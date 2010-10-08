@@ -237,7 +237,7 @@ inline Matrix< T >::Matrix( const U & col1_x, const U & col1_y, const U & col1_z
    *this = Matrix< T >(Vector< T >(col1_x, col1_y, col1_z, col1_w),
                        Vector< T >(col2_x, col2_y, col2_z, col2_w),
                        Vector< T >(col3_x, col3_y, col3_z, col3_w),
-                       Vector< T >(col4_x, col4_y, col4_z, col4_w))
+                       Vector< T >(col4_x, col4_y, col4_z, col4_w));
 }
 
 template < typename T >
