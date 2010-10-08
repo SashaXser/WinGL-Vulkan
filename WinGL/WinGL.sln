@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinGL", "WinGL\WinGL.vcproj", "{D092669A-32E5-4A29-B944-426E32BC7D4F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectiveTexturing", "ProjectiveTexturing\ProjectiveTexturing.vcproj", "{89F1D234-D069-449F-AE70-08F13270F048}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D092669A-32E5-4A29-B944-426E32BC7D4F} = {D092669A-32E5-4A29-B944-426E32BC7D4F}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SmokeParticleSystem", "SmokeParticleSystem\SmokeParticleSystem.vcproj", "{F59A6672-F64B-4B82-9BD1-5C5D261BB895}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D092669A-32E5-4A29-B944-426E32BC7D4F} = {D092669A-32E5-4A29-B944-426E32BC7D4F}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 4
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = ProjectiveTexturing\\ProjectiveTexturing.vcproj
+		SccLocalPath1 = .
+		SccProjectFilePathRelativizedFromConnection1 = ProjectiveTexturing\\
+		SccProjectUniqueName2 = SmokeParticleSystem\\SmokeParticleSystem.vcproj
+		SccLocalPath2 = .
+		SccProjectFilePathRelativizedFromConnection2 = SmokeParticleSystem\\
+		SccProjectUniqueName3 = WinGL\\WinGL.vcproj
+		SccLocalPath3 = .
+		SccProjectFilePathRelativizedFromConnection3 = WinGL\\
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D092669A-32E5-4A29-B944-426E32BC7D4F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D092669A-32E5-4A29-B944-426E32BC7D4F}.Debug|Win32.Build.0 = Debug|Win32
+		{D092669A-32E5-4A29-B944-426E32BC7D4F}.Release|Win32.ActiveCfg = Release|Win32
+		{D092669A-32E5-4A29-B944-426E32BC7D4F}.Release|Win32.Build.0 = Release|Win32
+		{89F1D234-D069-449F-AE70-08F13270F048}.Debug|Win32.ActiveCfg = Debug|Win32
+		{89F1D234-D069-449F-AE70-08F13270F048}.Debug|Win32.Build.0 = Debug|Win32
+		{89F1D234-D069-449F-AE70-08F13270F048}.Release|Win32.ActiveCfg = Release|Win32
+		{89F1D234-D069-449F-AE70-08F13270F048}.Release|Win32.Build.0 = Release|Win32
+		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Debug|Win32.Build.0 = Debug|Win32
+		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Release|Win32.ActiveCfg = Release|Win32
+		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
