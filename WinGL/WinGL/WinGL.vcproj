@@ -108,7 +108,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
+				AdditionalOptions="/MP&#x0D;&#x0A;/D _HAS_ITERATOR_DEBUGGING=0&#x0D;&#x0A;/D _SECURE_SCL=0"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
