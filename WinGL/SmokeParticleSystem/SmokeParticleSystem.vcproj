@@ -197,6 +197,10 @@
 				RelativePath=".\SmokeParticleSystem.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\SmokeParticleSystemWindow.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -221,6 +225,10 @@
 			</File>
 			<File
 				RelativePath=".\SmokeParticleSystem.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SmokeParticleSystemWindow.h"
 				>
 			</File>
 		</Filter>
