@@ -43,6 +43,7 @@ private:
 
    // private typedefs
    typedef void (ProjectiveTextureWindow::*RenderModeFuncPtr)( void );
+   typedef void (ProjectiveTextureWindow::*SetupModeFuncPtr)( void );
 
    // prohibit copy constructor
             ProjectiveTextureWindow( const ProjectiveTextureWindow & );
@@ -56,6 +57,9 @@ private:
    void RenderSceneImmediateMode( );
    void RenderWallsImmediateMode( );
    void RenderSpotLightImmediateMode( );
+
+   // setup the scene for the specified mode
+   void SetupRenderSceneImmediateMode( );
 
    // loads a texture
    void LoadTexture( );
@@ -73,6 +77,7 @@ private:
    CameraVariables      mLightVariables;
    CameraVariables      mCameraVariables;
 
+   SetupModeFuncPtr     mpSetupModeFuncPtr;
    RenderModeFuncPtr    mpRenderModeFuncPtr;
 
 };

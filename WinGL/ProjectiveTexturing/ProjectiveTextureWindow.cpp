@@ -8,6 +8,12 @@
 // gl includes
 #include <gl/gl.h>
 
+// crt includes
+#include <assert.h>
+
+// global defines
+#define VALIDATE_OPENGL() assert(glGetError() == GL_NO_ERROR)
+
 ProjectiveTextureWindow::ProjectiveTextureWindow( ) :
 mTexWidth            ( 0 ),
 mTexHeight           ( 0 ),
@@ -15,6 +21,7 @@ mLogoTex             ( 0 ),
 mMouseXCoord         ( 0 ),
 mMouseYCoord         ( 0 ),
 mpActiveMViewMat     ( &mCameraVariables.mMViewMat ),
+mpSetupModeFuncPtr   ( &ProjectiveTextureWindow::SetupRenderSceneImmediateMode ),
 mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
 {
 }
@@ -74,6 +81,9 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
       glLoadMatrixd(mCameraVariables.mProjMat);
       glMatrixMode(GL_MODELVIEW);
       glLoadMatrixd(mCameraVariables.mMViewMat);
+
+      // setup render mode specific attributes
+      (this->*mpSetupModeFuncPtr)();
       
       return true;
    }
@@ -127,6 +137,9 @@ void ProjectiveTextureWindow::RenderScene( )
 
    // swap the front and back buffers
    SwapBuffers(GetHDC());
+
+   // make sure there are no errors
+   VALIDATE_OPENGL();
 }
 
 void ProjectiveTextureWindow::RenderSceneImmediateMode( )
@@ -141,20 +154,20 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    const float fWallValues[][4] =
    {
       // red bottom wall...
-      { -2.5f,  0.0f, -2.5f, 1.0f },
-      { -2.5f,  0.0f,  2.5f, 1.0f },
-      {  2.5f,  0.0f,  2.5f, 1.0f },
-      {  2.5f,  0.0f, -2.5f, 1.0f },
+      { -5.0f,  0.0f, -5.0f, 1.0f },
+      { -5.0f,  0.0f,  5.0f, 1.0f },
+      {  5.0f,  0.0f,  5.0f, 1.0f },
+      {  5.0f,  0.0f, -5.0f, 1.0f },
       // green left wall...
-      { -2.5f,  5.0f,  2.5f, 1.0f },
-      { -2.5f,  0.0f,  2.5f, 1.0f },
-      { -2.5f,  0.0f, -2.5f, 1.0f },
-      { -2.5f,  5.0f, -2.5f, 1.0f },
+      { -5.0f, 10.0f,  5.0f, 1.0f },
+      { -5.0f,  0.0f,  5.0f, 1.0f },
+      { -5.0f,  0.0f, -5.0f, 1.0f },
+      { -5.0f, 10.0f, -5.0f, 1.0f },
       // blue back wall...
-      { -2.5f,  5.0f, -2.5f, 1.0f },
-      { -2.5f,  0.0f, -2.5f, 1.0f },
-      {  2.5f,  0.0f, -2.5f, 1.0f },
-      {  2.5f,  5.0f, -2.5f, 1.0f }
+      { -5.0f, 10.0f, -5.0f, 1.0f },
+      { -5.0f,  0.0f, -5.0f, 1.0f },
+      {  5.0f,  0.0f, -5.0f, 1.0f },
+      {  5.0f, 10.0f, -5.0f, 1.0f }
    };
 
    // create the model matrix...
@@ -174,50 +187,23 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
                                 mLightVariables.mMViewMat *
                                 modelMat;
 
-   const Vectord t1 = objLinearMat * Vectorf(fWallValues[0]);
-   const Vectord t2 = objLinearMat * Vectorf(fWallValues[1]);
-   const Vectord t3 = objLinearMat * Vectorf(fWallValues[2]);
-   const Vectord t4 = objLinearMat * Vectorf(fWallValues[3]);
-   const Vectord t5 = objLinearMat * Vectorf(fWallValues[4]);
-   const Vectord t6 = objLinearMat * Vectorf(fWallValues[5]);
-   const Vectord t7 = objLinearMat * Vectorf(fWallValues[6]);
-   const Vectord t8 = objLinearMat * Vectorf(fWallValues[7]);
-   const Vectord t9 = objLinearMat * Vectorf(fWallValues[8]);
-   const Vectord t10 = objLinearMat * Vectorf(fWallValues[9]);
-   const Vectord t11 = objLinearMat * Vectorf(fWallValues[10]);
-   const Vectord t12 = objLinearMat * Vectorf(fWallValues[11]);
-
    // enable texturing
    glEnable(GL_TEXTURE_2D);
    //glEnable(GL_ALPHA_TEST);
    //glEnable(GL_BLEND);
    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
+   // enable texture generation modes
+   glEnable(GL_TEXTURE_GEN_S);
+   glEnable(GL_TEXTURE_GEN_T);
+   glEnable(GL_TEXTURE_GEN_R);
+   glEnable(GL_TEXTURE_GEN_Q);
+
+   // load the texture matrix
    glMatrixMode(GL_TEXTURE);
    glPushMatrix();
    glLoadMatrixd(objLinearMat);
    glMatrixMode(GL_MODELVIEW);
-
-   //glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-   //glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-//   glTexGendv(GL_S, GL_OBJECT_PLANE, objLinearMat.mT);
-//   glTexGendv(GL_T, GL_OBJECT_PLANE, objLinearMat.mT + 4);
-//   glTexGendv(GL_R, GL_OBJECT_PLANE, objLinearMat.mT + 8);
-//   glTexGendv(GL_Q, GL_OBJECT_PLANE, objLinearMat.mT + 12);
-   const double s_plane[] = { 1, 0, 0, 0 };
-   const double t_plane[] = { 0, 1, 0, 0 };
-   const double r_plane[] = { 0, 0, 1, 0 };
-   const double q_plane[] = { 0, 0, 0, 1 };
-   glTexGendv(GL_S, GL_EYE_PLANE, s_plane);
-   glTexGendv(GL_T, GL_EYE_PLANE, t_plane);
-   glTexGendv(GL_R, GL_EYE_PLANE, r_plane);
-   glTexGendv(GL_Q, GL_EYE_PLANE, q_plane);
-   glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-   glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-   glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-   glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-   glEnable(GL_TEXTURE_GEN_S);
-   glEnable(GL_TEXTURE_GEN_T);
 
    // bind the logo texture
    glBindTexture(GL_TEXTURE_2D, mLogoTex);
@@ -255,9 +241,13 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    // disable texturing
    glDisable(GL_TEXTURE_2D);
 
+   // disable texture gen modes
    glDisable(GL_TEXTURE_GEN_S);
    glDisable(GL_TEXTURE_GEN_T);
+   glDisable(GL_TEXTURE_GEN_R);
+   glDisable(GL_TEXTURE_GEN_Q);
 
+   // restore the texture matrix
    glMatrixMode(GL_TEXTURE);
    glPopMatrix();
    glMatrixMode(GL_MODELVIEW);
@@ -317,6 +307,29 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
    glEnd();
 }
 
+void ProjectiveTextureWindow::SetupRenderSceneImmediateMode( )
+{
+   // setup the object plane attributes
+   const double pObjPlaneSTRQ[][4] =
+   {
+      { 1.0, 0.0, 0.0, 0.0 },
+      { 0.0, 1.0, 0.0, 0.0 },
+      { 0.0, 0.0, 1.0, 0.0 },
+      { 0.0, 0.0, 0.0, 1.0 }
+   };
+
+   // setup object level texture generation
+   glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+   glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+   glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+   glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+
+   glTexGendv(GL_S, GL_OBJECT_PLANE, pObjPlaneSTRQ[0]);
+   glTexGendv(GL_T, GL_OBJECT_PLANE, pObjPlaneSTRQ[1]);
+   glTexGendv(GL_R, GL_OBJECT_PLANE, pObjPlaneSTRQ[2]);
+   glTexGendv(GL_Q, GL_OBJECT_PLANE, pObjPlaneSTRQ[3]);
+}
+
 void ProjectiveTextureWindow::LoadTexture( )
 {
    // load the texture data
@@ -332,7 +345,7 @@ void ProjectiveTextureWindow::LoadTexture( )
 
       // setup the texture parameters
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_2D, OpenGLExt::GL_GENERATE_MIPMAP, GL_TRUE);
