@@ -378,10 +378,52 @@ extern unsigned char (__stdcall * glUnmapBufferARB)(unsigned int target);
 extern void (__stdcall * glGetBufferParameterivARB)(unsigned int target, unsigned int pname, int *params);
 extern void (__stdcall * glGetBufferPointervARB)(unsigned int target, unsigned int pname, void **params);
 
+// opengl debug out defines
+enum
+{
+   DEBUG_OUTPUT_SYNCHRONOUS_ARB =      0x8242,
+
+   MAX_DEBUG_MESSAGE_LENGTH_ARB =            0x9143,
+   MAX_DEBUG_LOGGED_MESSAGES_ARB =           0x9144,
+   DEBUG_LOGGED_MESSAGES_ARB =               0x9145,
+   DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB =    0x8243,
+
+   DEBUG_CALLBACK_FUNCTION_ARB =       0x8244,
+   DEBUG_CALLBACK_USER_PARAM_ARB =     0x8245,
+
+   DEBUG_SOURCE_API_ARB =              0x8246,
+   DEBUG_SOURCE_WINDOW_SYSTEM_ARB =    0x8247,
+   DEBUG_SOURCE_SHADER_COMPILER_ARB =  0x8248,
+   DEBUG_SOURCE_THIRD_PARTY_ARB =      0x8249,
+   DEBUG_SOURCE_APPLICATION_ARB =      0x824A,
+   DEBUG_SOURCE_OTHER_ARB =            0x824B,
+
+   DEBUG_TYPE_ERROR_ARB =                 0x824C,
+   DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB =   0x824D,
+   DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB =    0x824E,
+   DEBUG_TYPE_PORTABILITY_ARB =           0x824F,
+   DEBUG_TYPE_PERFORMANCE_ARB =           0x8250,
+   DEBUG_TYPE_OTHER_ARB =                 0x8251,
+
+   DEBUG_SEVERITY_HIGH_ARB =     0x9146,
+   DEBUG_SEVERITY_MEDIUM_ARB =   0x9147,
+   DEBUG_SEVERITY_LOW_ARB =      0x9148
+};
+
+typedef void (__stdcall * GLDEBUGPROCARB)(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * message, void * userParam);
+
+extern void (__stdcall * glDebugMessageControlARB)(unsigned int source, unsigned int type, unsigned int severity, int count, const unsigned int * ids, unsigned char enabled);
+extern void (__stdcall * glDebugMessageInsertARB)(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * buf);
+extern void (__stdcall * glDebugMessageCallbackARB)(GLDEBUGPROCARB callback, void * userParam);
+extern unsigned int (__stdcall * glGetDebugMessageLogARB)(unsigned int count, int bufsize, unsigned int * sources, unsigned int * types, unsigned int * ids, unsigned int * severities, int * lengths, char * messageLog);
+extern void (__stdcall * glGetPointerv)(unsigned int pname, void ** params);
+
 // misc defines
 enum
 {
-   GL_GENERATE_MIPMAP =    0x8191
+   // gl mipmap texture defines
+   GL_GENERATE_MIPMAP =       0x8191,
+   GL_GENERATE_MIPMAP_HINT =  0x8192
 };
 
 // initializes gl extensions

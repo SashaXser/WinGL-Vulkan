@@ -10,6 +10,6 @@ int WINAPI WinMain( HINSTANCE hInstance,
                     int nShowCmd )
 {
    ProjectiveTextureWindow * pProjWnd = new ProjectiveTextureWindow;
-   pProjWnd->Create(640, 480, "Projective Texture");
+   pProjWnd->Create(800, 600, "Projective Texture");
    return pProjWnd->Run();
 }

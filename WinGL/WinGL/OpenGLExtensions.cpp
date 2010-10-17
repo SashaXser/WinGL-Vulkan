@@ -140,6 +140,13 @@ void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const c
    GET_PROC_ADDRESS(unsigned char, (unsigned int), glUnmapBufferARB);
    GET_PROC_ADDRESS(void, (unsigned int, unsigned int, int *), glGetBufferParameterivARB);
    GET_PROC_ADDRESS(void, (unsigned int, unsigned int, void **), glGetBufferPointervARB);
+
+   // debug out extensions
+   GET_PROC_ADDRESS(void, (unsigned int, unsigned int, unsigned int, int, const unsigned int *, unsigned char), glDebugMessageControlARB);
+   GET_PROC_ADDRESS(void, (unsigned int, unsigned int, unsigned int, unsigned int, int, const char *), glDebugMessageInsertARB);
+   GET_PROC_ADDRESS(void, (GLDEBUGPROCARB, void *), glDebugMessageCallbackARB);
+   GET_PROC_ADDRESS(unsigned int, (unsigned int, int, unsigned int *, unsigned int *, unsigned int *, unsigned int *, int *, char *), glGetDebugMessageLogARB);
+   GET_PROC_ADDRESS(void, (unsigned int, void **), glGetPointerv);
 }
 
 // context creation
@@ -269,5 +276,12 @@ void * (__stdcall * glMapBufferARB)(unsigned int target, unsigned int access) = 
 unsigned char (__stdcall * glUnmapBufferARB)(unsigned int target) = 0;
 void (__stdcall * glGetBufferParameterivARB)(unsigned int target, unsigned int pname, int *params) = 0;
 void (__stdcall * glGetBufferPointervARB)(unsigned int target, unsigned int pname, void **params) = 0;
+
+// debug out extensions
+void (__stdcall * glDebugMessageControlARB)(unsigned int source, unsigned int type, unsigned int severity, int count, const unsigned int * ids, unsigned char enabled) = 0;
+void (__stdcall * glDebugMessageInsertARB)(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * buf) = 0;
+void (__stdcall * glDebugMessageCallbackARB)(GLDEBUGPROCARB callback, void * userParam) = 0;
+unsigned int (__stdcall * glGetDebugMessageLogARB)(unsigned int count, int bufsize, unsigned int * sources, unsigned int * types, unsigned int * ids, unsigned int * severities, int * lengths, char * messageLog) = 0;
+void (__stdcall * glGetPointerv)(unsigned int pname, void ** params) = 0;
 
 } // namespace OpenGLExt

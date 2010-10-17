@@ -19,13 +19,14 @@ public:
       int nMajorVer;
       int nMinorVer;
       bool bCompatibleContext;
+      bool bEnableDebug;
    };
 
    // creates the application
    virtual bool Create( unsigned int nWidth,
                         unsigned int nHeight,
                         const char * pWndTitle,
-                        const void * pInitParams = NULL );
+                        const void ** pInitParams = NULL );
 
 protected:
    // destructor...
@@ -45,7 +46,7 @@ private:
    OpenGLWindow & operator = ( const OpenGLWindow & );
 
    // creates an OpenGL context
-   bool CreateOpenGLContext( const OpenGLInit * pInitParams );
+   bool CreateOpenGLContext( const OpenGLInit ** pInitParams );
 
    // releases the OpenGL context
    void ReleaseOpenGLContext( );

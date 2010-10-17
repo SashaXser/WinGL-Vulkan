@@ -18,19 +18,19 @@ OpenGLWindow::~OpenGLWindow( )
 bool OpenGLWindow::Create( unsigned int nWidth,
                            unsigned int nHeight,
                            const char * pWndTitle,
-                           const void * pInitParams )
+                           const void ** pInitParams )
 {
    // create the main window
    if (Window::Create(nWidth, nHeight, pWndTitle, NULL))
    {
       // create the opengl context
-      return CreateOpenGLContext(reinterpret_cast< const OpenGLInit * >(pInitParams));
+      return CreateOpenGLContext(reinterpret_cast< const OpenGLInit ** >(pInitParams));
    }
 
    return false;
 }
 
-bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit * pInitParams )
+bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
 {
    // create a pixel format descriptor
    PIXELFORMATDESCRIPTOR pfd;
@@ -67,51 +67,60 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit * pInitParams )
       reinterpret_cast< int (* (__stdcall *)( const char * ))( void ) >
       (&wglGetProcAddress));
 
-   // release and destroy basic context
+   // release the basic context
    wglMakeCurrent(hDC, NULL);
-   wglDeleteContext(basicContext);
 
-   // create a new context
-   int attribList[] =
-   {
-      OpenGLExt::WGL_CONTEXT_MAJOR_VERSION_ARB, 0,
-      OpenGLExt::WGL_CONTEXT_MINOR_VERSION_ARB, 0,
-      OpenGLExt::WGL_CONTEXT_PROFILE_MASK_ARB, 0,
-      0, 0
-   };
-   
    if (pInitParams)
    {
-      // create the specified context...
-      attribList[1] = pInitParams->nMajorVer;
-      attribList[3] = pInitParams->nMinorVer;
-      attribList[5] = pInitParams->bCompatibleContext ?
-                      OpenGLExt::WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB :
-                      OpenGLExt::WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+      // destroy the basic context
+      wglDeleteContext(basicContext);
+
+      for (; !mGLContext && *pInitParams; ++pInitParams)
+      {
+         // create a new context
+         int attribList[] =
+         {
+            OpenGLExt::WGL_CONTEXT_MAJOR_VERSION_ARB, 0,
+            OpenGLExt::WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+            OpenGLExt::WGL_CONTEXT_PROFILE_MASK_ARB, 0,
+            OpenGLExt::WGL_CONTEXT_FLAGS_ARB, 0,
+            0, 0
+         };
+         
+         // create the specified context...
+         attribList[1] = (*pInitParams)->nMajorVer;
+         attribList[3] = (*pInitParams)->nMinorVer;
+         attribList[5] = (*pInitParams)->bCompatibleContext ?
+                         OpenGLExt::WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB :
+                         OpenGLExt::WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+         attribList[7] = (*pInitParams)->bEnableDebug ?
+                         OpenGLExt::WGL_CONTEXT_DEBUG_BIT_ARB : 0;
+
+         // store a 2.1 value and the requested
+         // context in two byte of data
+         const short CONTEXT_TWO_DOT_ONE = 2 << 8 | 1;
+         const short REQUESTED_CONTEXT = attribList[1] << 8 | attribList[2];
+
+         // if the requested context is a 2.1 or lower,
+         // remove the profile mask and the context flags
+         // as these types of contexts do not use or need these...
+         if (REQUESTED_CONTEXT <= CONTEXT_TWO_DOT_ONE)
+         {
+            attribList[4] = 0;
+            attribList[5] = 0;
+            attribList[6] = 0;
+            attribList[7] = 0;
+         }
+
+         mGLContext =
+            OpenGLExt::wglCreateContextAttribsARB(hDC, NULL, attribList);
+      }
    }
    else
    {
-      // creates a 2.1 context...
-      attribList[1] = 2;
-      attribList[3] = 1;
+      // use the basic context for opengl requests
+      mGLContext = basicContext;
    }
-
-   // store a 2.1 value and the requested
-   // context in two byte of data
-   const short CONTEXT_TWO_DOT_ONE = 2 << 8 | 1;
-   const short REQUESTED_CONTEXT = attribList[1] << 8 | attribList[2];
-
-   // if the requested context is a 2.1 or lower,
-   // remove the profile mask as these types of
-   // contexts do not use or need one...
-   if (REQUESTED_CONTEXT <= CONTEXT_TWO_DOT_ONE)
-   {
-      attribList[4] = 0;
-      attribList[5] = 0;
-   }
-
-   mGLContext =
-      OpenGLExt::wglCreateContextAttribsARB(hDC, NULL, attribList);
 
    return mGLContext ? true : false;
 }

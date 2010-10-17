@@ -84,7 +84,8 @@ public:
    Vector< T > &  MakeZeroVector( );
 
    // makes the vector a unit vector
-   Vector< T > &  MakeUnitLength( );
+   Vector< T >    UnitVector( ) const;
+   Vector< T > &  MakeUnitVector( );
 
    // returns the length
    T  Length( ) const;
@@ -416,7 +417,17 @@ inline Vector< T > & Vector< T >::MakeZeroVector( )
 }
 
 template < typename T >
-inline Vector< T > & Vector< T >::MakeUnitLength( )
+inline Vector< T > Vector< T >::UnitVector( ) const
+{
+   Vector< T > v(*this);
+
+   v.MakeUnitVector();
+
+   return v;
+}
+
+template < typename T >
+inline Vector< T > & Vector< T >::MakeUnitVector( )
 {
    T t = 1 / Length();
 

@@ -59,7 +59,11 @@ private:
    void RenderSpotLightImmediateMode( );
 
    // setup the scene for the specified mode
-   void SetupRenderSceneImmediateMode( );
+   void SetupRenderSceneImmediateModeEyeSpace( );
+   void SetupRenderSceneImmediateModeObjectSpace( );
+
+   // updates an immediate mode light model
+   void UpdateImmediateModeLightModel( );
 
    // loads a texture
    void LoadTexture( );
