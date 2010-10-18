@@ -67,6 +67,9 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
 
       glEnable(GL_DEPTH_TEST);
 
+      // set the shading model to be smooth
+      glShadeModel(GL_SMOOTH);
+
       // load the projective texture
       LoadTexture();
 
@@ -442,6 +445,10 @@ void ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace( )
 
 void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
 {
+   // push the modelview matrix and load identity
+   glPushMatrix();
+   glLoadIdentity();
+
    // setup global ambient parameters
    const float lightModelAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lightModelAmbient);
@@ -474,8 +481,14 @@ void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, lightViewDir);
 
+   glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 10.0f);
+   glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 120.0f);
+
    // setup color tracking
    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+   // restore the modelview matrix
+   glPopMatrix();
 }
 
 void ProjectiveTextureWindow::LoadTexture( )
