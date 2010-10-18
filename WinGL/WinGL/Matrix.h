@@ -153,13 +153,13 @@ public:
    bool GetFrustum( T pFrusVals[6] ) const;
 
    template < typename U >
-   bool GetFrustum( U & rFOV, U & rAspect,
-                    U & rZNear, U & rZFar ) const;
-   bool GetFrustum( T & rFOV, T & rAspect,
-                    T & rZNear, T & rZFar ) const;
+   bool GetPerspective( U & rFOV, U & rAspect,
+                        U & rZNear, U & rZFar ) const;
+   bool GetPerspective( T & rFOV, T & rAspect,
+                        T & rZNear, T & rZFar ) const;
    template < typename U >
-   bool GetFrustum( U pFrusVals[4] ) const;
-   bool GetFrustum( T pFrusVals[4] ) const;
+   bool GetPerspective( U pFrusVals[4] ) const;
+   bool GetPerspective( T pFrusVals[4] ) const;
 
    // transpose
    void        MakeTranspose( );
@@ -503,6 +503,7 @@ bool Matrix< T >::GetFrustum( U & rLeft, U & rRight,
                               U & rBottom, U & rTop,
                               U & rZNear, U & rZFar ) const
 {
+   return false;
 }
 
 template < typename T >
@@ -510,41 +511,54 @@ bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
                               T & rBottom, T & rTop,
                               T & rZNear, T & rZFar ) const
 {
+   return false;
 }
 
 template < typename T >
 template < typename U >
 bool Matrix< T >::GetFrustum( U pFrusVals[6] ) const
 {
+   return GetFrustum(pFrusVals[0], pFrusVals[1],
+                     pFrusVals[2], pFrusVals[3],
+                     pFrusVals[4], pFrusVals[5]);
 }
 
 template < typename T >
 bool Matrix< T >::GetFrustum( T pFrusVals[6] ) const
 {
+   return GetFrustum(pFrusVals[0], pFrusVals[1],
+                     pFrusVals[2], pFrusVals[3],
+                     pFrusVals[4], pFrusVals[5]);
 }
 
 template < typename T >
 template < typename U >
-bool Matrix< T >::GetFrustum( U & rFOV, U & rAspect,
-                              U & rZNear, U & rZFar ) const
+bool Matrix< T >::GetPerspective( U & rFOV, U & rAspect,
+                                  U & rZNear, U & rZFar ) const
 {
+   return false;
 }
 
 template < typename T >
-bool Matrix< T >::GetFrustum( T & rFOV, T & rAspect,
-                              T & rZNear, T & rZFar ) const
+bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
+                                  T & rZNear, T & rZFar ) const
 {
+   return false;
 }
 
 template < typename T >
 template < typename U >
-bool Matrix< T >::GetFrustum( U pFrusVals[4] ) const
+bool Matrix< T >::GetPerspective( U pFrusVals[4] ) const
 {
+   return GetPerspective(pFrusVals[0], pFrusVals[1],
+                         pFrusVals[2], pFrusVals[3]);
 }
 
 template < typename T >
-bool Matrix< T >::GetFrustum( T pFrusVals[4] ) const
+bool Matrix< T >::GetPerspective( T pFrusVals[4] ) const
 {
+   return GetPerspective(pFrusVals[0], pFrusVals[1],
+                         pFrusVals[2], pFrusVals[3]);
 }
 
 template < typename T >
