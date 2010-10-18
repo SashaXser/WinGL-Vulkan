@@ -503,6 +503,22 @@ bool Matrix< T >::GetFrustum( U & rLeft, U & rRight,
                               U & rBottom, U & rTop,
                               U & rZNear, U & rZFar ) const
 {
+   T l = 0, r = 0;
+   T b = 0, t = 0;
+   T n = 0, f = 0;
+
+   if (GetFrustum(l, r, b, t, n, r))
+   {
+      rLeft = l;
+      rRight = r;
+      rBottom = b;
+      rTop = t;
+      rZNear = n;
+      rZFar = f;
+
+      return true;
+   }
+
    return false;
 }
 
@@ -511,6 +527,21 @@ bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
                               T & rBottom, T & rTop,
                               T & rZNear, T & rZFar ) const
 {
+   if (mT[3]  ==  0.0 && mT[7]  == 0.0 &&
+       mT[11] == -1.0 && mT[15] == 0.0)
+   {
+      rZNear = mT[14] / (mT[10] - 1.0);
+      rZFar = mT[14] / (mT[10] + 1.0);
+
+      rLeft = rZNear * (mT[8] - 1.0) / mT[0];
+      rRight = rZNear * (mT[8] + 1.0) / mT[0];
+
+      rTop - rZNear * (mT[9] + 1.0) / mT[5];
+      rBottom = rZNear * (mT[9] - 1.0) / mT[5];
+
+      return true;
+   }
+
    return false;
 }
 
