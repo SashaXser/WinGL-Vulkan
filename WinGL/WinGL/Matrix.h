@@ -567,6 +567,19 @@ template < typename U >
 bool Matrix< T >::GetPerspective( U & rFOV, U & rAspect,
                                   U & rZNear, U & rZFar ) const
 {
+   T fov = 0, asp = 0;
+   T n = 0, f = 0;
+
+   if (GetPerspective(fov, asp, n, f))
+   {
+      rFOV = fov;
+      rAspect = asp;
+      rZNear = n;
+      rZFar = f;
+
+      return true;
+   }
+
    return false;
 }
 
@@ -574,6 +587,17 @@ template < typename T >
 bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
                                   T & rZNear, T & rZFar ) const
 {
+   T l = 0, r = 0;
+   T b = 0, t = 0;
+
+   if (GetFrustum(l, r, b, t, rZNear, rZFar))
+   {
+      rFOV = (atan(t / rZNear) - atan(b / rZNear)) * 180.0 / M_PI;
+      rAspect = (r - l) / (t - b);
+
+      return true;
+   }
+
    return false;
 }
 
