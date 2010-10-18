@@ -337,6 +337,9 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
    Vectord n3 = invLightMat * Vectord( 1.0, -1.0, -1.0);
    Vectord n4 = invLightMat * Vectord( 1.0,  1.0, -1.0);
 
+   // obtain the light cam position
+   Vectord lightPos = mLightVariables.mMViewMat.Inverse() * Vectord(0.0, 0.0, 0.0);
+
    // normalize the points back to world space
    f1 *= 1.0 / f1.mT[3];
    f2 *= 1.0 / f2.mT[3];
@@ -370,6 +373,17 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
    glVertex3dv(f3);
    glVertex3dv(n3);
    glVertex3dv(f4);
+   glVertex3dv(n4);
+   glEnd();
+
+   glBegin(GL_LINES);
+   glVertex3dv(lightPos);
+   glVertex3dv(n1);
+   glVertex3dv(lightPos);
+   glVertex3dv(n2);
+   glVertex3dv(lightPos);
+   glVertex3dv(n3);
+   glVertex3dv(lightPos);
    glVertex3dv(n4);
    glEnd();
 }
@@ -428,29 +442,37 @@ void ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace( )
 
 void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
 {
-   // obtain the lights position and view direction
-   const Vectord lightPos = mLightVariables.mMViewMat.Inverse() * Vectorf(0.0, 0.0, 0.0);
-   const Vectord lightViewDir = MatrixHelper::GetViewVector(mLightVariables.mMViewMat).UnitVector();
+   // setup global ambient parameters
+   const float lightModelAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lightModelAmbient);
 
-   const float pLightPos[] =
+   // obtain the lights position and view direction
+   const Vectord lPos = mLightVariables.mMViewMat.Inverse() * Vectorf(0.0, 0.0, 0.0);
+   const Vectord lViewDir = MatrixHelper::GetViewVector(mLightVariables.mMViewMat).UnitVector();
+
+   const float lightPos[] =
    {
-      static_cast< float >(lightPos.mT[0]),
-      static_cast< float >(lightPos.mT[1]),
-      static_cast< float >(lightPos.mT[2]),
-      static_cast< float >(lightPos.mT[3])
+      static_cast< float >(lPos.mT[0]),
+      static_cast< float >(lPos.mT[1]),
+      static_cast< float >(lPos.mT[2]),
+      static_cast< float >(lPos.mT[3])
    };
 
-   const float pLightViewDir[] =
+   const float lightViewDir[] =
    {
-      static_cast< float >(lightViewDir.mT[0]),
-      static_cast< float >(lightViewDir.mT[1]),
-      static_cast< float >(lightViewDir.mT[2]),
-      static_cast< float >(lightViewDir.mT[3])
+      static_cast< float >(lViewDir.mT[0]),
+      static_cast< float >(lViewDir.mT[1]),
+      static_cast< float >(lViewDir.mT[2]),
+      static_cast< float >(lViewDir.mT[3])
    };
 
    // setup the light parameters
-   glLightfv(GL_LIGHT0, GL_POSITION, pLightPos);
-   glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, pLightViewDir);
+   const float lightAmbient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+   const float lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+   glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+   glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+   glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, lightViewDir);
 
    // setup color tracking
    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);

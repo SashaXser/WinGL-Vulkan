@@ -536,7 +536,7 @@ bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
       rLeft = rZNear * (mT[8] - 1.0) / mT[0];
       rRight = rZNear * (mT[8] + 1.0) / mT[0];
 
-      rTop - rZNear * (mT[9] + 1.0) / mT[5];
+      rTop = rZNear * (mT[9] + 1.0) / mT[5];
       rBottom = rZNear * (mT[9] - 1.0) / mT[5];
 
       return true;
