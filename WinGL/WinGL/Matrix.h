@@ -141,6 +141,26 @@ public:
                      const Vector< T > & rCenter,
                      const Vector< T > & rUp );
 
+   template < typename U >
+   bool GetFrustum( U & rLeft, U & rRight,
+                    U & rBottom, U & rTop,
+                    U & rZNear, U & rZFar ) const;
+   bool GetFrustum( T & rLeft, T & rRight,
+                    T & rBottom, T & rTop,
+                    T & rZNear, T & rZFar ) const;
+   template < typename U >
+   bool GetFrustum( U pFrusVals[6] ) const;
+   bool GetFrustum( T pFrusVals[6] ) const;
+
+   template < typename U >
+   bool GetFrustum( U & rFOV, U & rAspect,
+                    U & rZNear, U & rZFar ) const;
+   bool GetFrustum( T & rFOV, T & rAspect,
+                    T & rZNear, T & rZFar ) const;
+   template < typename U >
+   bool GetFrustum( U pFrusVals[4] ) const;
+   bool GetFrustum( T pFrusVals[4] ) const;
+
    // transpose
    void        MakeTranspose( );
    Matrix< T > Transpose( ) const;
@@ -475,6 +495,56 @@ inline void Matrix< T >::MakeRotation( const T & degrees, const Vector< T > & ve
    mT[1] = xy * oneMinCos + zsin;      mT[5] = yy * oneMinCos + cosine;    mT[9] = yz * oneMinCos - xsin;      mT[13] = 0;
    mT[2] = xz * oneMinCos - ysin;      mT[6] = yz * oneMinCos + xsin;      mT[10] = zz * oneMinCos + cosine;   mT[14] = 0;
    mT[3] = 0;                          mT[7] = 0;                          mT[11] = 0;                         mT[15] = 1;
+}
+
+template < typename T >
+template < typename U >
+bool Matrix< T >::GetFrustum( U & rLeft, U & rRight,
+                              U & rBottom, U & rTop,
+                              U & rZNear, U & rZFar ) const
+{
+}
+
+template < typename T >
+bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
+                              T & rBottom, T & rTop,
+                              T & rZNear, T & rZFar ) const
+{
+}
+
+template < typename T >
+template < typename U >
+bool Matrix< T >::GetFrustum( U pFrusVals[6] ) const
+{
+}
+
+template < typename T >
+bool Matrix< T >::GetFrustum( T pFrusVals[6] ) const
+{
+}
+
+template < typename T >
+template < typename U >
+bool Matrix< T >::GetFrustum( U & rFOV, U & rAspect,
+                              U & rZNear, U & rZFar ) const
+{
+}
+
+template < typename T >
+bool Matrix< T >::GetFrustum( T & rFOV, T & rAspect,
+                              T & rZNear, T & rZFar ) const
+{
+}
+
+template < typename T >
+template < typename U >
+bool Matrix< T >::GetFrustum( U pFrusVals[4] ) const
+{
+}
+
+template < typename T >
+bool Matrix< T >::GetFrustum( T pFrusVals[4] ) const
+{
 }
 
 template < typename T >
