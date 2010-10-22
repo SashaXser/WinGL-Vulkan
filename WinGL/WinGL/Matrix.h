@@ -11,9 +11,7 @@
 
 // local includes
 #include "Vector.h"
-
-// platform includes
-#include <assert.h>
+#include "WglAssert.h"
 
 template < typename T >
 class Matrix
@@ -474,7 +472,7 @@ template < typename T >
 inline void Matrix< T >::MakeRotation( const T & degrees, const Vector< T > & vec )
 {
    // validate a unit vector...
-   assert(0.9999999999 <= vec.Length() && vec.Length() <= 1.0000000001);
+   WGL_ASSERT(0.9999999999 <= vec.Length() && vec.Length() <= 1.0000000001);
 
    const T radians = degrees * M_PI / 180.0;
 
@@ -883,8 +881,8 @@ inline void Matrix< T >::MakeInverse( )
              a3 * b2 - a4 * b1 + a5 * b0);
 
    // make sure there is an inverse
-   assert(-0.0000000001 > (1.0 / inverseDet) ||
-           0.0000000001 < (1.0 / inverseDet));
+   WGL_ASSERT(-0.0000000001 > (1.0 / inverseDet) ||
+              0.0000000001 < (1.0 / inverseDet));
 
    // create the inverse matrix
    Matrix< T > matInv;

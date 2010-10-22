@@ -1,8 +1,6 @@
 // local includes
 #include "Window.h"
-
-// crt includes
-#include <assert.h>
+#include "WglAssert.h"
 
 // library includes
 #pragma comment( lib, "Winmm.lib" )
@@ -105,7 +103,7 @@ bool Window::GetAppMessages( int & nQuitRetValue )
       {
          // there is an error...
          // silently ignore it...
-         assert(false);
+         WGL_ASSERT(false);
       }
       else
       {
@@ -117,7 +115,7 @@ bool Window::GetAppMessages( int & nQuitRetValue )
 
    // make sure that the message is the quit message...
    // assign the quit message return value...
-   assert(wndMsg.message == WM_QUIT);
+   WGL_ASSERT(wndMsg.message == WM_QUIT);
    nQuitRetValue = wndMsg.wParam;
 
    return true;

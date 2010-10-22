@@ -1,6 +1,7 @@
 // local includes
 #include "ProjectiveTextureWindow.h"
 #include "Timer.h"
+#include "WglAssert.h"
 #include "ReadTexture.h"
 #include "MatrixHelper.h"
 #include "OpenGLExtensions.h"
@@ -8,11 +9,8 @@
 // gl includes
 #include <gl/gl.h>
 
-// crt includes
-#include <assert.h>
-
 // global defines
-#define VALIDATE_OPENGL() assert(glGetError() == GL_NO_ERROR)
+#define VALIDATE_OPENGL() WGL_ASSERT(glGetError() == GL_NO_ERROR)
 
 ProjectiveTextureWindow::ProjectiveTextureWindow( ) :
 mTexWidth            ( 0 ),
@@ -70,6 +68,10 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
       // set the shading model to be smooth
       glShadeModel(GL_SMOOTH);
 
+      // set hit values
+      glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+      glHint(OpenGLExt::GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+
       // load the projective texture
       LoadTexture();
 
@@ -78,18 +80,18 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
                                                static_cast< double >(mTexWidth) /
                                                static_cast< double >(mTexHeight),
                                                1.0, 5.0);
-      mLightVariables.mMViewMat.MakeLookAt(Vectord(5.0, 2.5, 5.0),
-                                           Vectord(-2.5, 0.0, -2.5),
-                                           Vectord(0.0, 1.0, 0.0));
+      mLightVariables.mMViewMat.MakeLookAt(Vectord( 10.0, 10.0,  10.0),
+                                           Vectord(-10.0,  0.0, -10.0),
+                                           Vectord(  0.0,  1.0,   0.0));
 
       // setup the camera parameters
       mCameraVariables.mProjMat.MakePerspective(45.0, 
                                                 static_cast< double >(nWidth) /
                                                 static_cast< double >(nHeight),
                                                 0.1, 100.0);
-      mCameraVariables.mMViewMat.MakeLookAt(Vectord(5.0, 2.5, 5.0),
-                                            Vectord(-2.5, 0.0, -2.5),
-                                            Vectord(0.0, 1.0, 0.0));
+      mCameraVariables.mMViewMat.MakeLookAt(Vectord( 10.0, 10.0,  10.0),
+                                            Vectord(-10.0,  0.0, -10.0),
+                                            Vectord(  0.0,  1.0,   0.0));
 
       // load the camera parameters
       glMatrixMode(GL_PROJECTION);
@@ -174,20 +176,20 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    const float fWallValues[][4] =
    {
       // red bottom wall...
-      { -5.0f,  0.0f, -5.0f, 1.0f },
-      { -5.0f,  0.0f,  5.0f, 1.0f },
-      {  5.0f,  0.0f,  5.0f, 1.0f },
-      {  5.0f,  0.0f, -5.0f, 1.0f },
+      { -10.0f,  0.0f, -10.0f, 1.0f },
+      { -10.0f,  0.0f,  10.0f, 1.0f },
+      {  10.0f,  0.0f,  10.0f, 1.0f },
+      {  10.0f,  0.0f, -10.0f, 1.0f },
       // green left wall...
-      { -5.0f, 10.0f,  5.0f, 1.0f },
-      { -5.0f,  0.0f,  5.0f, 1.0f },
-      { -5.0f,  0.0f, -5.0f, 1.0f },
-      { -5.0f, 10.0f, -5.0f, 1.0f },
+      { -10.0f, 20.0f,  10.0f, 1.0f },
+      { -10.0f,  0.0f,  10.0f, 1.0f },
+      { -10.0f,  0.0f, -10.0f, 1.0f },
+      { -10.0f, 20.0f, -10.0f, 1.0f },
       // blue back wall...
-      { -5.0f, 10.0f, -5.0f, 1.0f },
-      { -5.0f,  0.0f, -5.0f, 1.0f },
-      {  5.0f,  0.0f, -5.0f, 1.0f },
-      {  5.0f, 10.0f, -5.0f, 1.0f }
+      { -10.0f, 20.0f, -10.0f, 1.0f },
+      { -10.0f,  0.0f, -10.0f, 1.0f },
+      {  10.0f,  0.0f, -10.0f, 1.0f },
+      {  10.0f, 20.0f, -10.0f, 1.0f }
    };
 
    // texture matrix
@@ -231,12 +233,15 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    else
    {
       // what the?
-      assert(false);
+      WGL_ASSERT(false);
    }
 
    //glEnable(GL_ALPHA_TEST);
    //glEnable(GL_BLEND);
-   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+   float c[] = {1,1,1,0};
+   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+   glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, c);
 
    // enable lighting
    glEnable(GL_LIGHTING);
@@ -258,11 +263,9 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glMatrixMode(GL_MODELVIEW);
 
    // enable texturing
-   //glEnable(GL_TEXTURE_2D);
-   glEnable(GL_TEXTURE_1D);
+   glEnable(GL_TEXTURE_2D);
    // bind the logo texture
-   //glBindTexture(GL_TEXTURE_2D, mLogoTex);
-   glBindTexture(GL_TEXTURE_1D, mLogoTex);
+   glBindTexture(GL_TEXTURE_2D, mLogoTex);
 
    // render the bottom wall first
    glColor3f(1.0f, 0.0f, 0.0f);
@@ -297,12 +300,10 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glEnd();
 
    // unbind the texture
-   //glBindTexture(GL_TEXTURE_2D, 0);
-   glBindTexture(GL_TEXTURE_1D, 0);
+   glBindTexture(GL_TEXTURE_2D, 0);
 
    // disable texturing
-   //glDisable(GL_TEXTURE_2D);
-   glDisable(GL_TEXTURE_1D);
+   glDisable(GL_TEXTURE_2D);
 
    // disable ligthing
    glDisable(GL_LIGHTING);
@@ -470,7 +471,8 @@ void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
       static_cast< float >(lViewDir.mT[0]),
       static_cast< float >(lViewDir.mT[1]),
       static_cast< float >(lViewDir.mT[2]),
-      static_cast< float >(lViewDir.mT[3])
+      //static_cast< float >(lViewDir.mT[3])
+      0.0f
    };
 
    // setup the light parameters
@@ -478,14 +480,15 @@ void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
    const float lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
-   glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-   glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, lightViewDir);
+   glLightfv(GL_LIGHT0, GL_POSITION, lightViewDir);
+   //glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+   //glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, lightViewDir);
 
-   glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 10.0f);
-   glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 120.0f);
+   //glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 10.0f);
+   //glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 120.0f);
 
    // setup color tracking
-   glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
    // restore the modelview matrix
    glPopMatrix();
@@ -502,26 +505,19 @@ void ProjectiveTextureWindow::LoadTexture( )
       glGenTextures(1, &mLogoTex);
 
       // bind the texture object
-      //glBindTexture(GL_TEXTURE_2D, mLogoTex);
-      glBindTexture(GL_TEXTURE_1D, mLogoTex);
+      glBindTexture(GL_TEXTURE_2D, mLogoTex);
 
       // setup the texture parameters
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-      //glTexParameteri(GL_TEXTURE_2D, OpenGLExt::GL_GENERATE_MIPMAP, GL_TRUE);
-      //glTexParameteri(GL_TEXTURE_2D, OpenGLExt::GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_1D, OpenGLExt::GL_GENERATE_MIPMAP, GL_FALSE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+      glTexParameteri(GL_TEXTURE_2D, OpenGLExt::GL_GENERATE_MIPMAP, GL_TRUE);
 
       VALIDATE_OPENGL();
 
       // load the texture data
-      /*glTexImage2D(GL_TEXTURE_2D,
+      glTexImage2D(GL_TEXTURE_2D,
                    0,
                    GL_RGBA8,
                    mTexWidth,
@@ -529,22 +525,10 @@ void ProjectiveTextureWindow::LoadTexture( )
                    0,
                    GL_RGBA,
                    GL_UNSIGNED_BYTE,
-                   pTexture);*/
-      glTexImage1D(GL_TEXTURE_1D,
-                   0,
-                   GL_RGBA8,
-                   mTexWidth * mTexHeight,
-                   0,
-                   GL_RGBA,
-                   GL_UNSIGNED_BYTE,
                    pTexture);
 
-      int i = glGetError();
-      VALIDATE_OPENGL();
-
       // release the bound texture
-      //glBindTexture(GL_TEXTURE_2D, 0);
-      glBindTexture(GL_TEXTURE_1D, 0);
+      glBindTexture(GL_TEXTURE_2D, 0);
 
       // release the texture
       delete [] pTexture;

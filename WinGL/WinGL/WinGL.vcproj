@@ -175,6 +175,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\WglAssert.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Window.cpp"
 				>
 			</File>
@@ -218,6 +222,10 @@
 			</File>
 			<File
 				RelativePath=".\Vector.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WglAssert.h"
 				>
 			</File>
 			<File
