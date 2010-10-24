@@ -32,7 +32,18 @@ if (fire_assert && !(exp)) \
 } \
 }
 
+#define WGL_ASSERT_INIT( init, exp ) \
+{ \
+init; \
+WGL_ASSERT( exp ); \
+}
+
 int __WglAssertMsgBox( const char * const pCaption, const char * const pMessage );
+
+#else
+
+#define WGL_ASSERT( exp )
+#define WGL_ASSERT_INIT( init, exp )
 
 #endif // _DEBUG
 

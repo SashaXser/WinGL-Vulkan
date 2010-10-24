@@ -50,6 +50,9 @@ private:
    // prohibit copy operator
    ProjectiveTextureWindow &  operator = ( const ProjectiveTextureWindow & );
 
+   // init common gl attributes
+   void InitGLState( int vpWidth, int vpHeight );
+
    // renders the scene
    void RenderScene( );
    
