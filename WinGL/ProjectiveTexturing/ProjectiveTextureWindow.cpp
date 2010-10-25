@@ -161,7 +161,8 @@ void ProjectiveTextureWindow::InitGLState( int vpWidth, int vpHeight )
    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
    // setup global ambient parameters
-   const float lightModelAmbient[] = { 0.9f, 0.9f, 0.9f, 1.0f };
+   const float lightModelAmbient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+   //const float lightModelAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lightModelAmbient);
 
    // initialize the ambient and diffuse params of light 0
@@ -261,8 +262,8 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    //glEnable(GL_ALPHA_TEST);
    //glEnable(GL_BLEND);
 
-   float c[] = {1,1,1,0};
-   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
+   float c[] = {1,0,0,0};
+   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
    glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, c);
 
    // enable lighting
