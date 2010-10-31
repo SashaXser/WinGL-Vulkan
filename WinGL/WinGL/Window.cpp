@@ -116,7 +116,7 @@ bool Window::GetAppMessages( int & nQuitRetValue )
    // make sure that the message is the quit message...
    // assign the quit message return value...
    WGL_ASSERT(wndMsg.message == WM_QUIT);
-   nQuitRetValue = wndMsg.wParam;
+   nQuitRetValue = wndMsg.wParam & 0x00000000FFFFFFFF;
 
    return true;
 }
@@ -133,7 +133,7 @@ bool Window::PeekAppMessages( int & nQuitRetValue )
          // application has requtested termination
          // indicate termination to the calling function
          termApp = true;
-         nQuitRetValue = wndMsg.wParam;
+         nQuitRetValue = wndMsg.wParam & 0x00000000FFFFFFFF;
          break;
       }
       else
