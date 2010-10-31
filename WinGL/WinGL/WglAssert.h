@@ -27,7 +27,7 @@ if (fire_assert && !(exp)) \
                         "No - Ignore current assert indefinitely\n" \
                         "Cancel - Skip current assert"); \
    \
-   if (response == WGL_YES) __asm { int 3 } \
+   if (response == WGL_YES) __debugbreak(); \
    else if (response == WGL_NO) fire_assert = false; \
 } \
 }
