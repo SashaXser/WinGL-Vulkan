@@ -554,8 +554,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
    case WM_SIZE:
       {
       // obtain the width and height
-      const int width = lParam & 0xFFFF;
-      const int height = lParam >> 16;
+      const int width = lParam & 0x000000000000FFFF;
+      const int height = (lParam >> 16) & 0x000000000000FFFF;
       // set the size of the viewport
       glViewport(0, 0, width, height);
       // setup the projection matrix
@@ -586,8 +586,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
    case WM_MOUSEMOVE:
       {
       // obtain the current x and y values
-      const int nCurX = lParam & 0x0000FFFF;
-      const int nCurY = lParam >> 16;
+      const int nCurX = lParam & 0x000000000000FFFF;
+      const int nCurY = (lParam >> 16) & 0x000000000000FFFF;
 
       // modifies the camera parameters
       if (wParam & MK_LBUTTON)
