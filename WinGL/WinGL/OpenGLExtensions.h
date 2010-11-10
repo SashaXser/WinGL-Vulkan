@@ -1,7 +1,13 @@
 #ifndef _OPENGL_EXTENSIONS_H_
 #define _OPENGL_EXTENSIONS_H_
 
+// platform includes
 #include <windows.h>
+
+// opengl ext defines
+#define DECLARE_OGL_EXT( ret, params, name ) \
+   typedef ret (__stdcall * name##Type) params; \
+   extern name##Type name
 
 namespace OpenGLExt
 {
@@ -36,7 +42,7 @@ enum
    GL_ERROR_INVALID_PROFILE_ARB =		0x2096
 };
 
-extern HGLRC (__stdcall * wglCreateContextAttribsARB)(HDC hDC, HDC hShareContext, const int *attibList);
+DECLARE_OGL_EXT(HGLRC, (HDC hDC, HDC hShareContext, const int * attibList), wglCreateContextAttribsARB);
 
 // fragment program extensions
 enum
@@ -129,25 +135,25 @@ enum
    GL_MATRIX31_ARB = 0x88DF
 };
 
-extern void (__stdcall * glProgramStringARB)(int target, int format, int len, const void *string); 
-extern void (__stdcall * glBindProgramARB)(int target, unsigned int program);
-extern void (__stdcall * glDeleteProgramsARB)(int n, const unsigned int *programs);
-extern void (__stdcall * glGenProgramsARB)(int n, unsigned int *programs);
-extern void (__stdcall * glProgramEnvParameter4dARB)(int target, unsigned int index, double x, double y, double z, double w);
-extern void (__stdcall * glProgramEnvParameter4dvARB)(int target, unsigned int index, const double *params);
-extern void (__stdcall * glProgramEnvParameter4fARB)(int target, unsigned int index, float x, float y, float z, float w);
-extern void (__stdcall * glProgramEnvParameter4fvARB)(int target, unsigned int index, const float *params);
-extern void (__stdcall * glProgramLocalParameter4dARB)(int target, unsigned int index, double x, double y, double z, double w);
-extern void (__stdcall * glProgramLocalParameter4dvARB)(int target, unsigned int index, const double *params);
-extern void (__stdcall * glProgramLocalParameter4fARB)(int target, unsigned int index, float x, float y, float z, float w);
-extern void (__stdcall * glProgramLocalParameter4fvARB)(int target, unsigned int index, const float *params);
-extern void (__stdcall * glGetProgramEnvParameterdvARB)(int target, unsigned int index, double *params);
-extern void (__stdcall * glGetProgramEnvParameterfvARB)(int target, unsigned int index, float *params);
-extern void (__stdcall * glGetProgramLocalParameterdvARB)(int target, unsigned int index, double *params);
-extern void (__stdcall * glGetProgramLocalParameterfvARB)(int target, unsigned int index, float *params);
-extern void (__stdcall * glGetProgramivARB)(int target, int pname, int *params);
-extern void (__stdcall * glGetProgramStringARB)(int target, int pname, void *string);
-extern unsigned char (__stdcall * glIsProgramARB)(unsigned int program);
+DECLARE_OGL_EXT(void, (int target, int format, int len, const void * string), glProgramStringARB); 
+DECLARE_OGL_EXT(void, (int target, unsigned int program), glBindProgramARB);
+DECLARE_OGL_EXT(void, (int n, const unsigned int *programs), glDeleteProgramsARB);
+DECLARE_OGL_EXT(void, (int n, unsigned int *programs), glGenProgramsARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, double x, double y, double z, double w), glProgramEnvParameter4dARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, const double *params), glProgramEnvParameter4dvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, float x, float y, float z, float w), glProgramEnvParameter4fARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, const float *params), glProgramEnvParameter4fvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, double x, double y, double z, double w), glProgramLocalParameter4dARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, const double *params), glProgramLocalParameter4dvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, float x, float y, float z, float w), glProgramLocalParameter4fARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, const float *params), glProgramLocalParameter4fvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, double *params), glGetProgramEnvParameterdvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, float *params), glGetProgramEnvParameterfvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, double *params), glGetProgramLocalParameterdvARB);
+DECLARE_OGL_EXT(void, (int target, unsigned int index, float *params), glGetProgramLocalParameterfvARB);
+DECLARE_OGL_EXT(void, (int target, int pname, int *params), glGetProgramivARB);
+DECLARE_OGL_EXT(void, (int target, int pname, void *string), glGetProgramStringARB);
+DECLARE_OGL_EXT(unsigned char, (unsigned int program), glIsProgramARB);
 
 // vertex program extensions
 enum
@@ -175,49 +181,49 @@ enum
    GL_MAX_VERTEX_ATTRIBS_ARB =             0x8869
 };
 
-extern void (__stdcall * glVertexAttrib1sARB)(unsigned int index, short x);
-extern void (__stdcall * glVertexAttrib1fARB)(unsigned int index, float x);
-extern void (__stdcall * glVertexAttrib1dARB)(unsigned int index, double x);
-extern void (__stdcall * glVertexAttrib2sARB)(unsigned int index, short x, short y);
-extern void (__stdcall * glVertexAttrib2fARB)(unsigned int index, float x, float y);
-extern void (__stdcall * glVertexAttrib2dARB)(unsigned int index, double x, double y);
-extern void (__stdcall * glVertexAttrib3sARB)(unsigned int index, short x, short y, short z);
-extern void (__stdcall * glVertexAttrib3fARB)(unsigned int index, float x, float y, float z);
-extern void (__stdcall * glVertexAttrib3dARB)(unsigned int index, double x, double y, double z);
-extern void (__stdcall * glVertexAttrib4sARB)(unsigned int index, short x, short y, short z, short w);
-extern void (__stdcall * glVertexAttrib4fARB)(unsigned int index, float x, float y, float z, float w);
-extern void (__stdcall * glVertexAttrib4dARB)(unsigned int index, double x, double y, double z, double w);
-extern void (__stdcall * glVertexAttrib4NubARB)(unsigned int index, unsigned char x, unsigned char y, unsigned char z, unsigned char w);
-extern void (__stdcall * glVertexAttrib1svARB)(unsigned int index, const short *v);
-extern void (__stdcall * glVertexAttrib1fvARB)(unsigned int index, const float *v);
-extern void (__stdcall * glVertexAttrib1dvARB)(unsigned int index, const double *v);
-extern void (__stdcall * glVertexAttrib2svARB)(unsigned int index, const short *v);
-extern void (__stdcall * glVertexAttrib2fvARB)(unsigned int index, const float *v);
-extern void (__stdcall * glVertexAttrib2dvARB)(unsigned int index, const double *v);
-extern void (__stdcall * glVertexAttrib3svARB)(unsigned int index, const short *v);
-extern void (__stdcall * glVertexAttrib3fvARB)(unsigned int index, const float *v);
-extern void (__stdcall * glVertexAttrib3dvARB)(unsigned int index, const double *v);
-extern void (__stdcall * glVertexAttrib4bvARB)(unsigned int index, const char *v);
-extern void (__stdcall * glVertexAttrib4svARB)(unsigned int index, const short *v);
-extern void (__stdcall * glVertexAttrib4ivARB)(unsigned int index, const int *v);
-extern void (__stdcall * glVertexAttrib4ubvARB)(unsigned int index, const unsigned char *v);
-extern void (__stdcall * glVertexAttrib4usvARB)(unsigned int index, const unsigned short *v);
-extern void (__stdcall * glVertexAttrib4uivARB)(unsigned int index, const unsigned int *v);
-extern void (__stdcall * glVertexAttrib4fvARB)(unsigned int index, const float *v);
-extern void (__stdcall * glVertexAttrib4dvARB)(unsigned int index, const double *v);
-extern void (__stdcall * glVertexAttrib4NbvARB)(unsigned int index, const char *v);
-extern void (__stdcall * glVertexAttrib4NsvARB)(unsigned int index, const short *v);
-extern void (__stdcall * glVertexAttrib4NivARB)(unsigned int index, const int *v);
-extern void (__stdcall * glVertexAttrib4NubvARB)(unsigned int index, const unsigned char *v);
-extern void (__stdcall * glVertexAttrib4NusvARB)(unsigned int index, const unsigned short *v);
-extern void (__stdcall * glVertexAttrib4NuivARB)(unsigned int index, const unsigned int *v);
-extern void (__stdcall * glVertexAttribPointerARB)(unsigned int index, int size, int type, unsigned char normalized, int stride, const void *pointer);
-extern void (__stdcall * glEnableVertexAttribArrayARB)(unsigned int index);
-extern void (__stdcall * glDisableVertexAttribArrayARB)(unsigned int index);
-extern void (__stdcall * glGetVertexAttribdvARB)(unsigned int index, int pname, double *params);
-extern void (__stdcall * glGetVertexAttribfvARB)(unsigned int index, int pname, float *params);
-extern void (__stdcall * glGetVertexAttribivARB)(unsigned int index, int pname, int *params);
-extern void (__stdcall * glGetVertexAttribPointervARB)(unsigned int index, int pname, void **pointer);
+DECLARE_OGL_EXT(void, (unsigned int index, short x), glVertexAttrib1sARB);
+DECLARE_OGL_EXT(void, (unsigned int index, float x), glVertexAttrib1fARB);
+DECLARE_OGL_EXT(void, (unsigned int index, double x), glVertexAttrib1dARB);
+DECLARE_OGL_EXT(void, (unsigned int index, short x, short y), glVertexAttrib2sARB);
+DECLARE_OGL_EXT(void, (unsigned int index, float x, float y), glVertexAttrib2fARB);
+DECLARE_OGL_EXT(void, (unsigned int index, double x, double y), glVertexAttrib2dARB);
+DECLARE_OGL_EXT(void, (unsigned int index, short x, short y, short z), glVertexAttrib3sARB);
+DECLARE_OGL_EXT(void, (unsigned int index, float x, float y, float z), glVertexAttrib3fARB);
+DECLARE_OGL_EXT(void, (unsigned int index, double x, double y, double z), glVertexAttrib3dARB);
+DECLARE_OGL_EXT(void, (unsigned int index, short x, short y, short z, short w), glVertexAttrib4sARB);
+DECLARE_OGL_EXT(void, (unsigned int index, float x, float y, float z, float w), glVertexAttrib4fARB);
+DECLARE_OGL_EXT(void, (unsigned int index, double x, double y, double z, double w), glVertexAttrib4dARB);
+DECLARE_OGL_EXT(void, (unsigned int index, unsigned char x, unsigned char y, unsigned char z, unsigned char w), glVertexAttrib4NubARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const short *v), glVertexAttrib1svARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const float *v), glVertexAttrib1fvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const double *v), glVertexAttrib1dvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const short *v), glVertexAttrib2svARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const float *v), glVertexAttrib2fvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const double *v), glVertexAttrib2dvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const short *v), glVertexAttrib3svARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const float *v), glVertexAttrib3fvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const double *v), glVertexAttrib3dvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const char *v), glVertexAttrib4bvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const short *v), glVertexAttrib4svARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const int *v), glVertexAttrib4ivARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const unsigned char *v), glVertexAttrib4ubvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const unsigned short *v), glVertexAttrib4usvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const unsigned int *v), glVertexAttrib4uivARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const float *v), glVertexAttrib4fvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const double *v), glVertexAttrib4dvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const char *v), glVertexAttrib4NbvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const short *v), glVertexAttrib4NsvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const int *v), glVertexAttrib4NivARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const unsigned char *v), glVertexAttrib4NubvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const unsigned short *v), glVertexAttrib4NusvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, const unsigned int *v), glVertexAttrib4NuivARB);
+DECLARE_OGL_EXT(void, (unsigned int index, int size, int type, unsigned char normalized, int stride, const void *pointer), glVertexAttribPointerARB);
+DECLARE_OGL_EXT(void, (unsigned int index), glEnableVertexAttribArrayARB);
+DECLARE_OGL_EXT(void, (unsigned int index), glDisableVertexAttribArrayARB);
+DECLARE_OGL_EXT(void, (unsigned int index, int pname, double *params), glGetVertexAttribdvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, int pname, float *params), glGetVertexAttribfvARB);
+DECLARE_OGL_EXT(void, (unsigned int index, int pname, int *params), glGetVertexAttribivARB);
+DECLARE_OGL_EXT(void, (unsigned int index, int pname, void **pointer), glGetVertexAttribPointervARB);
 
 // shader object extensions
 typedef unsigned int glHandleARB;
@@ -262,45 +268,45 @@ enum
    GL_SAMPLER_2D_RECT_SHADOW_ARB =           0x8B64
 };
 
-extern void (__stdcall * glDeleteObjectARB)(glHandleARB obj);
-extern glHandleARB (__stdcall * glGetHandleARB)(int pname);
-extern void (__stdcall * glDetachObjectARB)(glHandleARB containerObj, glHandleARB attachedObj);
-extern glHandleARB (__stdcall * glCreateShaderObjectARB)(int shaderType);
-extern void (__stdcall * glShaderSourceARB)(glHandleARB shaderObj, int count, const char **string, const int *length);
-extern void (__stdcall * glCompileShaderARB)(glHandleARB shaderObj);
-extern glHandleARB (__stdcall * glCreateProgramObjectARB)(void);
-extern void (__stdcall * glAttachObjectARB)(glHandleARB containerObj, glHandleARB obj);
-extern void (__stdcall * glLinkProgramARB)(glHandleARB programObj);
-extern void (__stdcall * glUseProgramObjectARB)(glHandleARB programObj);
-extern void (__stdcall * glValidateProgramARB)(glHandleARB programObj);
-extern void (__stdcall * glUniform1fARB)(int location, float v0);
-extern void (__stdcall * glUniform2fARB)(int location, float v0, float v1);
-extern void (__stdcall * glUniform3fARB)(int location, float v0, float v1, float v2);
-extern void (__stdcall * glUniform4fARB)(int location, float v0, float v1, float v2, float v3);
-extern void (__stdcall * glUniform1iARB)(int location, int v0);
-extern void (__stdcall * glUniform2iARB)(int location, int v0, int v1);
-extern void (__stdcall * glUniform3iARB)(int location, int v0, int v1, int v2);
-extern void (__stdcall * glUniform4iARB)(int location, int v0, int v1, int v2, int v3);
-extern void (__stdcall * glUniform1fvARB)(int location, int count, const float *value);
-extern void (__stdcall * glUniform2fvARB)(int location, int count, const float *value);
-extern void (__stdcall * glUniform3fvARB)(int location, int count, const float *value);
-extern void (__stdcall * glUniform4fvARB)(int location, int count, const float *value);
-extern void (__stdcall * glUniform1ivARB)(int location, int count, const int *value);
-extern void (__stdcall * glUniform2ivARB)(int location, int count, const int *value);
-extern void (__stdcall * glUniform3ivARB)(int location, int count, const int *value);
-extern void (__stdcall * glUniform4ivARB)(int location, int count, const int *value);
-extern void (__stdcall * glUniformMatrix2fvARB)(int location, int count, unsigned char transpose, const float *value);
-extern void (__stdcall * glUniformMatrix3fvARB)(int location, int count, unsigned char transpose, const float *value);
-extern void (__stdcall * glUniformMatrix4fvARB)(int location, int count, unsigned char transpose, const float *value);
-extern void (__stdcall * glGetObjectParameterfvARB)(glHandleARB obj, int pname, float *params);
-extern void (__stdcall * glGetObjectParameterivARB)(glHandleARB obj, int pname, int *params);
-extern void (__stdcall * glGetInfoLogARB)(glHandleARB obj, int maxLength, int *length, char *infoLog);
-extern void (__stdcall * glGetAttachedObjectsARB)(glHandleARB containerObj, int maxCount, int *count, glHandleARB *obj);
-extern int (__stdcall * glGetUniformLocationARB)(glHandleARB programObj, const char *name);
-extern void (__stdcall * glGetActiveUniformARB)(glHandleARB programObj, unsigned int index, int maxLength, int *length, int *size, int *type, char *name);
-extern void (__stdcall * glGetUniformfvARB)(glHandleARB programObj, int location, float *params);
-extern void (__stdcall * glGetUniformivARB)(glHandleARB programObj, int location, int *params);
-extern void (__stdcall * glGetShaderSourceARB)(glHandleARB obj, int maxLength, int *length, char *source);
+DECLARE_OGL_EXT(void, (glHandleARB obj), glDeleteObjectARB);
+DECLARE_OGL_EXT(glHandleARB, (int pname), glGetHandleARB);
+DECLARE_OGL_EXT(void, (glHandleARB containerObj, glHandleARB attachedObj), glDetachObjectARB);
+DECLARE_OGL_EXT(glHandleARB, (int shaderType), glCreateShaderObjectARB);
+DECLARE_OGL_EXT(void, (glHandleARB shaderObj, int count, const char **string, const int *length), glShaderSourceARB);
+DECLARE_OGL_EXT(void, (glHandleARB shaderObj), glCompileShaderARB);
+DECLARE_OGL_EXT(glHandleARB, (void), glCreateProgramObjectARB);
+DECLARE_OGL_EXT(void, (glHandleARB containerObj, glHandleARB obj), glAttachObjectARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj), glLinkProgramARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj), glUseProgramObjectARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj), glValidateProgramARB);
+DECLARE_OGL_EXT(void, (int location, float v0), glUniform1fARB);
+DECLARE_OGL_EXT(void, (int location, float v0, float v1), glUniform2fARB);
+DECLARE_OGL_EXT(void, (int location, float v0, float v1, float v2), glUniform3fARB);
+DECLARE_OGL_EXT(void, (int location, float v0, float v1, float v2, float v3), glUniform4fARB);
+DECLARE_OGL_EXT(void, (int location, int v0), glUniform1iARB);
+DECLARE_OGL_EXT(void, (int location, int v0, int v1), glUniform2iARB);
+DECLARE_OGL_EXT(void, (int location, int v0, int v1, int v2), glUniform3iARB);
+DECLARE_OGL_EXT(void, (int location, int v0, int v1, int v2, int v3), glUniform4iARB);
+DECLARE_OGL_EXT(void, (int location, int count, const float *value), glUniform1fvARB);
+DECLARE_OGL_EXT(void, (int location, int count, const float *value), glUniform2fvARB);
+DECLARE_OGL_EXT(void, (int location, int count, const float *value), glUniform3fvARB);
+DECLARE_OGL_EXT(void, (int location, int count, const float *value), glUniform4fvARB);
+DECLARE_OGL_EXT(void, (int location, int count, const int *value), glUniform1ivARB);
+DECLARE_OGL_EXT(void, (int location, int count, const int *value), glUniform2ivARB);
+DECLARE_OGL_EXT(void, (int location, int count, const int *value), glUniform3ivARB);
+DECLARE_OGL_EXT(void, (int location, int count, const int *value), glUniform4ivARB);
+DECLARE_OGL_EXT(void, (int location, int count, unsigned char transpose, const float *value), glUniformMatrix2fvARB);
+DECLARE_OGL_EXT(void, (int location, int count, unsigned char transpose, const float *value), glUniformMatrix3fvARB);
+DECLARE_OGL_EXT(void, (int location, int count, unsigned char transpose, const float *value), glUniformMatrix4fvARB);
+DECLARE_OGL_EXT(void, (glHandleARB obj, int pname, float *params), glGetObjectParameterfvARB);
+DECLARE_OGL_EXT(void, (glHandleARB obj, int pname, int *params), glGetObjectParameterivARB);
+DECLARE_OGL_EXT(void, (glHandleARB obj, int maxLength, int *length, char *infoLog), glGetInfoLogARB);
+DECLARE_OGL_EXT(void, (glHandleARB containerObj, int maxCount, int *count, glHandleARB *obj), glGetAttachedObjectsARB);
+DECLARE_OGL_EXT(int, (glHandleARB programObj, const char *name), glGetUniformLocationARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj, unsigned int index, int maxLength, int *length, int *size, int *type, char *name), glGetActiveUniformARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj, int location, float *params), glGetUniformfvARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj, int location, int *params), glGetUniformivARB);
+DECLARE_OGL_EXT(void, (glHandleARB obj, int maxLength, int *length, char *source), glGetShaderSourceARB);
 
 // vertex shader extensions
 enum
@@ -316,9 +322,9 @@ enum
    GL_OBJECT_ACTIVE_ATTRIBUTE_MAX_LENGTH_ARB = 0x8B8A
 };
 
-extern void (__stdcall * glBindAttribLocationARB)(glHandleARB programObj, unsigned int index, const char *name);
-extern void (__stdcall * glGetActiveAttribARB)(glHandleARB programObj, unsigned int index, int maxLength, int *length, int *size, int *type, char *name);
-extern int (__stdcall * glGetAttribLocationARB)(glHandleARB programObj, const char *name);
+DECLARE_OGL_EXT(void, (glHandleARB programObj, unsigned int index, const char *name), glBindAttribLocationARB);
+DECLARE_OGL_EXT(void, (glHandleARB programObj, unsigned int index, int maxLength, int *length, int *size, int *type, char *name), glGetActiveAttribARB);
+DECLARE_OGL_EXT(int, (glHandleARB programObj, const char *name), glGetAttribLocationARB);
 
 // fragment shader extensions
 enum
@@ -366,17 +372,17 @@ enum
    GL_BUFFER_MAP_POINTER_ARB =                      0x88BD
 };
 
-extern void (__stdcall * glBindBufferARB)(unsigned int target, unsigned int buffer);
-extern void (__stdcall * glDeleteBuffersARB)(int n, const unsigned int *buffers);
-extern void (__stdcall * glGenBuffersARB)(int n, unsigned int *buffers);
-extern unsigned char (__stdcall * glIsBufferARB)(unsigned int buffer);
-extern void (__stdcall * glBufferDataARB)(unsigned int target, intptr size, const void *data, unsigned int usage);
-extern void (__stdcall * glBufferSubDataARB)(unsigned int target, intptr offset, sizeiptr size, const void *data);
-extern void (__stdcall * glGetBufferSubDataARB)(unsigned int target, intptr offset, sizeiptr size, void *data);
-extern void * (__stdcall * glMapBufferARB)(unsigned int target, unsigned int access);
-extern unsigned char (__stdcall * glUnmapBufferARB)(unsigned int target);
-extern void (__stdcall * glGetBufferParameterivARB)(unsigned int target, unsigned int pname, int *params);
-extern void (__stdcall * glGetBufferPointervARB)(unsigned int target, unsigned int pname, void **params);
+DECLARE_OGL_EXT(void, (unsigned int target, unsigned int buffer), glBindBufferARB);
+DECLARE_OGL_EXT(void, (int n, const unsigned int *buffers), glDeleteBuffersARB);
+DECLARE_OGL_EXT(void, (int n, unsigned int *buffers), glGenBuffersARB);
+DECLARE_OGL_EXT(unsigned char, (unsigned int buffer), glIsBufferARB);
+DECLARE_OGL_EXT(void, (unsigned int target, intptr size, const void *data, unsigned int usage), glBufferDataARB);
+DECLARE_OGL_EXT(void, (unsigned int target, intptr offset, sizeiptr size, const void *data), glBufferSubDataARB);
+DECLARE_OGL_EXT(void, (unsigned int target, intptr offset, sizeiptr size, void *data), glGetBufferSubDataARB);
+DECLARE_OGL_EXT(void *, (unsigned int target, unsigned int access), glMapBufferARB);
+DECLARE_OGL_EXT(unsigned char, (unsigned int target), glUnmapBufferARB);
+DECLARE_OGL_EXT(void, (unsigned int target, unsigned int pname, int *params), glGetBufferParameterivARB);
+DECLARE_OGL_EXT(void, (unsigned int target, unsigned int pname, void **params), glGetBufferPointervARB);
 
 // opengl debug out defines
 enum
@@ -412,11 +418,11 @@ enum
 
 typedef void (__stdcall * GLDEBUGPROCARB)(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * message, void * userParam);
 
-extern void (__stdcall * glDebugMessageControlARB)(unsigned int source, unsigned int type, unsigned int severity, int count, const unsigned int * ids, unsigned char enabled);
-extern void (__stdcall * glDebugMessageInsertARB)(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * buf);
-extern void (__stdcall * glDebugMessageCallbackARB)(GLDEBUGPROCARB callback, void * userParam);
-extern unsigned int (__stdcall * glGetDebugMessageLogARB)(unsigned int count, int bufsize, unsigned int * sources, unsigned int * types, unsigned int * ids, unsigned int * severities, int * lengths, char * messageLog);
-extern void (__stdcall * glGetPointerv)(unsigned int pname, void ** params);
+DECLARE_OGL_EXT(void, (unsigned int source, unsigned int type, unsigned int severity, int count, const unsigned int * ids, unsigned char enabled), glDebugMessageControlARB);
+DECLARE_OGL_EXT(void, (unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * buf), glDebugMessageInsertARB);
+DECLARE_OGL_EXT(void, (GLDEBUGPROCARB callback, void * userParam), glDebugMessageCallbackARB);
+DECLARE_OGL_EXT(unsigned int, (unsigned int count, int bufsize, unsigned int * sources, unsigned int * types, unsigned int * ids, unsigned int * severities, int * lengths, char * messageLog), glGetDebugMessageLogARB);
+DECLARE_OGL_EXT(void, (unsigned int pname, void ** params), glGetPointerv);
 
 // misc defines
 enum
