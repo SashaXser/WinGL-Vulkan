@@ -38,7 +38,7 @@ bool SmokeParticleSystemWindow::Create( unsigned int nWidth,
    // initialize with a 3.2 context
    OpenGLWindow::OpenGLInit glInit32 =
    {
-      3, 2, true, false
+      3, 2, true, false, false
    };
 
    // initialize 32 else nothing

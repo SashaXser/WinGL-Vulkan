@@ -387,33 +387,33 @@ DECLARE_OGL_EXT(void, (unsigned int target, unsigned int pname, void **params), 
 // opengl debug out defines
 enum
 {
-   DEBUG_OUTPUT_SYNCHRONOUS_ARB =      0x8242,
+   GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB =      0x8242,
 
-   MAX_DEBUG_MESSAGE_LENGTH_ARB =            0x9143,
-   MAX_DEBUG_LOGGED_MESSAGES_ARB =           0x9144,
-   DEBUG_LOGGED_MESSAGES_ARB =               0x9145,
-   DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB =    0x8243,
+   GL_MAX_DEBUG_MESSAGE_LENGTH_ARB =            0x9143,
+   GL_MAX_DEBUG_LOGGED_MESSAGES_ARB =           0x9144,
+   GL_DEBUG_LOGGED_MESSAGES_ARB =               0x9145,
+   GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB =    0x8243,
 
-   DEBUG_CALLBACK_FUNCTION_ARB =       0x8244,
-   DEBUG_CALLBACK_USER_PARAM_ARB =     0x8245,
+   GL_DEBUG_CALLBACK_FUNCTION_ARB =       0x8244,
+   GL_DEBUG_CALLBACK_USER_PARAM_ARB =     0x8245,
 
-   DEBUG_SOURCE_API_ARB =              0x8246,
-   DEBUG_SOURCE_WINDOW_SYSTEM_ARB =    0x8247,
-   DEBUG_SOURCE_SHADER_COMPILER_ARB =  0x8248,
-   DEBUG_SOURCE_THIRD_PARTY_ARB =      0x8249,
-   DEBUG_SOURCE_APPLICATION_ARB =      0x824A,
-   DEBUG_SOURCE_OTHER_ARB =            0x824B,
+   GL_DEBUG_SOURCE_API_ARB =              0x8246,
+   GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB =    0x8247,
+   GL_DEBUG_SOURCE_SHADER_COMPILER_ARB =  0x8248,
+   GL_DEBUG_SOURCE_THIRD_PARTY_ARB =      0x8249,
+   GL_DEBUG_SOURCE_APPLICATION_ARB =      0x824A,
+   GL_DEBUG_SOURCE_OTHER_ARB =            0x824B,
 
-   DEBUG_TYPE_ERROR_ARB =                 0x824C,
-   DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB =   0x824D,
-   DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB =    0x824E,
-   DEBUG_TYPE_PORTABILITY_ARB =           0x824F,
-   DEBUG_TYPE_PERFORMANCE_ARB =           0x8250,
-   DEBUG_TYPE_OTHER_ARB =                 0x8251,
+   GL_DEBUG_TYPE_ERROR_ARB =                 0x824C,
+   GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB =   0x824D,
+   GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB =    0x824E,
+   GL_DEBUG_TYPE_PORTABILITY_ARB =           0x824F,
+   GL_DEBUG_TYPE_PERFORMANCE_ARB =           0x8250,
+   GL_DEBUG_TYPE_OTHER_ARB =                 0x8251,
 
-   DEBUG_SEVERITY_HIGH_ARB =     0x9146,
-   DEBUG_SEVERITY_MEDIUM_ARB =   0x9147,
-   DEBUG_SEVERITY_LOW_ARB =      0x9148
+   GL_DEBUG_SEVERITY_HIGH_ARB =     0x9146,
+   GL_DEBUG_SEVERITY_MEDIUM_ARB =   0x9147,
+   GL_DEBUG_SEVERITY_LOW_ARB =      0x9148
 };
 
 typedef void (__stdcall * GLDEBUGPROCARB)(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char * message, void * userParam);
@@ -423,6 +423,34 @@ DECLARE_OGL_EXT(void, (unsigned int source, unsigned int type, unsigned int id, 
 DECLARE_OGL_EXT(void, (GLDEBUGPROCARB callback, void * userParam), glDebugMessageCallbackARB);
 DECLARE_OGL_EXT(unsigned int, (unsigned int count, int bufsize, unsigned int * sources, unsigned int * types, unsigned int * ids, unsigned int * severities, int * lengths, char * messageLog), glGetDebugMessageLogARB);
 DECLARE_OGL_EXT(void, (unsigned int pname, void ** params), glGetPointerv);
+
+// amd debug out defines
+enum
+{
+   GL_MAX_DEBUG_MESSAGE_LENGTH_AMD =   0x9143,
+   GL_MAX_DEBUG_LOGGED_MESSAGES_AMD =  0x9144,
+   GL_DEBUG_LOGGED_MESSAGES_AMD =      0x9145,       
+
+   GL_DEBUG_SEVERITY_HIGH_AMD =     0x9146,
+   GL_DEBUG_SEVERITY_MEDIUM_AMD =   0x9147,
+   GL_DEBUG_SEVERITY_LOW_AMD =      0x9148,
+
+   GL_DEBUG_CATEGORY_API_ERROR_AMD =            0x9149,
+   GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD =        0x914A,
+   GL_DEBUG_CATEGORY_DEPRECATION_AMD =          0x914B,
+   GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD =   0x914C,
+   GL_DEBUG_CATEGORY_PERFORMANCE_AMD =          0x914D,
+   GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD =      0x914E,
+   GL_DEBUG_CATEGORY_APPLICATION_AMD =          0x914F,
+   GL_DEBUG_CATEGORY_OTHER_AMD =                0x9150
+};
+
+typedef void (__stdcall * GLDEBUGPROCAMD)(unsigned int id, unsigned int category, unsigned int severity, int length, const char * message, void * userParam);
+
+DECLARE_OGL_EXT(void, (unsigned int category, unsigned int severity, int count, const unsigned int * ids, unsigned char enabled), glDebugMessageEnableAMD);
+DECLARE_OGL_EXT(void, (unsigned int category, unsigned int severity, unsigned int id, int length, const char * buf), glDebugMessageInsertAMD);
+DECLARE_OGL_EXT(void, (GLDEBUGPROCAMD callback, void * userParam), glDebugMessageCallbackAMD);
+DECLARE_OGL_EXT(unsigned int, (unsigned int count, int bufsize, unsigned int * categories, unsigned int * severities, unsigned int * ids, int * lengths, char * message), glGetDebugMessageLogAMD);
 
 // misc defines
 enum
@@ -437,6 +465,9 @@ enum
 // which accepts a const char *...  the returning value is another function pointer
 // that returns int and take no arguments...
 void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const char * ))( void ) );
+
+// determines if an extension is supported
+bool IsExtensionSupported( const char * const pExtension );
 
 }; // namespace OpenGLExt
 

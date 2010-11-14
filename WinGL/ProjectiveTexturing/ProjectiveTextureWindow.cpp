@@ -38,13 +38,13 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
    // initialize with a 4.0 context
    const OpenGLWindow::OpenGLInit glInit40 =
    {
-      4, 0, true, true
+      4, 0, true, true, false
    };
 
    // initialize with a 3.2 context
    const OpenGLWindow::OpenGLInit glInit32 =
    {
-      3, 2, true, false
+      3, 2, true, false, false
    };
 
    // initialize 40 first, then 32 second, else nothing
@@ -58,6 +58,9 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
    {
       // make the context current
       MakeCurrent();
+
+      // attach to the debug context
+      AttachToDebugContext();
 
       // init common gl state
       InitGLState(nWidth, nHeight);

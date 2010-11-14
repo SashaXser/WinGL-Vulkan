@@ -20,6 +20,7 @@ public:
       int nMinorVer;
       bool bCompatibleContext;
       bool bEnableDebug;
+      bool bEnableForwardCompatibleContext;
    };
 
    // creates the application
@@ -39,11 +40,31 @@ protected:
    BOOL MakeCurrent( ) { return wglMakeCurrent(GetDC(GetHWND()), mGLContext); }
    BOOL ReleaseCurrent( ) { return wglMakeCurrent(GetDC(GetHWND()), NULL); }
 
+   // attaches debug out to the application...
+   // a debug context must be requested for this to work...
+   bool AttachToDebugContext( );
+   void DetachFromDebugContext( );
+
 private:
    // prohibit copy constructor
             OpenGLWindow( const OpenGLWindow & );
    // prohibit copy operator
    OpenGLWindow & operator = ( const OpenGLWindow & );
+
+   // private static debug context callbacks
+   static void __stdcall DebugContextCallbackAMD( unsigned int id,
+                                                  unsigned int category,
+                                                  unsigned int severity,
+                                                  int length,
+                                                  const char * message,
+                                                  void * userParams );
+   static void __stdcall DebugContextCallbackARB( unsigned int source,
+                                                  unsigned int type,
+                                                  unsigned int id,
+                                                  unsigned int severity,
+                                                  int length,
+                                                  const char * message,
+                                                  void * userParams );
 
    // creates an OpenGL context
    bool CreateOpenGLContext( const OpenGLInit ** pInitParams );
@@ -53,6 +74,8 @@ private:
 
    // private member variables
    HGLRC    mGLContext;
+
+   bool     mDebugRequested;
 
 };
 

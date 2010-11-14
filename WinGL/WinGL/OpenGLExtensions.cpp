@@ -1,6 +1,9 @@
 // local includes
 #include "OpenGLExtensions.h"
 
+// gl includes
+#include <gl/gl.h>
+
 // initializing helpers
 #define GET_PROC_ADDRESS( func ) \
    func = reinterpret_cast< func##Type >(wglGetProcAddress(#func))
@@ -149,6 +152,42 @@ void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const c
    GET_PROC_ADDRESS(glDebugMessageCallbackARB);
    GET_PROC_ADDRESS(glGetDebugMessageLogARB);
    GET_PROC_ADDRESS(glGetPointerv);
+
+   // amd debug out extensions
+   GET_PROC_ADDRESS(glDebugMessageEnableAMD);
+   GET_PROC_ADDRESS(glDebugMessageInsertAMD);
+   GET_PROC_ADDRESS(glDebugMessageCallbackAMD);
+   GET_PROC_ADDRESS(glGetDebugMessageLogAMD);
+}
+
+bool IsExtensionSupported( const char * const pExtension )
+{
+   // currently not supported
+   bool supported = false;
+
+   // obtain the extensions string
+   const char * pExtensions =
+      reinterpret_cast< const char * >(glGetString(GL_EXTENSIONS));
+
+   // obtain the extensions str length
+   const size_t extStrLen = strlen(pExtension);
+
+   // continue until no extension is found
+   while (pExtensions)
+   {
+      // substring into the list of extensions
+      pExtensions = strstr(pExtensions, pExtension);
+
+      // make sure an extension is found and that the
+      // next character is a space or the null terminator
+      if (pExtensions && (*(pExtensions + extStrLen) == ' ' ||
+                          *(pExtensions + extStrLen) == '\0'))
+      {
+         supported = true; break;
+      }
+   }
+   
+   return supported;
 }
 
 // context creation
@@ -285,5 +324,11 @@ DEFINE_OGL_EXT(glDebugMessageInsertARB);
 DEFINE_OGL_EXT(glDebugMessageCallbackARB);
 DEFINE_OGL_EXT(glGetDebugMessageLogARB);
 DEFINE_OGL_EXT(glGetPointerv);
+
+// amd debug out extensions
+DEFINE_OGL_EXT(glDebugMessageEnableAMD);
+DEFINE_OGL_EXT(glDebugMessageInsertAMD);
+DEFINE_OGL_EXT(glDebugMessageCallbackAMD);
+DEFINE_OGL_EXT(glGetDebugMessageLogAMD);
 
 } // namespace OpenGLExt
