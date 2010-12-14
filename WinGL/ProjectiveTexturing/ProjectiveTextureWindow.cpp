@@ -9,6 +9,9 @@
 // gl includes
 #include <gl/gl.h>
 
+// stl includes
+#include <iostream>
+
 // global defines
 #define VALIDATE_OPENGL() WGL_ASSERT(glGetError() == GL_NO_ERROR)
 
@@ -22,6 +25,13 @@ mpActiveMViewMat     ( &mCameraVariables.mMViewMat ),
 mpSetupModeFuncPtr   ( &ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace ),
 mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
 {
+   // output keyboard controls
+   std::cout << "C - Switch between camera and light" << std::endl
+             << "1 - Texture projection object space immediate mode" << std::endl
+             << "2 - Texture projection eye space immediate mode" << std::endl
+             << "WSAD - Move camera or light forwards or backwards and strafe left or right" << std::endl
+             << "Left Mouse Button - Enable movement of camera or light" << std::endl
+             << "Esc - Quit application" << std::ends;
 }
 
 ProjectiveTextureWindow::~ProjectiveTextureWindow( )
@@ -262,12 +272,11 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
       WGL_ASSERT(false);
    }
 
-   //glEnable(GL_ALPHA_TEST);
+   glEnable(GL_ALPHA_TEST);
    //glEnable(GL_BLEND);
 
    float c[] = {1,0,0,0};
-   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, c);
+   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
    // enable lighting
    glEnable(GL_LIGHTING);
@@ -277,15 +286,15 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glEnable(GL_COLOR_MATERIAL);
 
    // enable texture generation modes
-//   glEnable(GL_TEXTURE_GEN_S);
-//   glEnable(GL_TEXTURE_GEN_T);
-//   glEnable(GL_TEXTURE_GEN_R);
-//   glEnable(GL_TEXTURE_GEN_Q);
+   glEnable(GL_TEXTURE_GEN_S);
+   glEnable(GL_TEXTURE_GEN_T);
+   glEnable(GL_TEXTURE_GEN_R);
+   glEnable(GL_TEXTURE_GEN_Q);
 
    // load the texture matrix
    glMatrixMode(GL_TEXTURE);
    glPushMatrix();
-//   glLoadMatrixd(projTxtMat);
+   glLoadMatrixd(projTxtMat);
    glMatrixMode(GL_MODELVIEW);
 
    // enable texturing
@@ -294,17 +303,12 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glBindTexture(GL_TEXTURE_2D, mLogoTex);
 
    // render the bottom wall first
-   glColor3f(1.0f, 0.5f, 0.0f);
+   glColor3f(1.0f, 0.0f, 0.0f);
    glBegin(GL_QUADS);
    glTexCoord2f(0,0); glNormal3f(0.0f, 1.0f, 0.0f); glVertex3fv(fWallValues[0]);
    glTexCoord2f(1,0); glNormal3f(0.0f, 1.0f, 0.0f); glVertex3fv(fWallValues[1]);
    glTexCoord2f(1,1); glNormal3f(0.0f, 1.0f, 0.0f); glVertex3fv(fWallValues[2]);
    glTexCoord2f(0,1); glNormal3f(0.0f, 1.0f, 0.0f); glVertex3fv(fWallValues[3]);
-   glEnd();
-
-   glBegin(GL_LINES);
-   glVertex3f(0, 0, 0);
-   glVertex3f(0, 10, 0);
    glEnd();
 
    // render the left wall second
@@ -512,7 +516,7 @@ void ProjectiveTextureWindow::LoadTexture( )
    // load the texture data
    unsigned char * pTexture = NULL;
 
-   if (ReadRGB("Gradient.rgb", mTexWidth, mTexHeight, &pTexture))
+   if (ReadRGB("BMLogo.rgb", mTexWidth, mTexHeight, &pTexture))
    {
       // generate a texture id
       glGenTextures(1, &mLogoTex);

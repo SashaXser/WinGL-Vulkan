@@ -384,6 +384,10 @@ DECLARE_OGL_EXT(unsigned char, (unsigned int target), glUnmapBufferARB);
 DECLARE_OGL_EXT(void, (unsigned int target, unsigned int pname, int *params), glGetBufferParameterivARB);
 DECLARE_OGL_EXT(void, (unsigned int target, unsigned int pname, void **params), glGetBufferPointervARB);
 
+// opengl draw instanced defines
+DECLARE_OGL_EXT(void, (int mode, int first, int count, int primcount), glDrawArraysInstancedARB);
+DECLARE_OGL_EXT(void, (int mode, int count, int type, const void * indices, int primcount), glDrawElementsInstancedARB);
+
 // opengl debug out defines
 enum
 {

@@ -146,6 +146,10 @@ void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const c
    GET_PROC_ADDRESS(glGetBufferParameterivARB);
    GET_PROC_ADDRESS(glGetBufferPointervARB);
 
+   // draw instanced extensions
+   GET_PROC_ADDRESS(glDrawArraysInstancedARB);
+   GET_PROC_ADDRESS(glDrawElementsInstancedARB);
+
    // debug out extensions
    GET_PROC_ADDRESS(glDebugMessageControlARB);
    GET_PROC_ADDRESS(glDebugMessageInsertARB);
@@ -317,6 +321,10 @@ DEFINE_OGL_EXT(glMapBufferARB);
 DEFINE_OGL_EXT(glUnmapBufferARB);
 DEFINE_OGL_EXT(glGetBufferParameterivARB);
 DEFINE_OGL_EXT(glGetBufferPointervARB);
+
+// draw instanced extensions
+DEFINE_OGL_EXT(glDrawArraysInstancedARB);
+DEFINE_OGL_EXT(glDrawElementsInstancedARB);
 
 // debug out extensions
 DEFINE_OGL_EXT(glDebugMessageControlARB);
