@@ -8,6 +8,7 @@
 
 // stl includes
 #include <sstream>
+#include <iostream>
 
 OpenGLWindow::OpenGLWindow( ) :
 mGLContext        ( NULL ),
@@ -275,7 +276,7 @@ void __stdcall OpenGLWindow::DebugContextCallbackAMD( unsigned int id,
    ssMsg << std::endl << "MSG: " << message << std::endl;
 
    // output to the debug out stream
-   OutputDebugString(ssMsg.str().c_str());
+   std::cout << ssMsg.str();
 }
 
 void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
