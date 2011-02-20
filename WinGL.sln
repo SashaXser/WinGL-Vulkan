@@ -14,19 +14,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SmokeParticleSystem", "Smok
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 4
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = ProjectiveTexturing\\ProjectiveTexturing.vcproj
-		SccLocalPath1 = .
-		SccProjectFilePathRelativizedFromConnection1 = ProjectiveTexturing\\
-		SccProjectUniqueName2 = SmokeParticleSystem\\SmokeParticleSystem.vcproj
-		SccLocalPath2 = .
-		SccProjectFilePathRelativizedFromConnection2 = SmokeParticleSystem\\
-		SccProjectUniqueName3 = WinGL\\WinGL.vcproj
-		SccLocalPath3 = .
-		SccProjectFilePathRelativizedFromConnection3 = WinGL\\
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64

@@ -5,10 +5,6 @@
 	Name="WinGL"
 	ProjectGUID="{D092669A-32E5-4A29-B944-426E32BC7D4F}"
 	RootNamespace="WinGL"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>

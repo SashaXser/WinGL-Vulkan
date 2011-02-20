@@ -5,10 +5,6 @@
 	Name="ProjectiveTexturing"
 	ProjectGUID="{89F1D234-D069-449F-AE70-08F13270F048}"
 	RootNamespace="ProjectiveTexturing"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
