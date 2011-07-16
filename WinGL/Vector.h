@@ -77,6 +77,11 @@ public:
    bool operator != ( const Vector< T > & vec ) const;
 
    // basic accessor into the array
+   T & X( );
+   T & Y( );
+   T & Z( );
+   T & W( );
+
    const T & X( ) const;
    const T & Y( ) const;
    const T & Z( ) const;
@@ -398,6 +403,30 @@ template < typename T >
 inline bool Vector< T >::operator != ( const Vector< T > & vec ) const
 {
    return !(*this == vec);
+}
+
+template < typename T >
+T & Vector< T >::X( )
+{
+   return mT[0];
+}
+
+template < typename T >
+T & Vector< T >::Y( )
+{
+   return mT[1];
+}
+
+template < typename T >
+T & Vector< T >::Z( )
+{
+   return mT[2];
+}
+
+template < typename T >
+T & Vector< T >::W( )
+{
+   return mT[3];
 }
 
 template < typename T >
