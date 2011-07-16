@@ -159,6 +159,11 @@ public:
    bool GetPerspective( U pFrusVals[4] ) const;
    bool GetPerspective( T pFrusVals[4] ) const;
 
+   // screen space tranlation matrix
+   template < typename U >
+   void MakeScreenSpaceMatrix( );
+   void MakeScreenSpaceMatrix( );
+
    // transpose
    void        MakeTranspose( );
    Matrix< T > Transpose( ) const;
@@ -612,6 +617,34 @@ bool Matrix< T >::GetPerspective( T pFrusVals[4] ) const
 {
    return GetPerspective(pFrusVals[0], pFrusVals[1],
                          pFrusVals[2], pFrusVals[3]);
+}
+
+template < typename T >
+template < typename U >
+void Matrix< T >::MakeScreenSpaceMatrix( const U & x, const U & y,
+                                         const U & width, const U & height )
+{
+   const T values[] =
+   {
+      x, y, width, height;
+   };
+
+   MakeScreenSpaceMatrix(values[0], values[1],
+                         values[2], values[3])
+}
+
+template < typename T >
+void Matrix< T >::MakeScreenSpaceMatrix( const T & x, const T & y,
+                                         const T & width, const T & height )
+{
+   MakeIdentity();
+
+   mT[0] = width / 2.0;
+   mT[5] = height / 2.0;
+   mT[10] = 0.5;
+   mT[12] = width / 2.0 + x;
+   mT[13] = height / 2.0 + y;
+   mT[14] = 0.5;
 }
 
 template < typename T >
