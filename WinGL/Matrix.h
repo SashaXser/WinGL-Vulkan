@@ -628,7 +628,7 @@ void Matrix< T >::MakeScreenSpaceMatrix( const U & x, const U & y,
 {
    const T values[] =
    {
-      x, y, width, height;
+      x, y, width, height
    };
 
    MakeScreenSpaceMatrix(values[0], values[1],
