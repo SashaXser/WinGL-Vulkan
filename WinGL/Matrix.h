@@ -159,12 +159,12 @@ public:
    bool GetPerspective( U pFrusVals[4] ) const;
    bool GetPerspective( T pFrusVals[4] ) const;
 
-   // screen space tranlation matrix
+   // clip space to screen space matrix
    template < typename U >
-   void MakeScreenSpaceMatrix( const U & x, const U & y,
-                               const U & width, const U & height );
-   void MakeScreenSpaceMatrix( const T & x, const T & y,
-                               const T & width, const T & height );
+   void MakeViewportMatrix( const U & x, const U & y,
+                            const U & width, const U & height );
+   void MakeViewportMatrix( const T & x, const T & y,
+                            const T & width, const T & height );
 
    // transpose
    void        MakeTranspose( );
@@ -623,8 +623,8 @@ bool Matrix< T >::GetPerspective( T pFrusVals[4] ) const
 
 template < typename T >
 template < typename U >
-void Matrix< T >::MakeScreenSpaceMatrix( const U & x, const U & y,
-                                         const U & width, const U & height )
+void Matrix< T >::MakeViewportMatrix( const U & x, const U & y,
+                                      const U & width, const U & height )
 {
    const T values[] =
    {
@@ -636,8 +636,8 @@ void Matrix< T >::MakeScreenSpaceMatrix( const U & x, const U & y,
 }
 
 template < typename T >
-void Matrix< T >::MakeScreenSpaceMatrix( const T & x, const T & y,
-                                         const T & width, const T & height )
+void Matrix< T >::MakeViewportMatrix( const T & x, const T & y,
+                                      const T & width, const T & height )
 {
    MakeIdentity();
 
