@@ -631,8 +631,8 @@ void Matrix< T >::MakeViewportMatrix( const U & x, const U & y,
       x, y, width, height
    };
 
-   MakeScreenSpaceMatrix(values[0], values[1],
-                         values[2], values[3]);
+   MakeViewportMatrix(values[0], values[1],
+                      values[2], values[3]);
 }
 
 template < typename T >
