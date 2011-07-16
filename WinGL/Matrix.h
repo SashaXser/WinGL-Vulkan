@@ -161,8 +161,10 @@ public:
 
    // screen space tranlation matrix
    template < typename U >
-   void MakeScreenSpaceMatrix( );
-   void MakeScreenSpaceMatrix( );
+   void MakeScreenSpaceMatrix( const U & x, const U & y,
+                               const U & width, const U & height );
+   void MakeScreenSpaceMatrix( const T & x, const T & y,
+                               const T & width, const T & height );
 
    // transpose
    void        MakeTranspose( );
@@ -630,7 +632,7 @@ void Matrix< T >::MakeScreenSpaceMatrix( const U & x, const U & y,
    };
 
    MakeScreenSpaceMatrix(values[0], values[1],
-                         values[2], values[3])
+                         values[2], values[3]);
 }
 
 template < typename T >
