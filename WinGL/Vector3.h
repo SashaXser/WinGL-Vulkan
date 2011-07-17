@@ -1,9 +1,11 @@
 #ifndef _VECTOR3_H_
 #define _VECTOR3_H_
 
+// local includes
+#include "WglAssert.h"
+
 // std includes
 #include <math.h>
-#include <assert.h>
 
 template < typename T >
 class Vector3
@@ -435,7 +437,7 @@ inline bool Vector3< T >::operator != ( const Vector3< T > & vec ) const
 template < typename T >
 inline T & Vector3< T >::operator [] ( const size_t i )
 {
-   assert(0 <= i <= NUM_COMPONENTS);
+   WGL_ASSERT(0 <= i < NUM_COMPONENTS);
 
    return mT[i];
 }

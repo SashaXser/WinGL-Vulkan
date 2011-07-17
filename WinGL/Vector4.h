@@ -3,10 +3,10 @@
 
 // local includes
 #include "Vector3.h"
+#include "WglAssert.h"
 
 // std includes
 #include <math.h>
-#include <assert.h>
 
 template < typename T >
 class Vector4
@@ -366,7 +366,7 @@ inline Vector4< T > & Vector4< T >::operator ^= ( const Vector4< U > & vec )
 template < typename T >
 inline Vector4< T > & Vector4< T >::operator ^= ( const Vector4< T > & vec )
 {
-   assert(mT[3] == 1 && vec.mT[3] == 1 && "Not Constrained To Homogeneous R3 Space");
+   WGL_ASSERT(mT[3] == 1 && vec.mT[3] == 1 && "Not Constrained To Homogeneous R3 Space");
 
    const T i = (mT[1] * vec.mT[2]) - (mT[2] * vec.mT[1]);
    const T j = (mT[2] * vec.mT[0]) - (mT[0] * vec.mT[2]);
@@ -485,7 +485,7 @@ inline bool Vector4< T >::operator != ( const Vector4< T > & vec ) const
 template < typename T >
 inline T & Vector4< T >::operator [] ( const size_t i )
 {
-   assert(0 <= i <= NUM_COMPONENTS);
+   WGL_ASSERT(0 <= i < NUM_COMPONENTS);
 
    return mT[i];
 }
