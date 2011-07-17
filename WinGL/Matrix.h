@@ -238,10 +238,10 @@ inline Matrix< T >::Matrix( const Vector4< U > & col1,
                             const Vector4< U > & col3,
                             const Vector4< U > & col4 )
 {
-   *this = Matrix< T >(Vector< T >(col1),
-                       Vector< T >(col2),
-                       Vector< T >(col3),
-                       Vector< T >(col4));
+   *this = Matrix< T >(Vector4< T >(col1),
+                       Vector4< T >(col2),
+                       Vector4< T >(col3),
+                       Vector4< T >(col4));
 }
 
 template < typename T >
@@ -263,10 +263,10 @@ inline Matrix< T >::Matrix( const U & col1_x, const U & col1_y, const U & col1_z
                             const U & col3_x, const U & col3_y, const U & col3_z, const U & col3_w,
                             const U & col4_x, const U & col4_y, const U & col4_z, const U & col4_w )
 {
-   *this = Matrix< T >(Vector< T >(col1_x, col1_y, col1_z, col1_w),
-                       Vector< T >(col2_x, col2_y, col2_z, col2_w),
-                       Vector< T >(col3_x, col3_y, col3_z, col3_w),
-                       Vector< T >(col4_x, col4_y, col4_z, col4_w));
+   *this = Matrix< T >(Vector4< T >(col1_x, col1_y, col1_z, col1_w),
+                       Vector4< T >(col2_x, col2_y, col2_z, col2_w),
+                       Vector4< T >(col3_x, col3_y, col3_z, col3_w),
+                       Vector4< T >(col4_x, col4_y, col4_z, col4_w));
 }
 
 template < typename T >
@@ -794,9 +794,9 @@ inline void Matrix< T >::MakeLookAt( const U & rEyeX, const U & rEyeY, const U &
                                      const U & rCenterX, const U & rCenterY, const U & rCenterZ,
                                      const U & rUpX, const U & rUpY, const U & rUpZ )
 {
-   MakeLookAt(Vector< T >(rEyeX, rEyeY, rEyeZ),
-              Vector< T >(rCenterX, rCenterY, rCenterZ),
-              Vector< T >(rUpX, rUpY, rUpZ));
+   MakeLookAt(Vector3< T >(rEyeX, rEyeY, rEyeZ),
+              Vector3< T >(rCenterX, rCenterY, rCenterZ),
+              Vector3< T >(rUpX, rUpY, rUpZ));
 }
 
 template < typename T >
@@ -804,9 +804,9 @@ inline void Matrix< T >::MakeLookAt( const T & rEyeX, const T & rEyeY, const T &
                                      const T & rCenterX, const T & rCenterY, const T & rCenterZ,
                                      const T & rUpX, const T & rUpY, const T & rUpZ )
 {
-   MakeLookAt(Vector< T >(rEyeX, rEyeY, rEyeZ),
-              Vector< T >(rCenterX, rCenterY, rCenterZ),
-              Vector< T >(rUpX, rUpY, rUpZ));
+   MakeLookAt(Vector3< T >(rEyeX, rEyeY, rEyeZ),
+              Vector3< T >(rCenterX, rCenterY, rCenterZ),
+              Vector3< T >(rUpX, rUpY, rUpZ));
 }
 
 template < typename T >
@@ -815,9 +815,9 @@ inline void Matrix< T >::MakeLookAt( const U * const pEye,
                                      const U * const pCenter,
                                      const U * const pUp )
 {
-   MakeLookAt(Vector< T >(pEye[0], pEye[1], pEye[2]),
-              Vector< T >(pCenter[0], pCenter[1], pCenter[2]),
-              Vector< T >(pUp[0], pUp[1], pUp[2]));
+   MakeLookAt(Vector3< T >(pEye[0], pEye[1], pEye[2]),
+              Vector3< T >(pCenter[0], pCenter[1], pCenter[2]),
+              Vector3< T >(pUp[0], pUp[1], pUp[2]));
 }
 
 template < typename T >
@@ -825,9 +825,9 @@ inline void Matrix< T >::MakeLookAt( const T * const pEye,
                                      const T * const pCenter,
                                      const T * const pUp )
 {
-   MakeLookAt(Vector< T >(pEye[0], pEye[1], pEye[2]),
-              Vector< T >(pCenter[0], pCenter[1], pCenter[2]),
-              Vector< T >(pUp[0], pUp[1], pUp[2]));
+   MakeLookAt(Vector3< T >(pEye[0], pEye[1], pEye[2]),
+              Vector3< T >(pCenter[0], pCenter[1], pCenter[2]),
+              Vector3< T >(pUp[0], pUp[1], pUp[2]));
 }
 
 template < typename T >
