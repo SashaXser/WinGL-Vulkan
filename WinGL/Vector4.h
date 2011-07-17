@@ -96,8 +96,8 @@ public:
    bool operator != ( const Vector4< T > & vec ) const;
 
    // operator []
-   T & operator [] ( const size_t i );
-   const T & operator [] ( const size_t i ) const; 
+   T & operator [] ( const int i );
+   const T & operator [] ( const int i ) const; 
 
    // basic accessors into the array
    T & X( );
@@ -483,17 +483,17 @@ inline bool Vector4< T >::operator != ( const Vector4< T > & vec ) const
 }
 
 template < typename T >
-inline T & Vector4< T >::operator [] ( const size_t i )
+inline T & Vector4< T >::operator [] ( const int i )
 {
-   WGL_ASSERT(0 <= i < NUM_COMPONENTS);
+   WGL_ASSERT(0 <= i && i < NUM_COMPONENTS);
 
    return mT[i];
 }
 
 template < typename T >
-inline const T & Vector4< T >::operator [] ( const size_t i ) const
+inline const T & Vector4< T >::operator [] ( const int i ) const
 {
-   WGL_ASSERT(0 <= i < NUM_COMPONENTS);
+   WGL_ASSERT(0 <= i && i < NUM_COMPONENTS);
 
    return mT[i];
 }
