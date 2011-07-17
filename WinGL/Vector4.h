@@ -132,6 +132,7 @@ public:
    Vector4< T > &  MakeZeroVector( );
 
    // makes the vector a unit vector
+   T  Normalize( );
    Vector4< T >    UnitVector( ) const;
    Vector4< T > &  MakeUnitVector( );
 
@@ -647,6 +648,20 @@ inline Vector4< T > & Vector4< T >::MakeUnitVector( )
    mT[3] *= t;
 
    return (*this);
+}
+
+template < typename T >
+inline T Vector4< T >::Normalize( )
+{
+   const T length = Length();
+
+   const T t = 1 / length;
+   mT[0] *= t;
+   mT[1] *= t;
+   mT[2] *= t;
+   mT[3] *= t;
+
+   return length;
 }
 
 template < typename T >
