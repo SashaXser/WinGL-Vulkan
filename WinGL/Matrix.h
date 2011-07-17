@@ -10,7 +10,8 @@
 #include <memory.h>
 
 // local includes
-#include "Vector.h"
+#include "Vector3.h"
+#include "Vector4.h"
 #include "WglAssert.h"
 
 template < typename T >
@@ -21,26 +22,26 @@ public:
    typedef T type;
 
    // constructor / destructor
-            Matrix( );
-            Matrix( const T t[16] );
-            Matrix( const Matrix< T > & mat );
-            template < typename U >
-            Matrix( const Matrix< U > & mat );
-            Matrix( const Vector< T > & col1, const Vector< T > & col2,
-                    const Vector< T > & col3, const Vector< T > & col4 );
-            template < typename U >
-            Matrix( const Vector< U > & col1, const Vector< U > & col2,
-                    const Vector< U > & col3, const Vector< U > & col4 );
-            Matrix( const T & col1_x, const T & col1_y, const T & col1_z, const T & col1_w,
-                    const T & col2_x, const T & col2_y, const T & col2_z, const T & col2_w,
-                    const T & col3_x, const T & col3_y, const T & col3_z, const T & col3_w,
-                    const T & col4_x, const T & col4_y, const T & col4_z, const T & col4_w );
-            template < typename U >
-            Matrix( const U & col1_x, const U & col1_y, const U & col1_z, const U & col1_w,
-                    const U & col2_x, const U & col2_y, const U & col2_z, const U & col2_w,
-                    const U & col3_x, const U & col3_y, const U & col3_z, const U & col3_w,
-                    const U & col4_x, const U & col4_y, const U & col4_z, const U & col4_w );
-           ~Matrix( );
+    Matrix( );
+    Matrix( const T t[16] );
+    Matrix( const Matrix< T > & mat );
+    template < typename U >
+    Matrix( const Matrix< U > & mat );
+    Matrix( const Vector4< T > & col1, const Vector4< T > & col2,
+            const Vector4< T > & col3, const Vector4< T > & col4 );
+    template < typename U >
+    Matrix( const Vector4< U > & col1, const Vector4< U > & col2,
+            const Vector4< U > & col3, const Vector4< U > & col4 );
+    Matrix( const T & col1_x, const T & col1_y, const T & col1_z, const T & col1_w,
+            const T & col2_x, const T & col2_y, const T & col2_z, const T & col2_w,
+            const T & col3_x, const T & col3_y, const T & col3_z, const T & col3_w,
+            const T & col4_x, const T & col4_y, const T & col4_z, const T & col4_w );
+    template < typename U >
+    Matrix( const U & col1_x, const U & col1_y, const U & col1_z, const U & col1_w,
+            const U & col2_x, const U & col2_y, const U & col2_z, const U & col2_w,
+            const U & col3_x, const U & col3_y, const U & col3_z, const U & col3_w,
+            const U & col4_x, const U & col4_y, const U & col4_z, const U & col4_w );
+   ~Matrix( );
 
    // operator =
    template < typename U >
@@ -59,8 +60,11 @@ public:
    Matrix< T > & operator *= ( const Matrix< T > & mat );
 
    template < typename U >
-   Vector< T > operator * ( const Vector< U > & vec ) const;
-   Vector< T > operator * ( const Vector< T > & vec ) const;
+   Vector3< T > operator * ( const Vector3< U > & vec ) const;
+   Vector3< T > operator * ( const Vector3< T > & vec ) const;
+   template< typename U >
+   Vector4< T > operator * ( const Vector4< U > & vec ) const;
+   Vector4< T > operator * ( const Vector4< T > & vec ) const;
 
    // operator ==
    template < typename U >
@@ -81,11 +85,11 @@ public:
 
    // creates a rotation matrix
    void  MakeRotation( const T & degrees, const T & x, const T & y, const T & z );
-   void  MakeRotation( const T & degrees, const Vector< T > & vec );
+   void  MakeRotation( const T & degrees, const Vector3< T > & vec );
 
    // creates a translation matrix
    void  MakeTranslation( const T & x, const T & y, const T & z );
-   void  MakeTranslation( const Vector< T > & vec );
+   void  MakeTranslation( const Vector3< T > & vec );
 
    // create a projection matrix
    template < typename U >
@@ -132,12 +136,12 @@ public:
                      const T * const pUp );
 
    template < typename U >
-   void  MakeLookAt( const Vector< U > & rEye,
-                     const Vector< U > & rCenter,
-                     const Vector< U > & rUp );
-   void  MakeLookAt( const Vector< T > & rEye,
-                     const Vector< T > & rCenter,
-                     const Vector< T > & rUp );
+   void  MakeLookAt( const Vector3< U > & rEye,
+                     const Vector3< U > & rCenter,
+                     const Vector3< U > & rUp );
+   void  MakeLookAt( const Vector3< T > & rEye,
+                     const Vector3< T > & rCenter,
+                     const Vector3< T > & rUp );
 
    template < typename U >
    bool GetFrustum( U & rLeft, U & rRight,
@@ -216,10 +220,10 @@ inline Matrix< T >::Matrix( const Matrix< U > & mat )
 }
 
 template < typename T >
-inline Matrix< T >::Matrix( const Vector< T > & col1,
-                            const Vector< T > & col2,
-                            const Vector< T > & col3,
-                            const Vector< T > & col4 )
+inline Matrix< T >::Matrix( const Vector4< T > & col1,
+                            const Vector4< T > & col2,
+                            const Vector4< T > & col3,
+                            const Vector4< T > & col4 )
 {
    memcpy(mT, col1.mT, sizeof(col1.mT));
    memcpy(mT + 4, col2.mT, sizeof(col2.mT));
@@ -229,10 +233,10 @@ inline Matrix< T >::Matrix( const Vector< T > & col1,
 
 template < typename T >
 template < typename U >
-inline Matrix< T >::Matrix( const Vector< U > & col1,
-                            const Vector< U > & col2,
-                            const Vector< U > & col3,
-                            const Vector< U > & col4 )
+inline Matrix< T >::Matrix( const Vector4< U > & col1,
+                            const Vector4< U > & col2,
+                            const Vector4< U > & col3,
+                            const Vector4< U > & col4 )
 {
    *this = Matrix< T >(Vector< T >(col1),
                        Vector< T >(col2),
@@ -360,7 +364,7 @@ inline Matrix< T > Matrix< T >::operator * ( const Matrix< T > & mat ) const
 
 template < typename T >
 template < typename U >
-Matrix< T > & Matrix< T >::operator *= ( const Matrix< U > & mat )
+inline Matrix< T > & Matrix< T >::operator *= ( const Matrix< U > & mat )
 {
    Matrix< T > m(mat);
 
@@ -368,7 +372,7 @@ Matrix< T > & Matrix< T >::operator *= ( const Matrix< U > & mat )
 }
 
 template < typename T >
-Matrix< T > & Matrix< T >::operator *= ( const Matrix< T > & mat )
+inline Matrix< T > & Matrix< T >::operator *= ( const Matrix< T > & mat )
 {
    if (this != &mat)
       *this = (*this * mat);
@@ -378,13 +382,30 @@ Matrix< T > & Matrix< T >::operator *= ( const Matrix< T > & mat )
 
 template < typename T >
 template < typename U >
-inline Vector< T > Matrix< T >::operator * ( const Vector< U > & vec ) const
+inline Vector3< T > Matrix< T >::operator * ( const Vector3< U > & vec ) const
 {
-   return *this * Vector< T >(vec);
+   return *this * Vector3< T >(vec);
 }
 
 template < typename T >
-inline Vector< T > Matrix< T >::operator * ( const Vector< T > & vec ) const
+inline Vector3< T > Matrix< T >::operator * ( const Vector3< T > & vec ) const
+{
+   Vector4< T > v = *this * Vector4< T >(vec);
+
+   v *= 1 / v.mT[3];
+
+   return Vector3< T >(v.mT[0], v.mT[1], v.mT[2]);
+}
+
+template < typename T >
+template < typename U >
+inline Vector4< T > Matrix< T >::operator * ( const Vector4< U > & vec ) const
+{
+   return *this * Vector4< T >(vec);
+}
+
+template < typename T >
+inline Vector4< T > Matrix< T >::operator * ( const Vector4< T > & vec ) const
 {
    // note: post multiplication used to conform to opengl
 
@@ -410,7 +431,7 @@ inline Vector< T > Matrix< T >::operator * ( const Vector< T > & vec ) const
          *(mT + 11) * *(pT + 2) +
          *(mT + 15) * *(pT + 3);
 
-   return Vector< T >(x, y, z, w);
+   return Vector4< T >(x, y, z, w);
 }
 
 template < typename T >
@@ -472,11 +493,11 @@ inline void Matrix< T >::MakeIdentity( )
 template < typename T >
 inline void Matrix< T >::MakeRotation( const T & degrees, const T & x, const T & y, const T & z )
 {
-   MakeRotation(degrees, Vector< T >(x, y, z));
+   MakeRotation(degrees, Vector3< T >(x, y, z));
 }
 
 template < typename T >
-inline void Matrix< T >::MakeRotation( const T & degrees, const Vector< T > & vec )
+inline void Matrix< T >::MakeRotation( const T & degrees, const Vector3< T > & vec )
 {
    // validate a unit vector...
    WGL_ASSERT(0.9999999999 <= vec.Length() && vec.Length() <= 1.0000000001);
@@ -504,9 +525,9 @@ inline void Matrix< T >::MakeRotation( const T & degrees, const Vector< T > & ve
 
 template < typename T >
 template < typename U >
-bool Matrix< T >::GetFrustum( U & rLeft, U & rRight,
-                              U & rBottom, U & rTop,
-                              U & rZNear, U & rZFar ) const
+inline bool Matrix< T >::GetFrustum( U & rLeft, U & rRight,
+                                     U & rBottom, U & rTop,
+                                     U & rZNear, U & rZFar ) const
 {
    T l = 0, r = 0;
    T b = 0, t = 0;
@@ -528,9 +549,9 @@ bool Matrix< T >::GetFrustum( U & rLeft, U & rRight,
 }
 
 template < typename T >
-bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
-                              T & rBottom, T & rTop,
-                              T & rZNear, T & rZFar ) const
+inline bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
+                                     T & rBottom, T & rTop,
+                                     T & rZNear, T & rZFar ) const
 {
    if (mT[3]  ==  0.0 && mT[7]  == 0.0 &&
        mT[11] == -1.0 && mT[15] == 0.0)
@@ -552,7 +573,7 @@ bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
 
 template < typename T >
 template < typename U >
-bool Matrix< T >::GetFrustum( U pFrusVals[6] ) const
+inline bool Matrix< T >::GetFrustum( U pFrusVals[6] ) const
 {
    return GetFrustum(pFrusVals[0], pFrusVals[1],
                      pFrusVals[2], pFrusVals[3],
@@ -560,7 +581,7 @@ bool Matrix< T >::GetFrustum( U pFrusVals[6] ) const
 }
 
 template < typename T >
-bool Matrix< T >::GetFrustum( T pFrusVals[6] ) const
+inline bool Matrix< T >::GetFrustum( T pFrusVals[6] ) const
 {
    return GetFrustum(pFrusVals[0], pFrusVals[1],
                      pFrusVals[2], pFrusVals[3],
@@ -569,8 +590,8 @@ bool Matrix< T >::GetFrustum( T pFrusVals[6] ) const
 
 template < typename T >
 template < typename U >
-bool Matrix< T >::GetPerspective( U & rFOV, U & rAspect,
-                                  U & rZNear, U & rZFar ) const
+inline bool Matrix< T >::GetPerspective( U & rFOV, U & rAspect,
+                                         U & rZNear, U & rZFar ) const
 {
    T fov = 0, asp = 0;
    T n = 0, f = 0;
@@ -589,8 +610,8 @@ bool Matrix< T >::GetPerspective( U & rFOV, U & rAspect,
 }
 
 template < typename T >
-bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
-                                  T & rZNear, T & rZFar ) const
+inline bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
+                                         T & rZNear, T & rZFar ) const
 {
    T l = 0, r = 0;
    T b = 0, t = 0;
@@ -608,14 +629,14 @@ bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
 
 template < typename T >
 template < typename U >
-bool Matrix< T >::GetPerspective( U pFrusVals[4] ) const
+inline bool Matrix< T >::GetPerspective( U pFrusVals[4] ) const
 {
    return GetPerspective(pFrusVals[0], pFrusVals[1],
                          pFrusVals[2], pFrusVals[3]);
 }
 
 template < typename T >
-bool Matrix< T >::GetPerspective( T pFrusVals[4] ) const
+inline bool Matrix< T >::GetPerspective( T pFrusVals[4] ) const
 {
    return GetPerspective(pFrusVals[0], pFrusVals[1],
                          pFrusVals[2], pFrusVals[3]);
@@ -623,8 +644,8 @@ bool Matrix< T >::GetPerspective( T pFrusVals[4] ) const
 
 template < typename T >
 template < typename U >
-void Matrix< T >::MakeViewportMatrix( const U & x, const U & y,
-                                      const U & width, const U & height )
+inline void Matrix< T >::MakeViewportMatrix( const U & x, const U & y,
+                                             const U & width, const U & height )
 {
    const T values[] =
    {
@@ -636,8 +657,8 @@ void Matrix< T >::MakeViewportMatrix( const U & x, const U & y,
 }
 
 template < typename T >
-void Matrix< T >::MakeViewportMatrix( const T & x, const T & y,
-                                      const T & width, const T & height )
+inline void Matrix< T >::MakeViewportMatrix( const T & x, const T & y,
+                                             const T & width, const T & height )
 {
    MakeIdentity();
 
@@ -660,7 +681,7 @@ inline void Matrix< T >::MakeTranslation( const T & x, const T & y, const T & z 
 }
 
 template < typename T >
-inline void Matrix< T >::MakeTranslation( const Vector< T > & vec )
+inline void Matrix< T >::MakeTranslation( const Vector3< T > & vec )
 {
    MakeTranslation(vec.mT[0], vec.mT[1], vec.mT[2]);
 }
@@ -811,28 +832,28 @@ inline void Matrix< T >::MakeLookAt( const T * const pEye,
 
 template < typename T >
 template < typename U >
-inline void Matrix< T >::MakeLookAt( const Vector< U > & rEye,
-                                     const Vector< U > & rCenter,
-                                     const Vector< U > & rUp )
+inline void Matrix< T >::MakeLookAt( const Vector3< U > & rEye,
+                                     const Vector3< U > & rCenter,
+                                     const Vector3< U > & rUp )
 {
-   MakeLookAt(Vector< T >(rEye),
-              Vector< T >(rCenter),
-              Vector< T >(rUp));
+   MakeLookAt(Vector3< T >(rEye),
+              Vector3< T >(rCenter),
+              Vector3< T >(rUp));
 }
 
 template < typename T >
-inline void Matrix< T >::MakeLookAt( const Vector< T > & rEye,
-                                     const Vector< T > & rCenter,
-                                     const Vector< T > & rUp )
+inline void Matrix< T >::MakeLookAt( const Vector3< T > & rEye,
+                                     const Vector3< T > & rCenter,
+                                     const Vector3< T > & rUp )
 {
    // obtain the z-axis vector...
    // look at vector is in the opposite direction
    // since OpenGL z-axis is a right handed system...
-   const Vector< T > vZ = (rEye - rCenter).MakeUnitVector();
+   const Vector3< T > vZ = (rEye - rCenter).MakeUnitVector();
    // obtain the x-axis vector...
-   const Vector< T > vX = (rUp ^ vZ).MakeUnitVector();
+   const Vector3< T > vX = (rUp ^ vZ).MakeUnitVector();
    // obtain the y-axis vector...
-   const Vector< T > vY = vZ ^ vX;
+   const Vector3< T > vY = vZ ^ vX;
 
    // setup the matrix based on the new x, y, z values...
    mT[0] = vX.mT[0]; mT[4] = vX.mT[1]; mT[8]  = vX.mT[2];  mT[12] = -(rEye * vX);

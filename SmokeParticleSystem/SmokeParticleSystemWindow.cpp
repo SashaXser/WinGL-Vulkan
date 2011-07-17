@@ -184,7 +184,7 @@ LRESULT SmokeParticleSystemWindow::MessageHandler( UINT uMsg,
          pitch = max(-90.0, pitch);
          // get the current camera world position
          modelViewMat.MakeInverseFromOrthogonal();
-         Vectord camEye = modelViewMat * Vectord(0.0, 0.0, 0.0);
+         Vec3d camEye = modelViewMat * Vec3d(0.0, 0.0, 0.0);
          camEye *= -1.0;
          // clear the modelview matrix
          glLoadIdentity();
@@ -212,11 +212,11 @@ LRESULT SmokeParticleSystemWindow::MessageHandler( UINT uMsg,
                                              &yaw, &pitch,
                                              (double *)NULL);
       // obtain the view and strafe vectors
-      const Vectord viewVec = MatrixHelper::GetViewVector(modelViewMat);
-      const Vectord strafeVec = MatrixHelper::GetStrafeVector(modelViewMat);
+      const Vec3d viewVec = MatrixHelper::GetViewVector(modelViewMat);
+      const Vec3d strafeVec = MatrixHelper::GetStrafeVector(modelViewMat);
       // obtain the camera's world position
       modelViewMat.MakeInverseFromOrthogonal();
-      Vectord camEye = modelViewMat * Vectord(0.0, 0.0, 0.0);
+      Vec3d camEye = modelViewMat * Vec3d(0.0, 0.0, 0.0);
       // obtain the repeat count
       const unsigned short rptCnt = (unsigned short)(lParam & 0x0000FFFF);
       const double transScale = rptCnt * 0.15;

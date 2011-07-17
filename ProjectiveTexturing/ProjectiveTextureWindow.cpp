@@ -83,18 +83,18 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
                                                static_cast< double >(mTexWidth) /
                                                static_cast< double >(mTexHeight),
                                                1.0, 5.0);
-      mLightVariables.mMViewMat.MakeLookAt(Vectord( 10.0, 10.0,  10.0),
-                                           Vectord(-10.0,  0.0, -10.0),
-                                           Vectord(  0.0,  1.0,   0.0));
+      mLightVariables.mMViewMat.MakeLookAt(Vec3d( 10.0, 10.0,  10.0),
+                                           Vec3d(-10.0,  0.0, -10.0),
+                                           Vec3d(  0.0,  1.0,   0.0));
 
       // setup the camera parameters
       mCameraVariables.mProjMat.MakePerspective(45.0, 
                                                 static_cast< double >(nWidth) /
                                                 static_cast< double >(nHeight),
                                                 0.1, 100.0);
-      mCameraVariables.mMViewMat.MakeLookAt(Vectord( 10.0, 10.0,  10.0),
-                                            Vectord(-10.0,  0.0, -10.0),
-                                            Vectord(  0.0,  1.0,   0.0));
+      mCameraVariables.mMViewMat.MakeLookAt(Vec3d( 10.0, 10.0,  10.0),
+                                            Vec3d(-10.0,  0.0, -10.0),
+                                            Vec3d(  0.0,  1.0,   0.0));
 
       // load the camera parameters
       glMatrixMode(GL_PROJECTION);
@@ -240,10 +240,10 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
       const Matrixd modelMat;
 
       // map textures to [0, 1]
-      const Matrixd scaleBiasMat(Vectord(0.5, 0.0, 0.0, 0.0),
-                                 Vectord(0.0, 0.5, 0.0, 0.0),
-                                 Vectord(0.0, 0.0, 0.5, 0.0),
-                                 Vectord(0.5, 0.5, 0.5, 1.0));
+      const Matrixd scaleBiasMat(Vec4d(0.5, 0.0, 0.0, 0.0),
+                                 Vec4d(0.0, 0.5, 0.0, 0.0),
+                                 Vec4d(0.0, 0.0, 0.5, 0.0),
+                                 Vec4d(0.5, 0.5, 0.5, 1.0));
 
       // create the object linear matrix
       projTxtMat = scaleBiasMat *
@@ -255,10 +255,10 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
             &ProjectiveTextureWindow::SetupRenderSceneImmediateModeEyeSpace)
    {
       // map textures to [0, 1]
-      const Matrixd scaleBiasMat(Vectord(0.5, 0.0, 0.0, 0.0),
-                                 Vectord(0.0, 0.5, 0.0, 0.0),
-                                 Vectord(0.0, 0.0, 0.5, 0.0),
-                                 Vectord(0.5, 0.5, 0.5, 1.0));
+      const Matrixd scaleBiasMat(Vec4d(0.5, 0.0, 0.0, 0.0),
+                                 Vec4d(0.0, 0.5, 0.0, 0.0),
+                                 Vec4d(0.0, 0.0, 0.5, 0.0),
+                                 Vec4d(0.5, 0.5, 0.5, 1.0));
 
       // create the eye linear matrix
       projTxtMat = scaleBiasMat *
@@ -362,27 +362,17 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
 
    // obtain the vectors that make up the
    // eight sides of the viewing matrix...
-   Vectord f1 = invLightMat * Vectord(-1.0,  1.0,  1.0);
-   Vectord f2 = invLightMat * Vectord(-1.0, -1.0,  1.0);
-   Vectord f3 = invLightMat * Vectord( 1.0, -1.0,  1.0);
-   Vectord f4 = invLightMat * Vectord( 1.0,  1.0,  1.0);
-   Vectord n1 = invLightMat * Vectord(-1.0,  1.0, -1.0);
-   Vectord n2 = invLightMat * Vectord(-1.0, -1.0, -1.0);
-   Vectord n3 = invLightMat * Vectord( 1.0, -1.0, -1.0);
-   Vectord n4 = invLightMat * Vectord( 1.0,  1.0, -1.0);
+   Vec3d f1 = invLightMat * Vec3d(-1.0,  1.0,  1.0);
+   Vec3d f2 = invLightMat * Vec3d(-1.0, -1.0,  1.0);
+   Vec3d f3 = invLightMat * Vec3d( 1.0, -1.0,  1.0);
+   Vec3d f4 = invLightMat * Vec3d( 1.0,  1.0,  1.0);
+   Vec3d n1 = invLightMat * Vec3d(-1.0,  1.0, -1.0);
+   Vec3d n2 = invLightMat * Vec3d(-1.0, -1.0, -1.0);
+   Vec3d n3 = invLightMat * Vec3d( 1.0, -1.0, -1.0);
+   Vec3d n4 = invLightMat * Vec3d( 1.0,  1.0, -1.0);
 
    // obtain the light cam position
-   Vectord lightPos = mLightVariables.mMViewMat.Inverse() * Vectord(0.0, 0.0, 0.0);
-
-   // normalize the points back to world space
-   f1 *= 1.0 / f1.mT[3];
-   f2 *= 1.0 / f2.mT[3];
-   f3 *= 1.0 / f3.mT[3];
-   f4 *= 1.0 / f4.mT[3];
-   n1 *= 1.0 / n1.mT[3];
-   n2 *= 1.0 / n2.mT[3];
-   n3 *= 1.0 / n3.mT[3];
-   n4 *= 1.0 / n4.mT[3];
+   Vec3d lightPos = mLightVariables.mMViewMat.Inverse() * Vec3d(0.0, 0.0, 0.0);
 
    // set the color to yellow
    glColor3f(1.0f, 1.0f, 0.0f);
@@ -482,8 +472,8 @@ void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
                    "Current matrix mode is not the modelview");
 
    // obtain the lights position and view direction
-   const Vectord lPos = mLightVariables.mMViewMat.Inverse() * Vectorf(0.0, 0.0, 0.0);
-   const Vectord lViewDir = MatrixHelper::GetViewVector(mLightVariables.mMViewMat).UnitVector();
+   const Vec3d lPos = mLightVariables.mMViewMat.Inverse() * Vec3d(0.0, 0.0, 0.0);
+   const Vec3d lViewDir = MatrixHelper::GetViewVector(mLightVariables.mMViewMat).UnitVector();
 
    const float lightPos[] =
    {
@@ -620,8 +610,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          // obtain the camera world position...
          // take the inverse of the camera world position since
          // the camera must move things into the eye space...
-         const Vectord camEye = mpActiveMViewMat->InverseFromOrthogonal() *
-                                Vectord(0.0, 0.0, 0.0) * -1;
+         const Vec3d camEye = mpActiveMViewMat->InverseFromOrthogonal() *
+                              Vec3d(0.0, 0.0, 0.0) * -1;
          // create a translation matrix for the camera
          Matrixd matTrans;
          matTrans.MakeTranslation(camEye.mT[0], camEye.mT[1], camEye.mT[2]);
@@ -696,11 +686,11 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
                                                 const_cast< double * >(&dPitch),
                                                 (double *)NULL);
          // obtain the view and strafe vectors
-         const Vectord vecView = MatrixHelper::GetViewVector(*mpActiveMViewMat);
-         const Vectord vecStrafe = MatrixHelper::GetStrafeVector(*mpActiveMViewMat);
+         const Vec3d vecView = MatrixHelper::GetViewVector(*mpActiveMViewMat);
+         const Vec3d vecStrafe = MatrixHelper::GetStrafeVector(*mpActiveMViewMat);
          // obtain the camera world position...
-         Vectord camEye = mpActiveMViewMat->InverseFromOrthogonal() *
-                          Vectord(0.0, 0.0, 0.0);
+         Vec3d camEye = mpActiveMViewMat->InverseFromOrthogonal() *
+                        Vec3d(0.0, 0.0, 0.0);
          // obtain the repeat count of the key press
          const unsigned short nRptCnt =
             static_cast< unsigned short >(lParam & 0x0000FFFF);

@@ -6,7 +6,8 @@
 
 // local includes
 #include "Matrix.h"
-#include "Vector.h"
+#include "Vector3.h"
+#include "Vector4.h"
 
 namespace MatrixHelper
 {
@@ -38,9 +39,9 @@ void DecomposeYawPitchRollDeg( const Matrix< T > & mat,
 }
 
 template < typename T >
-Vector< T > GetStrafeVector( const Matrix< T > & mat )
+Vector3< T > GetStrafeVector( const Matrix< T > & mat )
 {
-   Vector< T > v;
+   Vector3< T > v;
 
    v.mT[0] = mat.mT[0];
    v.mT[1] = mat.mT[4];
@@ -50,9 +51,9 @@ Vector< T > GetStrafeVector( const Matrix< T > & mat )
 }
 
 template < typename T >
-Vector< T > GetViewVector( const Matrix< T > & mat )
+Vector3< T > GetViewVector( const Matrix< T > & mat )
 {
-   Vector< T > v;
+   Vector3< T > v;
 
    v.mT[0] = mat.mT[2];
    v.mT[1] = mat.mT[6];

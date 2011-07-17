@@ -365,7 +365,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Vector.h"
+				RelativePath=".\Vector3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Vector4.h"
 				>
 			</File>
 			<File
