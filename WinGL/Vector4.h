@@ -493,7 +493,9 @@ inline T & Vector4< T >::operator [] ( const size_t i )
 template < typename T >
 inline const T & Vector4< T >::operator [] ( const size_t i ) const
 {
-   return (*this)[i];
+   WGL_ASSERT(0 <= i < NUM_COMPONENTS);
+
+   return mT[i];
 }
 
 template < typename T >
