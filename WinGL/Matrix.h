@@ -87,9 +87,15 @@ public:
    void  MakeRotation( const T & degrees, const T & x, const T & y, const T & z );
    void  MakeRotation( const T & degrees, const Vector3< T > & vec );
 
+   static Matrix< T > Rotate( const T & degrees, const T & x, const T & y, const T & z );
+   static Matrix< T > Rotate( const T & degrees, const Vector3< T > & vec );
+
    // creates a translation matrix
    void  MakeTranslation( const T & x, const T & y, const T & z );
    void  MakeTranslation( const Vector3< T > & vec );
+
+   static Matrix< T > Translate( const T & x, const T & y, const T & z );
+   static Matrix< T > Translate( const Vector3< T > & vec );
 
    // create a projection matrix
    template < typename U >
@@ -491,7 +497,10 @@ inline void Matrix< T >::MakeIdentity( )
 }
 
 template < typename T >
-inline void Matrix< T >::MakeRotation( const T & degrees, const T & x, const T & y, const T & z )
+inline void Matrix< T >::MakeRotation( const T & degrees,
+                                       const T & x,
+                                       const T & y,
+                                       const T & z )
 {
    MakeRotation(degrees, Vector3< T >(x, y, z));
 }
@@ -521,6 +530,28 @@ inline void Matrix< T >::MakeRotation( const T & degrees, const Vector3< T > & v
    mT[1] = xy * oneMinCos + zsin;      mT[5] = yy * oneMinCos + cosine;    mT[9] = yz * oneMinCos - xsin;      mT[13] = 0;
    mT[2] = xz * oneMinCos - ysin;      mT[6] = yz * oneMinCos + xsin;      mT[10] = zz * oneMinCos + cosine;   mT[14] = 0;
    mT[3] = 0;                          mT[7] = 0;                          mT[11] = 0;                         mT[15] = 1;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Rotate( const T & degrees,
+                                        const T & x,
+                                        const T & y,
+                                        const T & z )
+{
+   Matrix< T > mat;
+   mat.MakeRotation(degrees, x, y, z);
+   
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Rotate( const T & degrees,
+                                        const Vector3< T > & vec )
+{
+   Matrix< T > mat;
+   mat.MakeRotation(degrees, vec);
+
+   return mat;
 }
 
 template < typename T >
@@ -684,6 +715,24 @@ template < typename T >
 inline void Matrix< T >::MakeTranslation( const Vector3< T > & vec )
 {
    MakeTranslation(vec.mT[0], vec.mT[1], vec.mT[2]);
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Translate( const T & x, const T & y, const T & z )
+{
+   Matrix< T > mat;
+   mat.MakeTranslation(x, y, z);
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Translate( const Vector3< T > & vec )
+{
+   Matrix< T > mat;
+   mat.MakeTranslation(vec);
+
+   return mat;
 }
 
 template < typename T >
