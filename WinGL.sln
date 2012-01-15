@@ -1,17 +1,11 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinGL", "WinGL\WinGL.vcproj", "{D092669A-32E5-4A29-B944-426E32BC7D4F}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinGL", "WinGL\WinGL.vcxproj", "{D092669A-32E5-4A29-B944-426E32BC7D4F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectiveTexturing", "ProjectiveTexturing\ProjectiveTexturing.vcproj", "{89F1D234-D069-449F-AE70-08F13270F048}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D092669A-32E5-4A29-B944-426E32BC7D4F} = {D092669A-32E5-4A29-B944-426E32BC7D4F}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectiveTexturing", "ProjectiveTexturing\ProjectiveTexturing.vcxproj", "{89F1D234-D069-449F-AE70-08F13270F048}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SmokeParticleSystem", "SmokeParticleSystem\SmokeParticleSystem.vcproj", "{F59A6672-F64B-4B82-9BD1-5C5D261BB895}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D092669A-32E5-4A29-B944-426E32BC7D4F} = {D092669A-32E5-4A29-B944-426E32BC7D4F}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SmokeParticleSystem", "SmokeParticleSystem\SmokeParticleSystem.vcxproj", "{F59A6672-F64B-4B82-9BD1-5C5D261BB895}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
