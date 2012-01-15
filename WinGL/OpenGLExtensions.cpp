@@ -162,6 +162,28 @@ void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const c
    GET_PROC_ADDRESS(glDebugMessageInsertAMD);
    GET_PROC_ADDRESS(glDebugMessageCallbackAMD);
    GET_PROC_ADDRESS(glGetDebugMessageLogAMD);
+
+   // framebuffer object
+   GET_PROC_ADDRESS(glIsRenderbuffer);
+   GET_PROC_ADDRESS(glBindRenderbuffer);
+   GET_PROC_ADDRESS(glDeleteRenderbuffers);
+   GET_PROC_ADDRESS(glGenRenderbuffers);
+   GET_PROC_ADDRESS(glRenderbufferStorage);
+   GET_PROC_ADDRESS(glRenderbufferStorageMultisample);
+   GET_PROC_ADDRESS(glGetRenderbufferParameteriv);
+   GET_PROC_ADDRESS(glIsFramebuffer);
+   GET_PROC_ADDRESS(glBindFramebuffer);
+   GET_PROC_ADDRESS(glDeleteFramebuffers);
+   GET_PROC_ADDRESS(glGeglnFramebuffers);
+   GET_PROC_ADDRESS(glCheckFramebufferStatus);
+   GET_PROC_ADDRESS(glFramebufferTexture1D);
+   GET_PROC_ADDRESS(glFramebufferTexture2D);
+   GET_PROC_ADDRESS(glFramebufferTexture3D);
+   GET_PROC_ADDRESS(glFramebufferTextureLayer);
+   GET_PROC_ADDRESS(glFramebufferRenderbuffer);
+   GET_PROC_ADDRESS(glGetFramebufferAttachmentParameteriv);
+   GET_PROC_ADDRESS(glBlitFramebuffer);
+   GET_PROC_ADDRESS(glGenerateMipmap);
 }
 
 bool IsExtensionSupported( const char * const pExtension )
@@ -338,5 +360,27 @@ DEFINE_OGL_EXT(glDebugMessageEnableAMD);
 DEFINE_OGL_EXT(glDebugMessageInsertAMD);
 DEFINE_OGL_EXT(glDebugMessageCallbackAMD);
 DEFINE_OGL_EXT(glGetDebugMessageLogAMD);
+
+// framebuffer object
+DEFINE_OGL_EXT(glIsRenderbuffer);
+DEFINE_OGL_EXT(glBindRenderbuffer);
+DEFINE_OGL_EXT(glDeleteRenderbuffers);
+DEFINE_OGL_EXT(glGenRenderbuffers);
+DEFINE_OGL_EXT(glRenderbufferStorage);
+DEFINE_OGL_EXT(glRenderbufferStorageMultisample);
+DEFINE_OGL_EXT(glGetRenderbufferParameteriv);
+DEFINE_OGL_EXT(glIsFramebuffer);
+DEFINE_OGL_EXT(glBindFramebuffer);
+DEFINE_OGL_EXT(glDeleteFramebuffers);
+DEFINE_OGL_EXT(glGeglnFramebuffers);
+DEFINE_OGL_EXT(glCheckFramebufferStatus);
+DEFINE_OGL_EXT(glFramebufferTexture1D);
+DEFINE_OGL_EXT(glFramebufferTexture2D);
+DEFINE_OGL_EXT(glFramebufferTexture3D);
+DEFINE_OGL_EXT(glFramebufferTextureLayer);
+DEFINE_OGL_EXT(glFramebufferRenderbuffer);
+DEFINE_OGL_EXT(glGetFramebufferAttachmentParameteriv);
+DEFINE_OGL_EXT(glBlitFramebuffer);
+DEFINE_OGL_EXT(glGenerateMipmap);
 
 } // namespace OpenGLExt

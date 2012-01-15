@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectiveTexturing", "Proj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SmokeParticleSystem", "SmokeParticleSystem\SmokeParticleSystem.vcxproj", "{F59A6672-F64B-4B82-9BD1-5C5D261BB895}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderTarget", "RenderTarget\RenderTarget.vcxproj", "{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D092669A-32E5-4A29-B944-426E32BC7D4F} = {D092669A-32E5-4A29-B944-426E32BC7D4F}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -39,6 +44,12 @@ Global
 		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Release|Win32.Build.0 = Release|Win32
 		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Release|x64.ActiveCfg = Release|x64
 		{F59A6672-F64B-4B82-9BD1-5C5D261BB895}.Release|x64.Build.0 = Release|x64
+		{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}.Debug|Win32.Build.0 = Debug|Win32
+		{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}.Debug|x64.ActiveCfg = Debug|Win32
+		{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}.Release|Win32.ActiveCfg = Release|Win32
+		{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}.Release|Win32.Build.0 = Release|Win32
+		{F7ECC6EA-A4DD-483C-8FF0-68760FFFAF1E}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
