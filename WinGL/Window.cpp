@@ -84,6 +84,20 @@ bool Window::Create( unsigned int nWidth,
    return false;
 }
 
+Size Window::GetSize( )
+{
+   RECT clientRect;
+   GetClientRect(mHWND, &clientRect);
+
+   Size clientSize =
+   {
+      clientRect.right - clientRect.left,
+      clientRect.bottom - clientRect.top
+   };
+
+   return clientSize;
+}
+
 int Window::Run( )
 {
    int retValue = 0;

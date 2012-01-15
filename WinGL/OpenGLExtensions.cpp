@@ -174,7 +174,7 @@ void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const c
    GET_PROC_ADDRESS(glIsFramebuffer);
    GET_PROC_ADDRESS(glBindFramebuffer);
    GET_PROC_ADDRESS(glDeleteFramebuffers);
-   GET_PROC_ADDRESS(glGeglnFramebuffers);
+   GET_PROC_ADDRESS(glGenFramebuffers);
    GET_PROC_ADDRESS(glCheckFramebufferStatus);
    GET_PROC_ADDRESS(glFramebufferTexture1D);
    GET_PROC_ADDRESS(glFramebufferTexture2D);
@@ -184,6 +184,9 @@ void InitializeOpenGLExtensions( int (* (__stdcall * wglGetProcAddress)( const c
    GET_PROC_ADDRESS(glGetFramebufferAttachmentParameteriv);
    GET_PROC_ADDRESS(glBlitFramebuffer);
    GET_PROC_ADDRESS(glGenerateMipmap);
+
+   // draw buffers
+   GET_PROC_ADDRESS(glDrawBuffersARB);
 }
 
 bool IsExtensionSupported( const char * const pExtension )
@@ -372,7 +375,7 @@ DEFINE_OGL_EXT(glGetRenderbufferParameteriv);
 DEFINE_OGL_EXT(glIsFramebuffer);
 DEFINE_OGL_EXT(glBindFramebuffer);
 DEFINE_OGL_EXT(glDeleteFramebuffers);
-DEFINE_OGL_EXT(glGeglnFramebuffers);
+DEFINE_OGL_EXT(glGenFramebuffers);
 DEFINE_OGL_EXT(glCheckFramebufferStatus);
 DEFINE_OGL_EXT(glFramebufferTexture1D);
 DEFINE_OGL_EXT(glFramebufferTexture2D);
@@ -382,5 +385,8 @@ DEFINE_OGL_EXT(glFramebufferRenderbuffer);
 DEFINE_OGL_EXT(glGetFramebufferAttachmentParameteriv);
 DEFINE_OGL_EXT(glBlitFramebuffer);
 DEFINE_OGL_EXT(glGenerateMipmap);
+
+// draw buffers
+DEFINE_OGL_EXT(glDrawBuffersARB);
 
 } // namespace OpenGLExt

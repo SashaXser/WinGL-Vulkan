@@ -4,6 +4,9 @@
 // platform includes
 #include <windows.h>
 
+// local includes
+#include "WindowDefines.h"
+
 class Window
 {
 public:
@@ -24,6 +27,9 @@ public:
 
    // returns the dc object
    const HDC &    GetHDC( ) const { return mHDC; }
+
+   // returns the size of the window
+   Size  GetSize( );
 
    // basic run implementation
    // will process messages until app quit
