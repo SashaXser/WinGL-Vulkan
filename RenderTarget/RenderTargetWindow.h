@@ -42,6 +42,9 @@ private:
    // renders the scene
    void RenderScene( );
 
+   // renders into the texture
+   void RenderTexture( );
+
    // private member variables
    unsigned int      mFrameBuffer;
    unsigned int      mClrAttachTex;

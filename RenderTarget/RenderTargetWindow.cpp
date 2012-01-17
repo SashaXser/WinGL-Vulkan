@@ -122,17 +122,13 @@ void RenderTargetWindow::CreateRenderTarget( )
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-   glBindTexture(GL_TEXTURE_2D, 0);
+
    // attach the color texture to the framebuffer
    OpenGLExt::glGenFramebuffers(1, &mFrameBuffer);
    OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, mFrameBuffer);
    OpenGLExt::glFramebufferTexture2D(OpenGLExt::GL_DRAW_FRAMEBUFFER,
                                      OpenGLExt::GL_COLOR_ATTACHMENT0,
                                      GL_TEXTURE_2D, mClrAttachTex, 0);
-
-   // explicitly turn off drawing to the depth buffer
-   glDepthMask(GL_FALSE);
-   glDisable(GL_DEPTH_TEST);
    
    // check that the framebuffer is complete
    const unsigned int frameBufStatus =
@@ -142,12 +138,18 @@ void RenderTargetWindow::CreateRenderTarget( )
    WGL_ASSERT(frameBufStatus == OpenGLExt::GL_FRAMEBUFFER_COMPLETE);
 
    // clear the texture and framebuffer
-   
+   glBindTexture(GL_TEXTURE_2D, 0);
    OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, 0);
+
+   // render the texture
+   RenderTexture();
 }
 
-void RenderTargetWindow::RenderScene( )
+void RenderTargetWindow::RenderTexture( )
 {
+   // set all the attribute bits
+   glPushAttrib(GL_ALL_ATTRIB_BITS);
+
    // bind the frame buffer object
    OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, mFrameBuffer);
 
@@ -157,23 +159,60 @@ void RenderTargetWindow::RenderScene( )
    // setup the basic projection parameters
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glOrtho(0.0, mClrAttachTexWH[0], 0.0, mClrAttachTexWH[1], -1.0, 1.0);
+   glOrtho(mClrAttachTexWH[0] * -2.0, mClrAttachTexWH[0] * 2.0,
+           0.0, mClrAttachTexWH[1],
+           -1.0, 1.0);
 
    // reset the modelview matrix
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
 
-   //glClear(GL_COLOR_BUFFER_BIT);
-   glColor3f(0,0,1);
+   // disable depth buffer reads and writes
+   glDepthMask(GL_FALSE);
+   glDisable(GL_DEPTH_TEST);
+
+   // clear the background
+   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+   glClear(GL_COLOR_BUFFER_BIT);
+
+   // render red box
    glBegin(GL_QUADS);
-   glVertex3d(0, 0, 0);
-   glVertex3d(5000, 0, 0);
-   glVertex3d(5000, 5000, 0);
-   glVertex3d(0, 5000, 0);
+   glColor3f(1.0f, 0.0f, 0.0f);
+   glVertex3f(-400.0f, -100.0f, 0.0f);
+   glVertex3f( 400.0f, -100.0f, 0.0f);
+   glVertex3f( 400.0f,  100.0f, 0.0f);
+   glVertex3f(-400.0f,  100.0f, 0.0f);
    glEnd();
 
+   // render blue box
+   glBegin(GL_QUADS);
+   glColor3f(0.0f, 0.0f, 1.0f);
+   glVertex3f(-200.0f, -100.0f, 0.0f);
+   glVertex3f( 200.0f, -100.0f, 0.0f);
+   glVertex3f( 200.0f,  100.0f, 0.0f);
+   glVertex3f(-200.0f,  100.0f, 0.0f);
+   glEnd();
+
+   // render green box
+   glBegin(GL_QUADS);
+   glColor3f(0.0f, 1.0f, 0.0f);
+   glVertex3f(-16.0f, -100.0f, 0.0f);
+   glVertex3f( 16.0f, -100.0f, 0.0f);
+   glVertex3f( 16.0f,  100.0f, 0.0f);
+   glVertex3f(-16.0f,  100.0f, 0.0f);
+   glEnd();
+
+   // unbind the framebuffer object
    OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, 0);
 
+   // restore all the attributes
+   glPopAttrib();
+}
+
+void RenderTargetWindow::RenderScene( )
+{
+   // clear the background
+   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
    glClear(GL_COLOR_BUFFER_BIT);
 
    // setup the viewport
@@ -183,34 +222,37 @@ void RenderTargetWindow::RenderScene( )
    // setup the basic projection parameters
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glOrtho(0.0, size.width, 0.0, size.height, -1.0, 1.0);
+   glOrtho(size.width * -0.5, size.width * 0.5,
+           size.height * -0.5f, size.height * 0.5f,
+           -1.0, 1.0);
 
    // reset the modelview matrix
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
 
-   glColor3f(1,0,0);
-   glBegin(GL_QUADS);
-   glVertex3d(0, 0, 0);
-   glVertex3d(size.width, 0, 0);
-   glVertex3d(size.width, size.height, 0);
-   glVertex3d(0, size.height, 0);
-   glEnd();
+   // determine the extents of the quad
+   double rightExt = mClrAttachTexWH[0] * 0.5;
+   double leftExt = mClrAttachTexWH[0] * -0.5;
+   double bottomExt = mClrAttachTexWH[1] * -0.5;
+   double topExt = mClrAttachTexWH[1] * 0.5;
 
+   // enable texturing
    glEnable(GL_TEXTURE_2D);
    glBindTexture(GL_TEXTURE_2D, mClrAttachTex);
 
+   // render a quad the size of the texture
    glBegin(GL_QUADS);
-   glVertex3d(0, 0, 0); glTexCoord2d(0, 0);
-   glVertex3d(100, 0, 0); glTexCoord2d(1, 0);
-   glVertex3d(100, 100, 0); glTexCoord2d(1, 1);
-   glVertex3d(0, 100, 0); glTexCoord2d(0, 1);
+   glColor3f(1.0f, 1.0f, 1.0f);
+   glTexCoord2f(0.0f, 0.0f); glVertex3d(leftExt, bottomExt, 0.0);
+   glTexCoord2f(1.0f, 0.0f); glVertex3d(rightExt, bottomExt, 0.0);
+   glTexCoord2f(1.0f, 1.0f); glVertex3d(rightExt, topExt, 0.0);
+   glTexCoord2f(0.0f, 1.0f); glVertex3d(leftExt, topExt, 0.0);
    glEnd();
 
-   glBindTexture(GL_TEXTURE_2D, 0);
+   // disable texturing
    glDisable(GL_TEXTURE_2D);
+   glBindTexture(GL_TEXTURE_2D, 0);
 
-   int err = glGetError();
-
+   // swap the front and back buffers
    SwapBuffers(GetHDC());
 }
