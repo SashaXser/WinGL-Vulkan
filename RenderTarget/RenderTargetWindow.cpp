@@ -212,8 +212,8 @@ void RenderTargetWindow::RenderTexture( )
    glVertex3f(-16.0f,  100.0f, 0.0f);
    glEnd();
 
-   ::glLineWidth(3);
    // render two white lines for the boarders
+   glLineWidth(4);
    glBegin(GL_LINES);
    glColor3f(1.0f, 1.0f, 1.0f);
    glVertex3d(MAX_WIDTH * -0.5,  100.0, 0.0f);
@@ -256,22 +256,22 @@ void RenderTargetWindow::RenderScene( )
    double bottomExt = mClrAttachTexWH[1] * -0.5;
    double topExt = mClrAttachTexWH[1] * 0.5;
 
-   //if (MAX_WIDTH > size.width)
-   //{
-   //   // recalculate the extents
-   //   const double pixelDelta = (MAX_WIDTH - size.width + 30.0) * 0.5;
-   //   // update the left and right extents of the quad
-   //   rightExt -= pixelDelta;
-   //   leftExt += pixelDelta;
-   //   // determine the new height size
-   //   const double height =
-   //      static_cast< double >(mClrAttachTexWH[1]) /
-   //      static_cast< double >(mClrAttachTexWH[0]) *
-   //      (rightExt * 2.0);
-   //   // update the bottom and top extents of the quad
-   //   //topExt = height * 0.5;
-   //   //bottomExt = height * -0.5;
-   //}
+   if (MAX_WIDTH > size.width)
+   {
+      // recalculate the extents
+      const double extPercentage = 1.0 - (MAX_WIDTH - size.width) / MAX_WIDTH;
+      // update the left and right extents of the quad
+      rightExt *= extPercentage;
+      leftExt *= extPercentage;
+      // determine the new height size
+      const double height =
+         static_cast< double >(mClrAttachTexWH[1]) /
+         static_cast< double >(mClrAttachTexWH[0]) *
+         (rightExt * 2.0);
+      // update the bottom and top extents of the quad
+      topExt = height * 0.5;
+      bottomExt = height * -0.5;
+   }
 
    // enable texturing
    glEnable(GL_TEXTURE_2D);
