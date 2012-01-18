@@ -6,7 +6,8 @@
 // gl includes
 #include <gl/GL.h>
 
-RenderTargetWindow::RenderTargetWindow( )
+RenderTargetWindow::RenderTargetWindow( ) :
+MAX_WIDTH      ( 300.0 )
 {
 }
 
@@ -82,8 +83,17 @@ LRESULT RenderTargetWindow::MessageHandler( UINT uMsg,
                                             WPARAM wParam,
                                             LPARAM lParam )
 {
-   // default handle the messages
-   return OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
+   switch (uMsg)
+   {
+   case WM_SIZING:
+      RenderScene(); return 0;
+
+      break;
+
+   default:
+      // default handle the messages
+      return OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
+   }
 }
 
 void RenderTargetWindow::SetupScene( )
@@ -159,7 +169,7 @@ void RenderTargetWindow::RenderTexture( )
    // setup the basic projection parameters
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glOrtho(mClrAttachTexWH[0] * -2.0, mClrAttachTexWH[0] * 2.0,
+   glOrtho(mClrAttachTexWH[0] * -0.5, mClrAttachTexWH[0] * 0.5,
            0.0, mClrAttachTexWH[1],
            -1.0, 1.0);
 
@@ -202,6 +212,16 @@ void RenderTargetWindow::RenderTexture( )
    glVertex3f(-16.0f,  100.0f, 0.0f);
    glEnd();
 
+   ::glLineWidth(3);
+   // render two white lines for the boarders
+   glBegin(GL_LINES);
+   glColor3f(1.0f, 1.0f, 1.0f);
+   glVertex3d(MAX_WIDTH * -0.5,  100.0, 0.0f);
+   glVertex3d(MAX_WIDTH * -0.5, -100.0, 0.0f);
+   glVertex3d(MAX_WIDTH *  0.5,  100.0, 0.0f);
+   glVertex3d(MAX_WIDTH *  0.5, -100.0, 0.0f);
+   glEnd();
+
    // unbind the framebuffer object
    OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, 0);
 
@@ -235,6 +255,23 @@ void RenderTargetWindow::RenderScene( )
    double leftExt = mClrAttachTexWH[0] * -0.5;
    double bottomExt = mClrAttachTexWH[1] * -0.5;
    double topExt = mClrAttachTexWH[1] * 0.5;
+
+   //if (MAX_WIDTH > size.width)
+   //{
+   //   // recalculate the extents
+   //   const double pixelDelta = (MAX_WIDTH - size.width + 30.0) * 0.5;
+   //   // update the left and right extents of the quad
+   //   rightExt -= pixelDelta;
+   //   leftExt += pixelDelta;
+   //   // determine the new height size
+   //   const double height =
+   //      static_cast< double >(mClrAttachTexWH[1]) /
+   //      static_cast< double >(mClrAttachTexWH[0]) *
+   //      (rightExt * 2.0);
+   //   // update the bottom and top extents of the quad
+   //   //topExt = height * 0.5;
+   //   //bottomExt = height * -0.5;
+   //}
 
    // enable texturing
    glEnable(GL_TEXTURE_2D);

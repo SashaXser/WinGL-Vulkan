@@ -50,6 +50,8 @@ private:
    unsigned int      mClrAttachTex;
    unsigned int      mClrAttachTexWH[2];
 
+   const double      MAX_WIDTH;
+
 };
 
 #endif // _RENDER_TARGET_WINDOW_H_
