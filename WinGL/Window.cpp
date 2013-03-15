@@ -2,6 +2,9 @@
 #include "Window.h"
 #include "WglAssert.h"
 
+// window includes
+#include <MMSystem.h>
+
 // library includes
 #pragma comment( lib, "Winmm.lib" )
 
