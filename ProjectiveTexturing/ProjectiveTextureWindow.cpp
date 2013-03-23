@@ -7,6 +7,7 @@
 #include "OpenGLExtensions.h"
 
 // gl includes
+#include "GL/glew.h"
 #include <gl/gl.h>
 
 // stl includes
@@ -168,7 +169,7 @@ void ProjectiveTextureWindow::InitGLState( int vpWidth, int vpHeight )
 
    // set hit values
    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-   glHint(OpenGLExt::GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+   glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
 
    // setup color tracking
    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -519,7 +520,7 @@ void ProjectiveTextureWindow::LoadTexture( )
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_2D, OpenGLExt::GL_GENERATE_MIPMAP, GL_TRUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 
       // load the texture data
       glTexImage2D(GL_TEXTURE_2D,

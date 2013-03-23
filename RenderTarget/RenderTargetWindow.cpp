@@ -4,6 +4,7 @@
 #include "OpenGLExtensions.h"
 
 // gl includes
+#include "GL/glew.h"
 #include <gl/GL.h>
 
 RenderTargetWindow::RenderTargetWindow( ) :
@@ -134,22 +135,21 @@ void RenderTargetWindow::CreateRenderTarget( )
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
    // attach the color texture to the framebuffer
-   OpenGLExt::glGenFramebuffers(1, &mFrameBuffer);
-   OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, mFrameBuffer);
-   OpenGLExt::glFramebufferTexture2D(OpenGLExt::GL_DRAW_FRAMEBUFFER,
-                                     OpenGLExt::GL_COLOR_ATTACHMENT0,
-                                     GL_TEXTURE_2D, mClrAttachTex, 0);
+   glGenFramebuffers(1, &mFrameBuffer);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFrameBuffer);
+   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
+                          GL_COLOR_ATTACHMENT0,
+                          GL_TEXTURE_2D, mClrAttachTex, 0);
    
    // check that the framebuffer is complete
-   const unsigned int frameBufStatus =
-      OpenGLExt::glCheckFramebufferStatus(OpenGLExt::GL_DRAW_FRAMEBUFFER);
+   const unsigned int frameBufStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
 
    // validate the frame buffer status
-   WGL_ASSERT(frameBufStatus == OpenGLExt::GL_FRAMEBUFFER_COMPLETE);
+   WGL_ASSERT(frameBufStatus == GL_FRAMEBUFFER_COMPLETE);
 
    // clear the texture and framebuffer
    glBindTexture(GL_TEXTURE_2D, 0);
-   OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, 0);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
    // render the texture
    RenderTexture();
@@ -161,7 +161,7 @@ void RenderTargetWindow::RenderTexture( )
    glPushAttrib(GL_ALL_ATTRIB_BITS);
 
    // bind the frame buffer object
-   OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, mFrameBuffer);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mFrameBuffer);
 
    // setup the viewport
    glViewport(0, 0, mClrAttachTexWH[0], mClrAttachTexWH[1]);
@@ -223,7 +223,7 @@ void RenderTargetWindow::RenderTexture( )
    glEnd();
 
    // unbind the framebuffer object
-   OpenGLExt::glBindFramebuffer(OpenGLExt::GL_DRAW_FRAMEBUFFER, 0);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
    // restore all the attributes
    glPopAttrib();

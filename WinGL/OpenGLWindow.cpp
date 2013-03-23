@@ -4,6 +4,8 @@
 #include "WglAssert.h"
 
 // opengl includes
+#include <GL/glew.h>
+#include <GL/wglew.h>
 #include <gl/gl.h>
 
 // stl includes
@@ -74,9 +76,7 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
 
    // initialize the opengl extensions
    // need to reinterpret the function sig to make x64 happy...
-   OpenGLExt::InitializeOpenGLExtensions(
-      reinterpret_cast< int (* (__stdcall *)( const char * ))( void ) >
-      (&wglGetProcAddress));
+   gl::InitializeOpenGLExtensions();
 
    // release the basic context
    wglMakeCurrent(hDC, NULL);
@@ -91,23 +91,23 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
          // create a new context
          int attribList[] =
          {
-            OpenGLExt::WGL_CONTEXT_MAJOR_VERSION_ARB, 0,
-            OpenGLExt::WGL_CONTEXT_MINOR_VERSION_ARB, 0,
-            OpenGLExt::WGL_CONTEXT_PROFILE_MASK_ARB, 0,
-            OpenGLExt::WGL_CONTEXT_FLAGS_ARB, 0,
-            0, 0
+            WGL_CONTEXT_MAJOR_VERSION_ARB,   0,
+            WGL_CONTEXT_MINOR_VERSION_ARB,   0,
+            WGL_CONTEXT_PROFILE_MASK_ARB,    0,
+            WGL_CONTEXT_FLAGS_ARB,           0,
+            0,                               0
          };
          
          // create the specified context...
          attribList[1] = (*pInitParams)->nMajorVer;
          attribList[3] = (*pInitParams)->nMinorVer;
          attribList[5] = (*pInitParams)->bCompatibleContext ?
-                         OpenGLExt::WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB :
-                         OpenGLExt::WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+                         WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB :
+                         WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
          attribList[7] = (*pInitParams)->bEnableDebug ?
-                         OpenGLExt::WGL_CONTEXT_DEBUG_BIT_ARB : 0;
+                         WGL_CONTEXT_DEBUG_BIT_ARB : 0;
          attribList[7] |= (*pInitParams)->bEnableForwardCompatibleContext ?
-                         OpenGLExt::WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0;
+                          WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0;
 
          // save the debug flag
          mDebugRequested = (*pInitParams)->bEnableDebug;
@@ -131,8 +131,7 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
             mDebugRequested = false;
          }
 
-         mGLContext =
-            OpenGLExt::wglCreateContextAttribsARB(hDC, NULL, attribList);
+         mGLContext = wglCreateContextAttribsARB(hDC, NULL, attribList);
       }
    }
    else
@@ -161,34 +160,34 @@ bool OpenGLWindow::AttachToDebugContext( )
    {
       // check to see if the arb is supported...
       // if the arb is not supported, try the amd extensions...
-      if (OpenGLExt::IsExtensionSupported("GL_ARB_debug_output"))
+      if (gl::IsExtensionSupported("GL_ARB_debug_output"))
       {
          WGL_ASSERT(!"OpenGLWindow::DetachFromDebugContext - Needs implementation");
       }
-      else if (OpenGLExt::IsExtensionSupported("GL_AMD_debug_output"))
+      else if (gl::IsExtensionSupported("GL_AMD_debug_output"))
       {
          // amd extension is supported here...
          // make the callback into the static function and pass this as the param...
-         OpenGLExt::glDebugMessageCallbackAMD(&OpenGLWindow::DebugContextCallbackAMD, this);
+         glDebugMessageCallbackAMD(&OpenGLWindow::DebugContextCallbackAMD, this);
 
          // enable all errors at the highest settings...
          unsigned int pDebugCat[] =
          {
-            OpenGLExt::GL_DEBUG_CATEGORY_API_ERROR_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_DEPRECATION_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_PERFORMANCE_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_APPLICATION_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_OTHER_AMD
+            GL_DEBUG_CATEGORY_API_ERROR_AMD,
+            GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD,
+            GL_DEBUG_CATEGORY_DEPRECATION_AMD,
+            GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD,
+            GL_DEBUG_CATEGORY_PERFORMANCE_AMD,
+            GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD,
+            GL_DEBUG_CATEGORY_APPLICATION_AMD,
+            GL_DEBUG_CATEGORY_OTHER_AMD
          };
 
          for (unsigned int i = 0; i < sizeof(pDebugCat) / sizeof(*pDebugCat); ++i)
          {
-            OpenGLExt::glDebugMessageEnableAMD(*(pDebugCat + i), OpenGLExt::GL_DEBUG_SEVERITY_HIGH_AMD, 0, NULL, GL_TRUE);
-            OpenGLExt::glDebugMessageEnableAMD(*(pDebugCat + i), OpenGLExt::GL_DEBUG_SEVERITY_MEDIUM_AMD, 0, NULL, GL_TRUE);
-            OpenGLExt::glDebugMessageEnableAMD(*(pDebugCat + i), OpenGLExt::GL_DEBUG_SEVERITY_LOW_AMD, 0, NULL, GL_TRUE);
+            glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_HIGH_AMD, 0, NULL, GL_TRUE);
+            glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_MEDIUM_AMD, 0, NULL, GL_TRUE);
+            glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_LOW_AMD, 0, NULL, GL_TRUE);
          }
 
          attached = true;
@@ -205,34 +204,34 @@ void OpenGLWindow::DetachFromDebugContext( )
    {
       // check to see if the arb is supported...
       // if the arb is not supported, try the amd extensions...
-      if (OpenGLExt::IsExtensionSupported("GL_ARB_debug_output"))
+      if (gl::IsExtensionSupported("GL_ARB_debug_output"))
       {
          WGL_ASSERT(!"OpenGLWindow::DetachFromDebugContext - Needs implementation"); 
       }
-      else if (OpenGLExt::IsExtensionSupported("GL_AMD_debug_output"))
+      else if (gl::IsExtensionSupported("GL_AMD_debug_output"))
       {
          // amd extension is supported here...
          // disable the callback by setting null to both params
-         OpenGLExt::glDebugMessageCallbackAMD(NULL, NULL);
+         glDebugMessageCallbackAMD(NULL, NULL);
 
          // disable all errors at the highest settings...
          unsigned int pDebugCat[] =
          {
-            OpenGLExt::GL_DEBUG_CATEGORY_API_ERROR_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_DEPRECATION_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_PERFORMANCE_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_APPLICATION_AMD,
-            OpenGLExt::GL_DEBUG_CATEGORY_OTHER_AMD
+            GL_DEBUG_CATEGORY_API_ERROR_AMD,
+            GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD,
+            GL_DEBUG_CATEGORY_DEPRECATION_AMD,
+            GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD,
+            GL_DEBUG_CATEGORY_PERFORMANCE_AMD,
+            GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD,
+            GL_DEBUG_CATEGORY_APPLICATION_AMD,
+            GL_DEBUG_CATEGORY_OTHER_AMD
          };
 
          for (unsigned int i = 0; i < sizeof(pDebugCat) / sizeof(*pDebugCat); ++i)
          {
-            OpenGLExt::glDebugMessageEnableAMD(*(pDebugCat + i), OpenGLExt::GL_DEBUG_SEVERITY_HIGH_AMD, 0, NULL, GL_FALSE);
-            OpenGLExt::glDebugMessageEnableAMD(*(pDebugCat + i), OpenGLExt::GL_DEBUG_SEVERITY_MEDIUM_AMD, 0, NULL, GL_FALSE);
-            OpenGLExt::glDebugMessageEnableAMD(*(pDebugCat + i), OpenGLExt::GL_DEBUG_SEVERITY_LOW_AMD, 0, NULL, GL_FALSE);
+            glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_HIGH_AMD, 0, NULL, GL_FALSE);
+            glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_MEDIUM_AMD, 0, NULL, GL_FALSE);
+            glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_LOW_AMD, 0, NULL, GL_FALSE);
          }
       }
    }
@@ -254,23 +253,23 @@ void __stdcall OpenGLWindow::DebugContextCallbackAMD( unsigned int id,
 
    switch (category)
    {
-   case OpenGLExt::GL_DEBUG_CATEGORY_API_ERROR_AMD:            ssMsg << "API"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD:        ssMsg << "Window"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_DEPRECATION_AMD:          ssMsg << "Depricated"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD:   ssMsg << "Undef Behavior"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_PERFORMANCE_AMD:          ssMsg << "Performance"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD:      ssMsg << "Shader Compiler"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_APPLICATION_AMD:          ssMsg << "App"; break;
-   case OpenGLExt::GL_DEBUG_CATEGORY_OTHER_AMD:                ssMsg << "Other"; break;
+   case GL_DEBUG_CATEGORY_API_ERROR_AMD:           ssMsg << "API"; break;
+   case GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD:       ssMsg << "Window"; break;
+   case GL_DEBUG_CATEGORY_DEPRECATION_AMD:         ssMsg << "Depricated"; break;
+   case GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD:  ssMsg << "Undef Behavior"; break;
+   case GL_DEBUG_CATEGORY_PERFORMANCE_AMD:         ssMsg << "Performance"; break;
+   case GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD:     ssMsg << "Shader Compiler"; break;
+   case GL_DEBUG_CATEGORY_APPLICATION_AMD:         ssMsg << "App"; break;
+   case GL_DEBUG_CATEGORY_OTHER_AMD:               ssMsg << "Other"; break;
    }
 
    ssMsg << " - SEVERITY: ";
 
    switch (severity)
    {
-   case OpenGLExt::GL_DEBUG_SEVERITY_HIGH_AMD:     ssMsg << "HIGH"; break;
-   case OpenGLExt::GL_DEBUG_SEVERITY_MEDIUM_AMD:   ssMsg << "MEDIUM"; break;
-   case OpenGLExt::GL_DEBUG_SEVERITY_LOW_AMD:      ssMsg << "LOW"; break;
+   case GL_DEBUG_SEVERITY_HIGH_AMD:    ssMsg << "HIGH"; break;
+   case GL_DEBUG_SEVERITY_MEDIUM_AMD:  ssMsg << "MEDIUM"; break;
+   case GL_DEBUG_SEVERITY_LOW_AMD:     ssMsg << "LOW"; break;
    }
 
    ssMsg << std::endl << "MSG: " << message << std::endl;

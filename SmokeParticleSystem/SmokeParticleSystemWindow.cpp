@@ -8,8 +8,9 @@
 #include "ParticleSystemManager.h"
 
 // gl includes
-#include "gl/gl.h"
-#include "gl/glu.h"
+#include "GL/glew.h"
+#include <gl/gl.h>
+#include <gl/glu.h>
 
 // global defines
 #ifdef _DEBUG
@@ -297,7 +298,7 @@ void SmokeParticleSystemWindow::RenderFloor( const SimFrame & simFrame,
    if (!glVertBuffers[0] || !glVertBuffers[1])
    {
       // create two buffers
-      OpenGLExt::glGenBuffersARB(2, glVertBuffers);
+      glGenBuffersARB(2, glVertBuffers);
 
       // setup the vertex buffer data first
       const unsigned short dataSize = sizeof(float);
@@ -323,10 +324,10 @@ void SmokeParticleSystemWindow::RenderFloor( const SimFrame & simFrame,
       }
 
       // send the data to the card
-      const OpenGLExt::intptr bufferDataSize = bufferSize * dataSize;
-      OpenGLExt::glBindBufferARB(OpenGLExt::GL_ARRAY_BUFFER_ARB, glVertBuffers[0]);
-      OpenGLExt::glBufferDataARB(OpenGLExt::GL_ARRAY_BUFFER_ARB, bufferDataSize,
-                                 pVertBuffer, OpenGLExt::GL_STATIC_DRAW_ARB);
+      const GLintptr bufferDataSize = bufferSize * dataSize;
+      glBindBufferARB(GL_ARRAY_BUFFER_ARB, glVertBuffers[0]);
+      glBufferDataARB(GL_ARRAY_BUFFER_ARB, bufferDataSize,
+                      pVertBuffer, GL_STATIC_DRAW_ARB);
 
       // release the vertices
       delete [] pVertBuffer;
@@ -360,10 +361,10 @@ void SmokeParticleSystemWindow::RenderFloor( const SimFrame & simFrame,
       }
 
       // send the indices to the card
-      const OpenGLExt::intptr indexBufDataSize = indexBufferSize * indexDataSize;
-      OpenGLExt::glBindBufferARB(OpenGLExt::GL_ELEMENT_ARRAY_BUFFER_ARB, glVertBuffers[1]);
-      OpenGLExt::glBufferDataARB(OpenGLExt::GL_ELEMENT_ARRAY_BUFFER_ARB, indexBufDataSize,
-                                 pIndBuffer, OpenGLExt::GL_STATIC_DRAW_ARB);
+      const GLintptr indexBufDataSize = indexBufferSize * indexDataSize;
+      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, glVertBuffers[1]);
+      glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, indexBufDataSize,
+                      pIndBuffer, GL_STATIC_DRAW_ARB);
 
       // release the indices
       delete [] pIndBuffer;
@@ -371,15 +372,15 @@ void SmokeParticleSystemWindow::RenderFloor( const SimFrame & simFrame,
    else if (shutdown)
    {
       // release the data
-      OpenGLExt::glDeleteBuffersARB(2, glVertBuffers);
+      glDeleteBuffersARB(2, glVertBuffers);
       // data not valid
       // early return
       return;
    }
 
    // bind the buffer objects
-   OpenGLExt::glBindBufferARB(OpenGLExt::GL_ARRAY_BUFFER_ARB, glVertBuffers[0]);
-   OpenGLExt::glBindBufferARB(OpenGLExt::GL_ELEMENT_ARRAY_BUFFER_ARB, glVertBuffers[1]);
+   glBindBufferARB(GL_ARRAY_BUFFER_ARB, glVertBuffers[0]);
+   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, glVertBuffers[1]);
 
    // enable the client states
    glEnableClientState(GL_VERTEX_ARRAY);
@@ -403,8 +404,8 @@ void SmokeParticleSystemWindow::RenderFloor( const SimFrame & simFrame,
    glDisableClientState(GL_VERTEX_ARRAY);
 
    // unbind the buffer objects
-   OpenGLExt::glBindBufferARB(OpenGLExt::GL_ARRAY_BUFFER_ARB, 0);
-   OpenGLExt::glBindBufferARB(OpenGLExt::GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+   glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 }
 
 void SmokeParticleSystemWindow::UpdateScene( const SimFrame & rSimFrame )
