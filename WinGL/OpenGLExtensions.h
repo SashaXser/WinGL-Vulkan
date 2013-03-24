@@ -7,11 +7,9 @@
 namespace gl
 {
 
-// initializes gl extensions
-// the function passed in is a function pointer assigned the name wglGetProcAddress
-// which accepts a const char *...  the returning value is another function pointer
-// that returns int and take no arguments...
-void InitializeOpenGLExtensions( );
+// if wnd is not null, associate a gl context to it;
+// owtherwise, a temp window will be created with a gl context
+HWND CreateOpenGLWindow( const HWND wnd, HGLRC & context );
 
 // determines if an extension is supported
 bool IsExtensionSupported( const char * const pExtension );
