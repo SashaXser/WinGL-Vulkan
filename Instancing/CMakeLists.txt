@@ -2,6 +2,7 @@ set(INSTANCING_SRC
 Main.cpp
 InstancingWindow.cpp
 InstancingWindow.h
+Shaders.h
 )
 
 add_executable(${PROJECT_NAME_INSTANCING} WIN32 ${INSTANCING_SRC})
@@ -14,3 +15,5 @@ if (PROJECTS_USE_GLEW_STATIC)
 endif (PROJECTS_USE_GLEW_STATIC)
 
 target_link_libraries(${PROJECT_NAME_INSTANCING} ${PROJECT_NAME_WIN_GL})
+
+copy_to_bin(buildings.rgb)

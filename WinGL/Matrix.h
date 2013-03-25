@@ -124,6 +124,16 @@ public:
                           const T & rZNear,
                           const T & rZFar );
 
+   template < typename U >
+   static Matrix< U > Perspective( const U & rFOV,
+                                   const U & rAspect,
+                                   const U & rZNear,
+                                   const U & rZFar );
+   static Matrix< T > Perspective( const T & rFOV,
+                                   const T & rAspect,
+                                   const T & rZNear,
+                                   const T & rZFar );
+
    // setup a viewing transformation
    template < typename U >
    void  MakeLookAt( const U & rEyeX, const U & rEyeY, const U & rEyeZ,
@@ -794,12 +804,12 @@ inline void Matrix< T >::MakeFrustum( const T & rLeft, const T & rRight,
                                       const T & rBottom, const T & rTop,
                                       const T & rNear, const T & rFar )
 {
-   const T SX = 2.0 * rNear / (rRight - rLeft);
-   const T SY = 2.0 * rNear / (rTop - rBottom);
+   const T SX = static_cast< T >(2.0) * rNear / (rRight - rLeft);
+   const T SY = static_cast< T >(2.0) * rNear / (rTop - rBottom);
    const T A = (rRight + rLeft) / (rRight - rLeft);
    const T B = (rTop + rBottom) / (rTop - rBottom);
    const T C = -(rFar + rNear) / (rFar - rNear);
-   const T D = -(2.0 * rFar * rNear) / (rFar - rNear);
+   const T D = -(static_cast< T >(2.0) * rFar * rNear) / (rFar - rNear);
 
    mT[0] = SX;  mT[4] = 0;   mT[8]  = A;   mT[12] = 0;
    mT[1] = 0;   mT[5] = SY;  mT[9]  = B;   mT[13] = 0;
@@ -828,13 +838,36 @@ inline void Matrix< T >::MakePerspective( const T & rFOV,
                                           const T & rZNear,
                                           const T & rZFar )
 {
-   const T angle = rFOV * M_PI / 180.0 * 0.5;
+   const T angle = rFOV * static_cast< T >(M_PI) / static_cast< T >(180.0) * static_cast< T >(0.5);
    const T top = rZNear * std::tan(angle);
    const T right = rAspect * top;
 
-   MakeFrustum(-right, right,
-               -top, top,
-               rZNear, rZFar);
+   MakeFrustum(-right, right, -top, top, rZNear, rZFar);
+}
+
+template < typename T >
+template < typename U >
+inline Matrix< U > Matrix< T >::Perspective( const U & rFOV,
+                                             const U & rAspect,
+                                             const U & rZNear,
+                                             const U & rZFar )
+{
+   Matrix< U > mat;
+   mat.MakePerspective(rFOV, rAspect, rZNear, rZFar);
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Perspective( const T & rFOV,
+                                             const T & rAspect,
+                                             const T & rZNear,
+                                             const T & rZFar )
+{
+   Matrix< T > mat;
+   mat.MakePerspective(rFOV, rAspect, rZNear, rZFar);
+
+   return mat;
 }
 
 template < typename T >
