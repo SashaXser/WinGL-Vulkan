@@ -144,6 +144,14 @@ public:
                      const T & rUpX, const T & rUpY, const T & rUpZ );
 
    template < typename U >
+   static Matrix< U > LookAt( const U & rEyeX, const U & rEyeY, const U & rEyeZ,
+                              const U & rCenterX, const U & rCenterY, const U & rCenterZ,
+                              const U & rUpX, const U & rUpY, const U & rUpZ );
+   static Matrix< T > LookAt( const T & rEyeX, const T & rEyeY, const T & rEyeZ,
+                              const T & rCenterX, const T & rCenterY, const T & rCenterZ,
+                              const T & rUpX, const T & rUpY, const T & rUpZ );
+
+   template < typename U >
    void  MakeLookAt( const U * const pEye,
                      const U * const pCenter,
                      const U * const pUp );
@@ -152,12 +160,28 @@ public:
                      const T * const pUp );
 
    template < typename U >
+   static Matrix< U > LookAt( const U * const pEye,
+                              const U * const pCenter,
+                              const U * const pUp );
+   static Matrix< T > LookAt( const T * const pEye,
+                              const T * const pCenter,
+                              const T * const pUp );
+
+   template < typename U >
    void  MakeLookAt( const Vector3< U > & rEye,
                      const Vector3< U > & rCenter,
                      const Vector3< U > & rUp );
    void  MakeLookAt( const Vector3< T > & rEye,
                      const Vector3< T > & rCenter,
                      const Vector3< T > & rUp );
+
+   template < typename U >
+   static Matrix< U > LookAt( const Vector3< U > & rEye,
+                              const Vector3< U > & rCenter,
+                              const Vector3< U > & rUp );
+   static Matrix< T > LookAt( const Vector3< T > & rEye,
+                              const Vector3< T > & rCenter,
+                              const Vector3< T > & rUp );
 
    template < typename U >
    bool GetFrustum( U & rLeft, U & rRight,
@@ -893,6 +917,33 @@ inline void Matrix< T >::MakeLookAt( const T & rEyeX, const T & rEyeY, const T &
 
 template < typename T >
 template < typename U >
+inline Matrix< U > Matrix< T >::LookAt( const U & rEyeX, const U & rEyeY, const U & rEyeZ,
+                                        const U & rCenterX, const U & rCenterY, const U & rCenterZ,
+                                        const U & rUpX, const U & rUpY, const U & rUpZ )
+{
+   Matrix< U > mat;
+   mat.MakeLookAt(rEyeX, rEyeY, rEyeZ,
+                  rCenterX, rCenterY, rCenterZ,
+                  rUpX, rUpY, rUpZ);
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::LookAt( const T & rEyeX, const T & rEyeY, const T & rEyeZ,
+                                        const T & rCenterX, const T & rCenterY, const T & rCenterZ,
+                                        const T & rUpX, const T & rUpY, const T & rUpZ )
+{
+   Matrix< T > mat;
+   mat.MakeLookAt(rEyeX, rEyeY, rEyeZ,
+                  rCenterX, rCenterY, rCenterZ,
+                  rUpX, rUpY, rUpZ);
+
+   return mat;
+}
+
+template < typename T >
+template < typename U >
 inline void Matrix< T >::MakeLookAt( const U * const pEye,
                                      const U * const pCenter,
                                      const U * const pUp )
@@ -910,6 +961,27 @@ inline void Matrix< T >::MakeLookAt( const T * const pEye,
    MakeLookAt(Vector3< T >(pEye[0], pEye[1], pEye[2]),
               Vector3< T >(pCenter[0], pCenter[1], pCenter[2]),
               Vector3< T >(pUp[0], pUp[1], pUp[2]));
+}
+
+template < typename T >
+template < typename U >
+inline static Matrix< U > Matrix< T >::LookAt( const U * const pEye,
+                                               const U * const pCenter,
+                                               const U * const pUp )
+{
+   return Matrix< U >::LookAt(*(pEye + 0), *(pEye + 1), *(pEye + 2),
+                              *(pCenter + 0), *(pCenter + 1), *(pCenter + 2),
+                              *(pUp + 0), *(pUp + 1), *(pUp + 2));
+}
+
+template < typename T >
+inline static Matrix< T > Matrix< T >::LookAt( const T * const pEye,
+                                               const T * const pCenter,
+                                               const T * const pUp )
+{
+   return Matrix< T >::LookAt(*(pEye + 0), *(pEye + 1), *(pEye + 2),
+                              *(pCenter + 0), *(pCenter + 1), *(pCenter + 2),
+                              *(pUp + 0), *(pUp + 1), *(pUp + 2));
 }
 
 template < typename T >
@@ -942,6 +1014,23 @@ inline void Matrix< T >::MakeLookAt( const Vector3< T > & rEye,
    mT[1] = vY.mT[0]; mT[5] = vY.mT[1]; mT[9]  = vY.mT[2];  mT[13] = -(rEye * vY);
    mT[2] = vZ.mT[0]; mT[6] = vZ.mT[1]; mT[10] = vZ.mT[2];  mT[14] = -(rEye * vZ);
    mT[3] = 0;        mT[7] = 0;        mT[11] = 0;         mT[15] = 1;
+}
+
+template < typename T >
+template < typename U >
+inline Matrix< U > Matrix< T >::LookAt( const Vector3< U > & rEye,
+                                        const Vector3< U > & rCenter,
+                                        const Vector3< U > & rUp )
+{
+   return Matrix< U >::LookAt(rEye.Ptr(), rCenter.Ptr(), rUp.Ptr());
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::LookAt( const Vector3< T > & rEye,
+                                        const Vector3< T > & rCenter,
+                                        const Vector3< T > & rUp )
+{
+   return Matrix< T >::LookAt(rEye.Ptr(), rCenter.Ptr(), rUp.Ptr());
 }
 
 template < typename T >

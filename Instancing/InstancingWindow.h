@@ -46,6 +46,13 @@ private:
    // gl buffer ids
    GLuint   mVertexBufferID;
    GLuint   mIndexBufferID;
+   GLuint   mTexBufferID;
+
+   // number of indices in the index buffer
+   GLuint   mIndexBufferSize;
+
+   // texture to use for the sides of the buildings
+   GLuint   mTextureID;
 
    // shader ids
    GLuint   mVertShaderID;
