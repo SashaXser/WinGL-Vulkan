@@ -4,6 +4,9 @@
 // local includes
 #include "OpenGLWindow.h"
 
+// std includes
+#include <stdint.h>
+
 // gl incudes
 #include <GL/glew.h>
 
@@ -40,23 +43,39 @@ private:
    // renders the scene
    void RenderScene( );
 
-   // vao ids
-   GLuint   mVertArrayID;
+   // returns texture coordinates for the requested set
+   const float * GetTextureCoords( const uint32_t set_id );
 
-   // gl buffer ids
-   GLuint   mVertexBufferID;
-   GLuint   mIndexBufferID;
-   GLuint   mTexBufferID;
+   // defines an instance
+   struct Instance
+   {
+      // vao id
+      GLuint   mVertArrayID;
+      // gl buffer ids
+      GLuint   mVertBufferID;
+      GLuint   mIdxBufferID;
+      GLuint   mTexBufferID;
+      GLuint   mWorldBufferID;
+      // number of indices in the index buffer
+      GLuint   mIdxBufferSize;
+      // texture to use for the buildings
+      GLuint   mTexID;
+      // number of instances to render
+      GLuint   mNumInstances;
+   };
 
-   // number of indices in the index buffer
-   GLuint   mIndexBufferSize;
-
-   // texture to use for the sides of the buildings
-   GLuint   mTextureID;
+   // defines number of instances and the area
+   static const uint32_t NUM_INSTANCES = 15000;
+   static const int32_t  INSTANCE_AREA = 500;
+   static const uint32_t NUM_BUILDING_TYPES = 5;
 
    // shader ids
+   GLuint   mProgramID;
    GLuint   mVertShaderID;
    GLuint   mFragShaderID;
+
+   // number of instances
+   Instance mInstances[NUM_BUILDING_TYPES];
 
 };
 

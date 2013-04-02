@@ -1,12 +1,12 @@
-#version 420
+#version 410
 
-layout(location = 0) out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
 
-layout(binding = 0) uniform sampler2D BuildingTex;
+layout (location = 0) uniform sampler2D BuildingTex;
 
-in vec2 TexCoord0;
+in vec2 TexCoord;
 
 void main()
 {
-  FragColor = texture(BuildingTex, TexCoord0);
+  FragColor = texture(BuildingTex, TexCoord);
 }
