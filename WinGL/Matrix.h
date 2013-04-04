@@ -618,17 +618,17 @@ inline bool Matrix< T >::GetFrustum( T & rLeft, T & rRight,
                                      T & rBottom, T & rTop,
                                      T & rZNear, T & rZFar ) const
 {
-   if (mT[3]  ==  0.0 && mT[7]  == 0.0 &&
-       mT[11] == -1.0 && mT[15] == 0.0)
+   if (mT[3]  ==  0 && mT[7]  == 0 &&
+       mT[11] == -1 && mT[15] == 0)
    {
-      rZNear = mT[14] / (mT[10] - 1.0);
-      rZFar = mT[14] / (mT[10] + 1.0);
+      rZNear = mT[14] / (mT[10] - 1);
+      rZFar = mT[14] / (mT[10] + 1);
 
-      rLeft = rZNear * (mT[8] - 1.0) / mT[0];
-      rRight = rZNear * (mT[8] + 1.0) / mT[0];
+      rLeft = rZNear * (mT[8] - 1) / mT[0];
+      rRight = rZNear * (mT[8] + 1) / mT[0];
 
-      rTop = rZNear * (mT[9] + 1.0) / mT[5];
-      rBottom = rZNear * (mT[9] - 1.0) / mT[5];
+      rTop = rZNear * (mT[9] + 1) / mT[5];
+      rBottom = rZNear * (mT[9] - 1) / mT[5];
 
       return true;
    }
@@ -683,7 +683,7 @@ inline bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
 
    if (GetFrustum(l, r, b, t, rZNear, rZFar))
    {
-      rFOV = (atan(t / rZNear) - atan(b / rZNear)) * 180.0 / M_PI;
+      rFOV = (atan(t / rZNear) - atan(b / rZNear)) * static_cast< T >(180.0) / static_cast< T >(M_PI);
       rAspect = (r - l) / (t - b);
 
       return true;
@@ -1041,7 +1041,7 @@ inline void Matrix< T >::MakeTranspose( )
  /*mT[0] = mat.mT[0];*/ mT[4] = mat.mT[1];   mT[8]  = mat.mT[2];    mT[12] = mat.mT[3];
    mT[1] = mat.mT[4]; /*mT[5] = mat.mT[5];*/ mT[9]  = mat.mT[6];    mT[13] = mat.mT[7];
    mT[2] = mat.mT[8];   mT[6] = mat.mT[9]; /*mT[10] = mat.mT[10];*/ mT[14] = mat.mT[11];
-   mT[3] = mat.mT[12];  mt[7] = mat.mT[13];  mT[11] = mat.mT[14]; /*mt[15] = mat.mT[15];*/
+   mT[3] = mat.mT[12];  mT[7] = mat.mT[13];  mT[11] = mat.mT[14]; /*mt[15] = mat.mT[15];*/
 }
 
 template < typename T >

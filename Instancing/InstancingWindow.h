@@ -2,6 +2,7 @@
 #define _INSTANCING_WINDOW_H_
 
 // local includes
+#include "Matrix.h"
 #include "OpenGLWindow.h"
 
 // std includes
@@ -31,6 +32,9 @@ protected:
    // destructor...
    virtual ~InstancingWindow( );
 
+   // handles messages passed by the system
+   virtual LRESULT MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam );
+
 private:
    // prohibit copy construction
    InstancingWindow( const InstancingWindow & );
@@ -46,8 +50,8 @@ private:
    // returns texture coordinates for the requested set
    const float * GetTextureCoords( const uint32_t set_id );
 
-   // defines an instance
-   struct Instance
+   // defines a building instance
+   struct BuildingInstance
    {
       // vao id
       GLuint   mVertArrayID;
@@ -64,18 +68,45 @@ private:
       GLuint   mNumInstances;
    };
 
+   // defines a tree instance
+   struct TreeInstance
+   {
+      // gl buffer ids
+      GLuint   mVertBufferID;
+      // defines the width and height of the tree
+      float    mSize[2];
+      // texture to use for the trees
+      GLuint   mTexID;
+      // defines the texture coordinates of the tree
+      float    mTexCoords[8];
+      // number of instances to render
+      GLuint   mNumInstances;
+   };
+
    // defines number of instances and the area
-   static const uint32_t NUM_INSTANCES = 15000;
-   static const int32_t  INSTANCE_AREA = 500;
-   static const uint32_t NUM_BUILDING_TYPES = 5;
+   static const uint32_t NUM_BUILDING_INSTANCES = 10000;
+   static const uint32_t NUM_TREE_INSTANCES = 10000;
+   static const int32_t  INSTANCE_AREA = 400;
+   static const uint32_t NUM_BUILDING_TYPES = 10;
+   static const uint32_t NUM_TREE_TYPES = 3;
 
    // shader ids
-   GLuint   mProgramID;
-   GLuint   mVertShaderID;
-   GLuint   mFragShaderID;
+   GLuint   mBuildingsProgID;
+   GLuint   mBuildingsVertID;
+   GLuint   mBuildingsFragID;
 
-   // number of instances
-   Instance mInstances[NUM_BUILDING_TYPES];
+   GLuint   mTreesProgID;
+   GLuint   mTreesVertID;
+   GLuint   mTreesFragID;
+   GLuint   mTreesGeomID;
+
+   // instances
+   BuildingInstance  mBuildingInstances[NUM_BUILDING_TYPES];
+   TreeInstance      mTreeInstances[NUM_TREE_TYPES];
+
+   // camera / view matrix
+   Matrixf  mCamera;
+   Matrixf  mPerspective;
 
 };
 

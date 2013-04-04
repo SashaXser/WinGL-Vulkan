@@ -32,9 +32,9 @@ void DecomposeYawPitchRollDeg( const Matrix< T > & mat,
    // in the yaw, pitch, and roll order
    DecomposeYawPitchRoll(mat, y, p, r);
 
-   if (y) *y *= (180.0 / M_PI);
-   if (p) *p *= (180.0 / M_PI);
-   if (r) *r *= (180.0 / M_PI);
+   if (y) *y *= (static_cast< T >(180.0) / static_cast< T >(M_PI));
+   if (p) *p *= (static_cast< T >(180.0) / static_cast< T >(M_PI));
+   if (r) *r *= (static_cast< T >(180.0) / static_cast< T >(M_PI));
 }
 
 template < typename T >

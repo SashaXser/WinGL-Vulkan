@@ -5,6 +5,7 @@
 #include "Shaders.h"
 #include "Vector4.h"
 #include "ReadTexture.h"
+#include "MatrixHelper.h"
 
 // gl includes
 #include "GL/glew.h"
@@ -19,11 +20,20 @@
 #define LET_APP_RUN_WILD 0
 
 InstancingWindow::InstancingWindow( ) :
-mVertShaderID        ( 0 ),
-mFragShaderID        ( 0 )
+mBuildingsProgID     ( 0 ),
+mBuildingsVertID     ( 0 ),
+mBuildingsFragID     ( 0 ),
+mTreesProgID         ( 0 ),
+mTreesVertID         ( 0 ),
+mTreesFragID         ( 0 ),
+mTreesGeomID         ( 0 )
 {
+   // give some meaning to random
+   srand(static_cast< uint32_t >(time(nullptr)));
+
    // clear out the instances
-   memset(&mInstances, 0x00, sizeof(mInstances));
+   memset(mBuildingInstances, 0x00, sizeof(mBuildingInstances));
+   memset(mTreeInstances, 0x00, sizeof(mTreeInstances));
 }
 
 InstancingWindow::~InstancingWindow( )
@@ -33,6 +43,10 @@ InstancingWindow::~InstancingWindow( )
 bool InstancingWindow::Create( unsigned int nWidth, unsigned int nHeight,
                                const char * pWndTitle, const void ** pInitParams )
 {
+   // initialize the camera and perspective
+   mCamera.MakeLookAt(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f);
+   mPerspective.MakePerspective(45.0f, static_cast< float >(nWidth) / static_cast< float >(nHeight), 1.0f, 1000.0f);
+
    // initialize gl context params
    const OpenGLWindow::OpenGLInit glInit41D =
    {
@@ -127,12 +141,85 @@ int InstancingWindow::Run( )
 
          // construct a string to place on the title
          std::stringstream ss;
-         ss << "Instancing - " << std::fixed << std::setprecision(3) << frame_rate << " fps";
+         ss << "Instancing - "
+            << "Num Buildings: " << NUM_BUILDING_INSTANCES
+            << " Num Trees: " << NUM_TREE_INSTANCES << " - "
+            << std::fixed << std::setprecision(3) << frame_rate << " fps";
          SetWindowText(GetHWND(), ss.str().c_str());
       }
    }
 
    return appQuitVal;
+}
+
+LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
+{
+   switch (uMsg)
+   {
+   case WM_SIZE:
+      {
+      // update the viewport
+      glViewport(0, 0, lParam & 0xFFFF, lParam >> 16);
+      // update the perspective matrix
+      float perspValues[4] = { 0 };
+      mPerspective.GetPerspective(perspValues);
+      mPerspective.MakePerspective(perspValues[0],
+                                   static_cast< float >(lParam & 0xFFFF) / static_cast< float >(lParam >> 16),
+                                   perspValues[2], perspValues[3]);
+      }
+
+      break;
+
+   case WM_KEYDOWN:
+      {
+      // get the view and strafe vector
+      const Vec3f strafe(mCamera[0], mCamera[4], mCamera[8]);
+      const Vec3f view(mCamera[2] * -1.0f, mCamera[6] * -1.0f, mCamera[10] * -1.0f);
+      
+      switch (wParam)
+      {
+      case 'A': mCamera = mCamera * Matrixf::Translate(strafe); break;
+      case 'D': mCamera = mCamera * Matrixf::Translate(strafe * -1.0f); break;
+      case 'W': mCamera = mCamera * Matrixf::Translate(view * -1.0f); break;
+      case 'S': mCamera = mCamera * Matrixf::Translate(view); break;
+      }
+      }
+
+      break;
+
+   case WM_MOUSEMOVE:
+      {
+      static short mouse_x = (short)(lParam & 0x0000FFFF);
+      static short mouse_y = (short)(lParam >> 16);
+
+      // obtain the current x and y locations
+      const short curX = (short)(lParam & 0x0000FFFF);
+      const short curY = (short)(lParam >> 16);
+
+      if (wParam & MK_LBUTTON)
+      {
+         const short deltaX = curX - mouse_x;
+         const short deltaY = curY - mouse_y;
+
+         float yaw = 0, pitch = 0;
+         MatrixHelper::DecomposeYawPitchRollDeg< float >(mCamera, &yaw, &pitch, nullptr);
+
+         Vec3f eye = mCamera.InverseFromOrthogonal() * Vec3f(0,0,0) * -1.0f;
+
+         mCamera = Matrixf::Rotate(pitch + deltaY, 1, 0, 0) *
+              Matrixf::Rotate(yaw + deltaX, 0, 1, 0) *
+              Matrixf::Translate(eye);
+      }
+
+      mouse_x = curX;
+      mouse_y = curY;
+
+      }
+
+      break;
+   }
+
+   return OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
 }
 
 void InstancingWindow::CreateInstances( )
@@ -166,7 +253,7 @@ void InstancingWindow::CreateInstances( )
    std::vector< std::vector< InstanceData > > instanceData(NUM_BUILDING_TYPES);
 
    // generate data for each instance
-   for (uint32_t i = 0; i < NUM_INSTANCES; ++i)
+   for (uint32_t i = 0; i < NUM_BUILDING_INSTANCES; ++i)
    {
       // determine an instance to generate data for
       const uint32_t instance = rand() % NUM_BUILDING_TYPES;
@@ -185,7 +272,7 @@ void InstancingWindow::CreateInstances( )
    for (uint32_t i = 0; i < NUM_BUILDING_TYPES; ++i)
    {
       // get the instance to work on...
-      Instance & instance = mInstances[i];
+      BuildingInstance & instance = mBuildingInstances[i];
 
       // generate the vertex array object
       glGenVertexArrays(1, &instance.mVertArrayID);
@@ -254,31 +341,95 @@ void InstancingWindow::CreateInstances( )
    }
 
    // create the shaders for this operation
-   mProgramID = glCreateProgram();
-   mVertShaderID = shader::LoadShaderFile(GL_VERTEX_SHADER, "vertex.vert");
-   mFragShaderID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "fragment.frag");
-   shader::LinkShaders(mProgramID, mVertShaderID, 0, mFragShaderID);
+   mBuildingsProgID = glCreateProgram();
+   mBuildingsVertID = shader::LoadShaderFile(GL_VERTEX_SHADER, "buildings.vert");
+   mBuildingsFragID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "buildings.frag");
+   shader::LinkShaders(mBuildingsProgID, mBuildingsVertID, 0, mBuildingsFragID);
+
+   // create a tree texture object
+   ReadRGB("trees.rgb", width, height, &pTexture);
+
+   GLuint treeTexID = 0;
+   glGenTextures(1, &treeTexID);
+   glBindTexture(GL_TEXTURE_2D, treeTexID);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexture);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glGenerateMipmap(GL_TEXTURE_2D);
+   glBindTexture(GL_TEXTURE_2D, 0);
+
+   // release the texture
+   delete [] pTexture;
+
+   // start setting up the instanced data for the trees
+   std::vector< std::vector< Vec3f > > treeVerts(NUM_TREE_TYPES);
+
+   // generate data for each instance
+   for (uint32_t i = 0; i < NUM_TREE_INSTANCES; ++i)
+   {
+      // determine an instance to generate data for
+      const uint32_t instance = rand() % NUM_TREE_TYPES;
+      // setup the instance data
+      const float x = static_cast< float >((rand() % INSTANCE_AREA) * (rand() % 2 == 0 ? 1 : -1));
+      const float z = static_cast< float >((rand() % INSTANCE_AREA) * (rand() % 2 == 0 ? 1 : -1));
+      // add to the list of instanced data
+      treeVerts[instance].push_back(Vec3f(x, 0.0f, z));
+   }
+
+   // generate gl data for each object
+   for (uint32_t i = 0; i < NUM_TREE_TYPES; ++i)
+   {
+      // get the instance to work on...
+      TreeInstance & instance = mTreeInstances[i];
+
+      // create, fill, and define the vertex array data
+      glGenBuffers(1, &instance.mVertBufferID);
+      glBindBuffer(GL_ARRAY_BUFFER, instance.mVertBufferID);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(Vec3f) * treeVerts[i].size(), &treeVerts[i][0], GL_STATIC_DRAW);
+
+      // define the size of the tree
+      const float size[][2] =
+      {
+         { 1.0f, 1.605f }, { 1.0f, 1.144f }, { 1.0f, 0.244f }
+      };
+
+      memcpy(instance.mSize, size[i], sizeof(instance.mSize));
+
+      // reduce the width and height by one for the texture coordinates
+      width -= 1; height -= 1;
+
+      // define the texture coordinates
+      const float coords[][8] =
+      {
+         { 0.0f, 343.0f / height, 413.0f / width, 343.0f / height, 413.0f / width, 1006.0f / height, 0.0f, 1006.0f / height },
+         { 413.0f / width, 309.0f / height, 1.0f, 309.0f / height, 1.0f, 1007.0f / height, 413.0f / width, 1007.0f / height },
+         { 130.0f / width, 36.0f / height, 895.0f / width, 36.0f / height, 895.0f / width, 223.0f / height, 130.0f / width, 223.0f / height }
+      };
+
+      memcpy(instance.mTexCoords, coords[i], sizeof(instance.mTexCoords));
+
+      // define the number of instances
+      instance.mNumInstances = treeVerts[i].size();
+      
+      // set the texture id for the instance
+      instance.mTexID = treeTexID;
+   }
+
+   // create the shaders for this operation
+   mTreesProgID = glCreateProgram();
+   mTreesVertID = shader::LoadShaderFile(GL_VERTEX_SHADER, "trees.vert");
+   mTreesFragID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "trees.frag");
+   mTreesGeomID = shader::LoadShaderFile(GL_GEOMETRY_SHADER, "trees.geom");
+   shader::LinkShaders(mTreesProgID, mTreesVertID, mTreesGeomID, mTreesFragID);
 }
 
 void InstancingWindow::RenderScene( )
 {
-   static float rot = 0;
-   float len = 100.0f;
-   float x = std::cos(rot) * len;
-   float y = std::cos(rot) * 30.0f;
-   float z = std::sin(rot) * len;
-   rot += (15.0f / 30.0f * (M_PI / 180.0f));
+   // create the projview matrix
+   const Matrixf projview = mPerspective * mCamera;
 
-   /*const Matrixf pvw =
-      Matrixf::Perspective(45.0f, 800.0f / 600.0f, 1.0f, 50.0f) *
-      Matrixf::LookAt(x, y, z, 0.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f) *
-      Matrixf();*/
-   const Matrixf pv =
-      Matrixf::Perspective(45.0f, 800.0f / 600.0f, 1.0f, 1000.0f) *
-      Matrixf::LookAt(x, y, z, 0.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
-   //const Matrixf w = Matrixf::Rotate(rot * 180.0f / M_PI, 0, 1, 0);
-   //const Matrixf w2 = Matrixf::Translate(3.0, 0, 0) * Matrixf::Rotate(rot * 180.0f / M_PI, 0, 1, 0);
-   
    // clear the buffers
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -286,17 +437,18 @@ void InstancingWindow::RenderScene( )
    glEnable(GL_TEXTURE_2D);
 
    // enable instanced building shaders
-   glUseProgram(mProgramID);
+   glUseProgram(mBuildingsProgID);
 
+   {
    // update the location of the camera
-   const GLint pvm_loc = glGetUniformLocation(mProgramID, "ProjViewMat");
-   glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, pv);
+   const GLint pvm_loc = glGetUniformLocation(mBuildingsProgID, "ProjViewMat");
+   glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, projview);
 
    // render the instances
    for (uint32_t i = 0; i < NUM_BUILDING_TYPES; ++i)
    {
       // get the instance
-      const Instance & instance = mInstances[i];
+      const BuildingInstance & instance = mBuildingInstances[i];
 
       // bind the texture to location 0
       glActiveTexture(GL_TEXTURE0);
@@ -311,8 +463,52 @@ void InstancingWindow::RenderScene( )
       // unbind buffered data
       glBindVertexArray(0);
    }
+   }
 
-   // disable instanced building shaders
+   // enable instanced tree shaders
+   glUseProgram(mTreesProgID);
+
+   {
+   // update the location of the camera
+   const GLint pvm_loc = glGetUniformLocation(mTreesProgID, "ProjViewMat");
+   glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, projview);
+
+   // update the camera location
+   const GLint cam_loc = glGetUniformLocation(mTreesProgID, "CameraPos");
+   glUniform3fv(cam_loc, 1, mCamera.InverseFromOrthogonal() * Vec3f(0.0f, 0.0f, 0.0f));
+
+   // get the texture coordinates and size locations
+   const GLint tex_loc = glGetUniformLocation(mTreesProgID, "TexCoords");
+   const GLint size_loc = glGetUniformLocation(mTreesProgID, "Size");
+
+   // render the instances
+   for (uint32_t i = 0; i < NUM_TREE_TYPES; ++i)
+   {
+      // get the instance
+      const TreeInstance & instance = mTreeInstances[i];
+
+      // update the tex coords and size
+      glUniform2fv(size_loc, 1, instance.mSize);
+      glUniform2fv(tex_loc, 4, instance.mTexCoords);
+
+      // bind the texture to location 0
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, instance.mTexID);
+
+      // bind the vertex data and setup the stream of data
+      glBindBuffer(GL_ARRAY_BUFFER, instance.mVertBufferID);
+      glEnableVertexAttribArray(0);
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+      // render the data
+      glDrawArrays(GL_POINTS, 0, instance.mNumInstances);
+
+      // unbind the buffered data
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+   }
+   }
+
+   // disable instanced tree shaders
    glUseProgram(0);
 
    // disable texturing
@@ -350,6 +546,31 @@ const float * InstancingWindow::GetTextureCoords( const uint32_t set_id )
    static const float tex4_b = (1023.0f - 239.0f) / 1023.0f;
    static const float tex4_t = (1023.0f - 18.0f) / 1023.0f;
 
+   static const float tex5_l = 19.0f / 1023.0f;
+   static const float tex5_r = 185.0f / 1023.0f;
+   static const float tex5_b = (1023.0f - 534.0f) / 1023.0f;
+   static const float tex5_t = (1023.0f - 312.0f) / 1023.0f;
+
+   static const float tex6_l = 193.0f / 1023.0f;
+   static const float tex6_r = 359.0f / 1023.0f;
+   static const float tex6_b = (1023.0f - 534.0f) / 1023.0f;
+   static const float tex6_t = (1023.0f - 312.0f) / 1023.0f;
+
+   static const float tex7_l = 366.0f / 1023.0f;
+   static const float tex7_r = 533.0f / 1023.0f;
+   static const float tex7_b = (1023.0f - 534.0f) / 1023.0f;
+   static const float tex7_t = (1023.0f - 312.0f) / 1023.0f;
+
+   static const float tex8_l = 540.0f / 1023.0f;
+   static const float tex8_r = 706.0f / 1023.0f;
+   static const float tex8_b = (1023.0f - 534.0f) / 1023.0f;
+   static const float tex8_t = (1023.0f - 312.0f) / 1023.0f;
+
+   static const float tex9_l = 716.0f / 1023.0f;
+   static const float tex9_r = 881.0f / 1023.0f;
+   static const float tex9_b = (1023.0f - 534.0f) / 1023.0f;
+   static const float tex9_t = (1023.0f - 312.0f) / 1023.0f;
+
    // define the common roof line for all buildings
    static const float tex_rl = 24.0f / 1023.0f;
    static const float tex_rr = 99.0f / 1023.0f;
@@ -386,6 +607,36 @@ const float * InstancingWindow::GetTextureCoords( const uint32_t set_id )
         tex4_l, tex4_b, tex4_r, tex4_b, tex4_r, tex4_t, tex4_l, tex4_t,
         tex4_l, tex4_b, tex4_r, tex4_b, tex4_r, tex4_t, tex4_l, tex4_t,
         tex4_l, tex4_b, tex4_r, tex4_b, tex4_r, tex4_t, tex4_l, tex4_t,
+        tex_rl, tex_rb, tex_rr, tex_rb, tex_rr, tex_rt, tex_rl, tex_rt },
+
+      { tex5_l, tex5_b, tex5_r, tex5_b, tex5_r, tex5_t, tex5_l, tex5_t,
+        tex5_l, tex5_b, tex5_r, tex5_b, tex5_r, tex5_t, tex5_l, tex5_t,
+        tex5_l, tex5_b, tex5_r, tex5_b, tex5_r, tex5_t, tex5_l, tex5_t,
+        tex5_l, tex5_b, tex5_r, tex5_b, tex5_r, tex5_t, tex5_l, tex5_t,
+        tex_rl, tex_rb, tex_rr, tex_rb, tex_rr, tex_rt, tex_rl, tex_rt },
+
+      { tex6_l, tex6_b, tex6_r, tex6_b, tex6_r, tex6_t, tex6_l, tex6_t,
+        tex6_l, tex6_b, tex6_r, tex6_b, tex6_r, tex6_t, tex6_l, tex6_t,
+        tex6_l, tex6_b, tex6_r, tex6_b, tex6_r, tex6_t, tex6_l, tex6_t,
+        tex6_l, tex6_b, tex6_r, tex6_b, tex6_r, tex6_t, tex6_l, tex6_t,
+        tex_rl, tex_rb, tex_rr, tex_rb, tex_rr, tex_rt, tex_rl, tex_rt },
+
+      { tex7_l, tex7_b, tex7_r, tex7_b, tex7_r, tex7_t, tex7_l, tex7_t,
+        tex7_l, tex7_b, tex7_r, tex7_b, tex7_r, tex7_t, tex7_l, tex7_t,
+        tex7_l, tex7_b, tex7_r, tex7_b, tex7_r, tex7_t, tex7_l, tex7_t,
+        tex7_l, tex7_b, tex7_r, tex7_b, tex7_r, tex7_t, tex7_l, tex7_t,
+        tex_rl, tex_rb, tex_rr, tex_rb, tex_rr, tex_rt, tex_rl, tex_rt },
+
+      { tex8_l, tex8_b, tex8_r, tex8_b, tex8_r, tex8_t, tex8_l, tex8_t,
+        tex8_l, tex8_b, tex8_r, tex8_b, tex8_r, tex8_t, tex8_l, tex8_t,
+        tex8_l, tex8_b, tex8_r, tex8_b, tex8_r, tex8_t, tex8_l, tex8_t,
+        tex8_l, tex8_b, tex8_r, tex8_b, tex8_r, tex8_t, tex8_l, tex8_t,
+        tex_rl, tex_rb, tex_rr, tex_rb, tex_rr, tex_rt, tex_rl, tex_rt },
+
+      { tex9_l, tex9_b, tex9_r, tex9_b, tex9_r, tex9_t, tex9_l, tex9_t,
+        tex9_l, tex9_b, tex9_r, tex9_b, tex9_r, tex9_t, tex9_l, tex9_t,
+        tex9_l, tex9_b, tex9_r, tex9_b, tex9_r, tex9_t, tex9_l, tex9_t,
+        tex9_l, tex9_b, tex9_r, tex9_b, tex9_r, tex9_t, tex9_l, tex9_t,
         tex_rl, tex_rb, tex_rr, tex_rb, tex_rr, tex_rt, tex_rl, tex_rt }
    };
 
