@@ -20,13 +20,17 @@
 #define LET_APP_RUN_WILD 0
 
 InstancingWindow::InstancingWindow( ) :
-mBuildingsProgID     ( 0 ),
-mBuildingsVertID     ( 0 ),
-mBuildingsFragID     ( 0 ),
-mTreesProgID         ( 0 ),
-mTreesVertID         ( 0 ),
-mTreesFragID         ( 0 ),
-mTreesGeomID         ( 0 )
+mBuildingsProgID        ( 0 ),
+mBuildingsVertID        ( 0 ),
+mBuildingsFragID        ( 0 ),
+mTreesProgID            ( 0 ),
+mTreesVertID            ( 0 ),
+mTreesFragID            ( 0 ),
+mTreesGeomID            ( 0 ),
+mNumBuildingInstances   ( 100 ),
+mNumTreeInstances       ( 100 ),
+mPrevMouseX             ( 0 ),
+mPrevMouseY             ( 0 )
 {
    // give some meaning to random
    srand(static_cast< uint32_t >(time(nullptr)));
@@ -142,8 +146,8 @@ int InstancingWindow::Run( )
          // construct a string to place on the title
          std::stringstream ss;
          ss << "Instancing - "
-            << "Num Buildings: " << NUM_BUILDING_INSTANCES
-            << " Num Trees: " << NUM_TREE_INSTANCES << " - "
+            << "Num Buildings: " << mNumBuildingInstances
+            << " Num Trees: " << mNumTreeInstances << " - "
             << std::fixed << std::setprecision(3) << frame_rate << " fps";
          SetWindowText(GetHWND(), ss.str().c_str());
       }
@@ -182,6 +186,56 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
       case 'D': mCamera = mCamera * Matrixf::Translate(strafe * -1.0f); break;
       case 'W': mCamera = mCamera * Matrixf::Translate(view * -1.0f); break;
       case 'S': mCamera = mCamera * Matrixf::Translate(view); break;
+
+      case VK_OEM_PLUS:
+      case VK_OEM_MINUS:
+         // release all the instance data
+         for (int i = 0; i < NUM_BUILDING_TYPES; ++i)
+         {
+            // release the texture
+            glDeleteTextures(1, &mBuildingInstances[i].mTexID);
+            // release the buffer data
+            glDeleteBuffers(1, &mBuildingInstances[i].mIdxBufferID);
+            glDeleteBuffers(1, &mBuildingInstances[i].mTexBufferID);
+            glDeleteBuffers(1, &mBuildingInstances[i].mVertBufferID);
+            glDeleteBuffers(1, &mBuildingInstances[i].mWorldBufferID);
+            // release the vertex array
+            glDeleteVertexArrays(1, &mBuildingInstances[i].mVertArrayID);
+         }
+
+         for (int i = 0; i < NUM_TREE_TYPES; ++i)
+         {
+            // release the texture
+            glDeleteTextures(1, &mTreeInstances[i].mTexID);
+            // release the buffer data
+            glDeleteBuffers(1, &mTreeInstances[i].mVertBufferID);
+         }
+
+         // clear the instances
+         memset(mBuildingInstances, 0x00, sizeof(mBuildingInstances));
+         memset(mTreeInstances, 0x00, sizeof(mTreeInstances));
+
+         // update the number of instances
+         switch (wParam)
+         {
+         case VK_OEM_PLUS:
+            // increase by half
+            mNumBuildingInstances = static_cast< uint32_t >(mNumBuildingInstances * 1.5);
+            
+            break;
+         case VK_OEM_MINUS:
+            // reduce by half and cap at 100
+            mNumBuildingInstances = std::max< uint32_t >(static_cast< uint32_t >(mNumBuildingInstances * 0.5), 100);
+            
+            break;
+         }
+
+         mNumTreeInstances = mNumBuildingInstances;
+
+         // create the instances
+         CreateInstances();
+
+         break;
       }
       }
 
@@ -189,31 +243,32 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
 
    case WM_MOUSEMOVE:
       {
-      static short mouse_x = (short)(lParam & 0x0000FFFF);
-      static short mouse_y = (short)(lParam >> 16);
-
       // obtain the current x and y locations
-      const short curX = (short)(lParam & 0x0000FFFF);
-      const short curY = (short)(lParam >> 16);
+      const short curMouseX = (short)(lParam & 0x0000FFFF);
+      const short curMouseY = (short)(lParam >> 16);
 
       if (wParam & MK_LBUTTON)
       {
-         const short deltaX = curX - mouse_x;
-         const short deltaY = curY - mouse_y;
+         // delta values
+         const short deltaX = curMouseX - mPrevMouseX;
+         const short deltaY = curMouseY - mPrevMouseY;
 
-         float yaw = 0, pitch = 0;
+         // decompose the camera into yaw and pitch
+         float yaw = 0.0f, pitch = 0.0f;
          MatrixHelper::DecomposeYawPitchRollDeg< float >(mCamera, &yaw, &pitch, nullptr);
 
-         Vec3f eye = mCamera.InverseFromOrthogonal() * Vec3f(0,0,0) * -1.0f;
+         // go from eye space to world space
+         // make sure to multiply by -1 as the final matrix translates world to eye
+         Vec3f eye = mCamera.InverseFromOrthogonal() * Vec3f(0.0f, 0.0f, 0.0f) * -1.0f;
 
-         mCamera = Matrixf::Rotate(pitch + deltaY, 1, 0, 0) *
-              Matrixf::Rotate(yaw + deltaX, 0, 1, 0) *
-              Matrixf::Translate(eye);
+         // construct the camera matrix
+         mCamera = Matrixf::Rotate(pitch + deltaY, 1.0f, 0.0f, 0.0f) *
+                   Matrixf::Rotate(yaw + deltaX, 0.0f, 1.0f, 0.0f) *
+                   Matrixf::Translate(eye);
       }
 
-      mouse_x = curX;
-      mouse_y = curY;
-
+      mPrevMouseX = curMouseX;
+      mPrevMouseY = curMouseY;
       }
 
       break;
@@ -253,7 +308,7 @@ void InstancingWindow::CreateInstances( )
    std::vector< std::vector< InstanceData > > instanceData(NUM_BUILDING_TYPES);
 
    // generate data for each instance
-   for (uint32_t i = 0; i < NUM_BUILDING_INSTANCES; ++i)
+   for (uint32_t i = 0; i < mNumBuildingInstances; ++i)
    {
       // determine an instance to generate data for
       const uint32_t instance = rand() % NUM_BUILDING_TYPES;
@@ -367,7 +422,7 @@ void InstancingWindow::CreateInstances( )
    std::vector< std::vector< Vec3f > > treeVerts(NUM_TREE_TYPES);
 
    // generate data for each instance
-   for (uint32_t i = 0; i < NUM_TREE_INSTANCES; ++i)
+   for (uint32_t i = 0; i < mNumTreeInstances; ++i)
    {
       // determine an instance to generate data for
       const uint32_t instance = rand() % NUM_TREE_TYPES;

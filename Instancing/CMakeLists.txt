@@ -19,6 +19,8 @@ add_executable(${PROJECT_NAME_INSTANCING} WIN32 ${INSTANCING_SRC} ${SHADER_SRC})
 include_directories(../WinGL)
 include_directories(${EXT_SRC_DIR}/glew-1.9.0/include)
 
+add_definitions(/D NOMINMAX)
+
 if (PROJECTS_USE_GLEW_STATIC)
    add_definitions(/DGLEW_STATIC)
 endif (PROJECTS_USE_GLEW_STATIC)

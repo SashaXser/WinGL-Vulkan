@@ -84,9 +84,7 @@ private:
    };
 
    // defines number of instances and the area
-   static const uint32_t NUM_BUILDING_INSTANCES = 10000;
-   static const uint32_t NUM_TREE_INSTANCES = 10000;
-   static const int32_t  INSTANCE_AREA = 400;
+   static const int32_t  INSTANCE_AREA = 500;
    static const uint32_t NUM_BUILDING_TYPES = 10;
    static const uint32_t NUM_TREE_TYPES = 3;
 
@@ -100,6 +98,10 @@ private:
    GLuint   mTreesFragID;
    GLuint   mTreesGeomID;
 
+   // number of instances
+   uint32_t mNumBuildingInstances;
+   uint32_t mNumTreeInstances;
+
    // instances
    BuildingInstance  mBuildingInstances[NUM_BUILDING_TYPES];
    TreeInstance      mTreeInstances[NUM_TREE_TYPES];
@@ -107,6 +109,10 @@ private:
    // camera / view matrix
    Matrixf  mCamera;
    Matrixf  mPerspective;
+
+   // the previous mouse x, y positions
+   int16_t  mPrevMouseX;
+   int16_t  mPrevMouseY;
 
 };
 

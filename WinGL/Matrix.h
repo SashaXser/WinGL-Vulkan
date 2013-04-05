@@ -545,7 +545,7 @@ inline void Matrix< T >::MakeRotation( const T & degrees, const Vector3< T > & v
    // validate a unit vector...
    WGL_ASSERT(0.9999999999 <= vec.Length() && vec.Length() <= 1.0000000001);
 
-   const T radians = degrees * M_PI / 180.0;
+   const T radians = degrees * static_cast< T >(M_PI / 180.0);
 
    const T cosine = std::cos(radians);
    const T sine = std::sin(radians);
@@ -683,7 +683,7 @@ inline bool Matrix< T >::GetPerspective( T & rFOV, T & rAspect,
 
    if (GetFrustum(l, r, b, t, rZNear, rZFar))
    {
-      rFOV = (atan(t / rZNear) - atan(b / rZNear)) * static_cast< T >(180.0) / static_cast< T >(M_PI);
+      rFOV = (atan(t / rZNear) - atan(b / rZNear)) * static_cast< T >(180.0 / M_PI);
       rAspect = (r - l) / (t - b);
 
       return true;
@@ -862,7 +862,7 @@ inline void Matrix< T >::MakePerspective( const T & rFOV,
                                           const T & rZNear,
                                           const T & rZFar )
 {
-   const T angle = rFOV * static_cast< T >(M_PI) / static_cast< T >(180.0) * static_cast< T >(0.5);
+   const T angle = rFOV * static_cast< T >(M_PI / 180.0 * 0.5);
    const T top = rZNear * std::tan(angle);
    const T right = rAspect * top;
 
