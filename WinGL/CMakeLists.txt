@@ -10,6 +10,8 @@ set(WIN_GL_SRC
 ./ReadTexture.cpp
 ./ReadTexture.h
 ./ReuseAllocator.h
+./Shaders.cpp
+./Shaders.h
 ./Singleton.h
 ./Timer.h
 ./Vector3.h

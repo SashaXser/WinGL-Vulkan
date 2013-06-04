@@ -2,7 +2,7 @@
 #define _SHADERS_H_
 
 // platform includes
-#include <Window.h>
+#include "Window.h"
 
 // gl includes
 #include "GL/glew.h"

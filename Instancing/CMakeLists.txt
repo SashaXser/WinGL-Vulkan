@@ -2,8 +2,6 @@ set(INSTANCING_SRC
 Main.cpp
 InstancingWindow.cpp
 InstancingWindow.h
-Shaders.cpp
-Shaders.h
 )
 
 set(SHADER_SRC
