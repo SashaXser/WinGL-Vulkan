@@ -395,11 +395,14 @@ void InstancingWindow::CreateInstances( )
       glBindVertexArray(0);
    }
 
-   // create the shaders for this operation
-   mBuildingsProgID = glCreateProgram();
-   mBuildingsVertID = shader::LoadShaderFile(GL_VERTEX_SHADER, "buildings.vert");
-   mBuildingsFragID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "buildings.frag");
-   shader::LinkShaders(mBuildingsProgID, mBuildingsVertID, 0, mBuildingsFragID);
+   if (!mBuildingsProgID)
+   {
+      // create the shaders for this operation
+      mBuildingsProgID = glCreateProgram();
+      mBuildingsVertID = shader::LoadShaderFile(GL_VERTEX_SHADER, "buildings.vert");
+      mBuildingsFragID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "buildings.frag");
+      shader::LinkShaders(mBuildingsProgID, mBuildingsVertID, 0, mBuildingsFragID);
+   }
 
    // create a tree texture object
    ReadRGB("trees.rgb", width, height, &pTexture);
@@ -472,12 +475,15 @@ void InstancingWindow::CreateInstances( )
       instance.mTexID = treeTexID;
    }
 
-   // create the shaders for this operation
-   mTreesProgID = glCreateProgram();
-   mTreesVertID = shader::LoadShaderFile(GL_VERTEX_SHADER, "trees.vert");
-   mTreesFragID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "trees.frag");
-   mTreesGeomID = shader::LoadShaderFile(GL_GEOMETRY_SHADER, "trees.geom");
-   shader::LinkShaders(mTreesProgID, mTreesVertID, mTreesGeomID, mTreesFragID);
+   if (!mTreesProgID)
+   {
+      // create the shaders for this operation
+      mTreesProgID = glCreateProgram();
+      mTreesVertID = shader::LoadShaderFile(GL_VERTEX_SHADER, "trees.vert");
+      mTreesFragID = shader::LoadShaderFile(GL_FRAGMENT_SHADER, "trees.frag");
+      mTreesGeomID = shader::LoadShaderFile(GL_GEOMETRY_SHADER, "trees.geom");
+      shader::LinkShaders(mTreesProgID, mTreesVertID, mTreesGeomID, mTreesFragID);
+   }
 }
 
 void InstancingWindow::RenderScene( )
