@@ -17,7 +17,7 @@
 #include <iomanip>
 
 // determines if the application should run wild
-#define LET_APP_RUN_WILD 0
+#define LET_APP_RUN_WILD 1
 
 InstancingWindow::InstancingWindow( ) :
 mBuildingsProgID        ( 0 ),
