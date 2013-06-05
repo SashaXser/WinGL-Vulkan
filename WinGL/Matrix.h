@@ -319,7 +319,7 @@ template < typename U >
 inline Matrix< T > & Matrix< T >::operator = ( const Matrix< U > & mat )
 {
    for (int i = 0; i < 16; ++i)
-      mT[i] = mat.mT[i];
+      mT[i] = static_cast< T >(mat.mT[i]);
 
    return *this;
 }
