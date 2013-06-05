@@ -4,6 +4,10 @@
 // wingl includes
 #include "OpenGLWindow.h"
 
+// gl includes
+#include "GL/glew.h"
+#include <GL/GL.h>
+
 class ShadowMapWindow : public OpenGLWindow
 {
 public:
@@ -33,6 +37,35 @@ protected:
                                    LPARAM lParam );
 
 private:
+   // defines a basic renderable object
+   struct Renderable
+   {
+      // vao id
+      GLuint   mVAO;
+      // vbo ids
+      GLuint   mVertBufID;
+      GLuint   mIdxBufID;
+      GLuint   mTexBufID;
+      GLuint   mNormBufID;
+      // texture id
+      GLuint   mTexID;
+   };
+
+   // renders the scene
+   void RenderScene( );
+
+   // generates the scene data
+   void GenerateSceneData( );
+   void GenerateFloor( );
+   void GenerateCube( );
+   void GenerateSphere( );
+   void GeneratePyramid( );
+
+   // renderable objects
+   Renderable  mFloor;
+   Renderable  mCube;
+   Renderable  mSphere;
+   Renderable  mPyramid;
 
 };
 
