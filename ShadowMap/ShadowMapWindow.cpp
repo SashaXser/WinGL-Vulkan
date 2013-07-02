@@ -55,6 +55,7 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
 
       // enable specific state
       glEnable(GL_CULL_FACE);
+      glEnable(GL_DEPTH_TEST);
       
       return true;
    }
@@ -129,6 +130,18 @@ void ShadowMapWindow::RenderScene( )
    glBindVertexArray(mCube.mVAO);
    glColor3f(1,0,0);
    glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, nullptr);
+   glBindVertexArray(mPyramid.mVAO);
+   glPushMatrix();
+   glTranslated(20, 0, 0);
+   glColor3f(0,1,0);
+   glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
+   glPopMatrix();
+   glBindVertexArray(mSphere.mVAO);
+   glPushMatrix();
+   glTranslated(-20, 0, 0);
+   glColor3f(0,0,1);
+   glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
+   glPopMatrix();
    glBindVertexArray(0);
 
  
@@ -221,9 +234,83 @@ void ShadowMapWindow::GenerateCube( )
 
 void ShadowMapWindow::GenerateSphere( )
 {
+   // create the vao
+   glGenVertexArrays(1, &mSphere.mVAO);
+   glBindVertexArray(mSphere.mVAO);
+
+   // create some very basic vertex data
+   const float verts[] =
+   {
+      -10.0f, -10.0f,  10.0f,  10.0f, -10.0f,  10.0f,  10.0f,  10.0f,  10.0f, -10.0f,  10.0f,  10.0f,
+       10.0f, -10.0f,  10.0f,  10.0f, -10.0f, -10.0f,  10.0f,  10.0f, -10.0f,  10.0f,  10.0f,  10.0f,
+       10.0f, -10.0f, -10.0f, -10.0f, -10.0f, -10.0f, -10.0f,  10.0f, -10.0f,  10.0f,  10.0f, -10.0f,
+      -10.0f, -10.0f, -10.0f, -10.0f, -10.0f,  10.0f, -10.0f,  10.0f,  10.0f, -10.0f,  10.0f, -10.0f,
+      -10.0f, -10.0f, -10.0f,  10.0f, -10.0f, -10.0f,  10.0f, -10.0f,  10.0f, -10.0f, -10.0f,  10.0f,
+      -10.0f,  10.0f,  10.0f,  10.0f,  10.0f,  10.0f,  10.0f,  10.0f, -10.0f, -10.0f,  10.0f, -10.0f
+   };
+
+   // create and fill the vertex buffer
+   glGenBuffers(1, &mSphere.mVertBufID);
+   glBindBuffer(GL_ARRAY_BUFFER, mSphere.mVertBufID);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+   glEnableVertexAttribArray(0);
+
+   // create the index vertex data
+   const GLuint indices[] =
+   {
+       0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+      10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      20, 21, 22, 23
+   };
+
+   // crate and fill the index buffer
+   glGenBuffers(1, &mSphere.mIdxBufID);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mSphere.mIdxBufID);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+   // disable the vao
+   glBindVertexArray(0);
+
+   ::gluTessCallback
 }
 
 void ShadowMapWindow::GeneratePyramid( )
 {
+   // create the vao
+   glGenVertexArrays(1, &mPyramid.mVAO);
+   glBindVertexArray(mPyramid.mVAO);
+
+   // create some very basic vertex data
+   const float verts[] =
+   {
+      -10.0f, -10.0f, -10.0f,  10.0f, -10.0f, -10.0f,  10.0f, -10.0f,  10.0f,
+       10.0f, -10.0f,  10.0f, -10.0f, -10.0f,  10.0f, -10.0f, -10.0f, -10.0f,
+        0.0f,  10.0f,   0.0f,  10.0f, -10.0f,  10.0f,  10.0f, -10.0f, -10.0f,
+        0.0f,  10.0f,   0.0f,  10.0f, -10.0f, -10.0f, -10.0f, -10.0f, -10.0f,
+        0.0f,  10.0f,   0.0f, -10.0f, -10.0f, -10.0f, -10.0f, -10.0f,  10.0f,
+        0.0f,  10.0f,   0.0f, -10.0f, -10.0f,  10.0f,  10.0f, -10.0f,  10.0f
+   };
+
+   // create and fill the vertex buffer
+   glGenBuffers(1, &mPyramid.mVertBufID);
+   glBindBuffer(GL_ARRAY_BUFFER, mPyramid.mVertBufID);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+   glEnableVertexAttribArray(0);
+
+   // create the index vertex data
+   const GLuint indices[] =
+   {
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+   };
+
+   // crate and fill the index buffer
+   glGenBuffers(1, &mPyramid.mIdxBufID);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mPyramid.mIdxBufID);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+   // disable the vao
+   glBindVertexArray(0);
 }
 
