@@ -17,7 +17,7 @@ void main()
 
   vec3 to = normalize(CameraPos - pos);
   vec3 up = vec3(0.0f, 1.0f, 0.0f);
-  vec3 right = cross(to, up);
+  vec3 right = normalize(cross(to, up));
   
   pos -= right * Size.x * 0.5f;
   gl_Position = ProjViewMat * vec4(pos, 1.0f);

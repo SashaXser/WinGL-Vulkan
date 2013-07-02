@@ -182,10 +182,10 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
       
       switch (wParam)
       {
-      case 'A': mCamera = mCamera * Matrixf::Translate(strafe); break;
-      case 'D': mCamera = mCamera * Matrixf::Translate(strafe * -1.0f); break;
-      case 'W': mCamera = mCamera * Matrixf::Translate(view * -1.0f); break;
-      case 'S': mCamera = mCamera * Matrixf::Translate(view); break;
+      case 'A': mCamera = mCamera * Matrixf::Translate(strafe * 0.25f); break;
+      case 'D': mCamera = mCamera * Matrixf::Translate(strafe * -0.25f); break;
+      case 'W': mCamera = mCamera * Matrixf::Translate(view * -0.25f); break;
+      case 'S': mCamera = mCamera * Matrixf::Translate(view * 0.25f); break;
 
       case VK_OEM_PLUS:
       case VK_OEM_MINUS:
