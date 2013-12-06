@@ -271,8 +271,6 @@ void ShadowMapWindow::GenerateSphere( )
 
    // disable the vao
    glBindVertexArray(0);
-
-   ::gluTessCallback
 }
 
 void ShadowMapWindow::GeneratePyramid( )
