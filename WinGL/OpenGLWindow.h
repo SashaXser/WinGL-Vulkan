@@ -11,7 +11,7 @@ public:
    // destructor is not public to make sure
    // that the class must be destroyed internally
    // through message WM_NCDESTROY...
-            OpenGLWindow( );
+   OpenGLWindow( );
 
    // initialization structure for the create function
    struct OpenGLInit
@@ -33,6 +33,10 @@ protected:
    // destructor...
    virtual ~OpenGLWindow( );
 
+   // called when the window is about to be destroyed
+   // the opengl context is no longer valid after this call returns
+   virtual void OnDestroy( ) override;
+
    // obtain access to the render context
    HGLRC GetGLContext( ) { return mGLContext; }
 
@@ -47,7 +51,7 @@ protected:
 
 private:
    // prohibit copy constructor
-            OpenGLWindow( const OpenGLWindow & );
+   OpenGLWindow( const OpenGLWindow & );
    // prohibit copy operator
    OpenGLWindow & operator = ( const OpenGLWindow & );
 
@@ -75,6 +79,7 @@ private:
    // private member variables
    HGLRC    mGLContext;
 
+   // determines if gl context requested debug mode
    bool     mDebugRequested;
 
 };

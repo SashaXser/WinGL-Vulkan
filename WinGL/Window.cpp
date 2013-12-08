@@ -178,6 +178,12 @@ LRESULT Window::MessageHandler( UINT uMsg,
 
       break;
 
+   case WM_DESTROY:
+      OnDestroy();
+      result = ::DefWindowProc(mHWND, uMsg, wParam, lParam);
+
+      break;
+
    case WM_NCDESTROY:
       delete this;
       result = ::DefWindowProc(mHWND, uMsg, wParam, lParam);

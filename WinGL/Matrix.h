@@ -107,6 +107,14 @@ public:
                     const T & rNear, const T & rFar );
 
    template < typename U >
+   static Matrix< U > Ortho( const U & rLeft, const U & rRight,
+                             const U & rBottom, const U & rTop,
+                             const U & rNear, const U & rFar );
+   static Matrix< T > Ortho( const T & rLeft, const T & rRight,
+                             const T & rBottom, const T & rTop,
+                             const T & rNear, const T & rFar );
+
+   template < typename U >
    void  MakeFrustum( const U & rLeft, const U & rRight,
                       const U & rBottom, const U & rTop,
                       const U & rNear, const U & rFar );
@@ -226,6 +234,7 @@ public:
 
    // returns the determinant
    T  Determinant( ) const;
+   T  Determinant( T a[6], T b[6] ) const;
 
    // matrix class should be simple and allow
    // for easy acess to the member variables
@@ -807,6 +816,29 @@ inline void Matrix< T >::MakeOrtho( const T & rLeft, const T & rRight,
 
 template < typename T >
 template < typename U >
+inline Matrix< U > Matrix< T >::Ortho( const U & rLeft, const U & rRight,
+                                       const U & rBottom, const U & rTop,
+                                       const U & rNear, const U & rFar )
+{
+   Matrix< U > mat;
+   mat.MakeOrtho(rLeft, rRight, rBottom, rTop, rNear, rFar);
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Ortho( const T & rLeft, const T & rRight,
+                                       const T & rBottom, const T & rTop,
+                                       const T & rNear, const T & rFar )
+{
+   Matrix< T > mat;
+   mat.MakeOrtho(rLeft, rRight, rBottom, rTop, rNear, rFar);
+
+   return mat;
+}
+
+template < typename T >
+template < typename U >
 inline void Matrix< T >::MakeFrustum( const U & rLeft, const U & rRight,
                                       const U & rBottom, const U & rTop,
                                       const U & rNear, const U & rFar )
@@ -1086,49 +1118,31 @@ template < typename T >
 inline void Matrix< T >::MakeInverse( )
 {
    // obtain the determinant
-   // determinant function is not being called as
-   // there are similarities between multiplications
-   // in the calculation of the determinant and the
-   // multiplications of the adjoint matrix...
-   const T a0 = mT[0]  * mT[5]  - mT[1]  * mT[4];
-   const T a1 = mT[0]  * mT[6]  - mT[2]  * mT[4];
-   const T a2 = mT[0]  * mT[7]  - mT[3]  * mT[4];
-   const T a3 = mT[1]  * mT[6]  - mT[2]  * mT[5];
-   const T a4 = mT[1]  * mT[7]  - mT[3]  * mT[5];
-   const T a5 = mT[2]  * mT[7]  - mT[3]  * mT[6];
-   const T b0 = mT[8]  * mT[13] - mT[9]  * mT[12];
-   const T b1 = mT[8]  * mT[14] - mT[10] * mT[12];
-   const T b2 = mT[8]  * mT[15] - mT[11] * mT[12];
-   const T b3 = mT[9]  * mT[14] - mT[10] * mT[13];
-   const T b4 = mT[9]  * mT[15] - mT[11] * mT[13];
-   const T b5 = mT[10] * mT[15] - mT[11] * mT[14];
-
-   const T inverseDet =
-      1.0 / (a0 * b5 - a1 * b4 + a2 * b3 + 
-             a3 * b2 - a4 * b1 + a5 * b0);
+   T a[6] = { }, b[6] = { };
+   const T inverseDet = 1 / Determinant(a, b);
 
    // make sure there is an inverse
    WGL_ASSERT(-0.0000000001 > (1.0 / inverseDet) ||
-              0.0000000001 < (1.0 / inverseDet));
+               0.0000000001 < (1.0 / inverseDet));
 
    // create the inverse matrix
    Matrix< T > matInv;
-   matInv.mT[0]  = + mT[5]  * b5 - mT[6]  * b4 + mT[7]  * b3;
-   matInv.mT[4]  = - mT[4]  * b5 + mT[6]  * b2 - mT[7]  * b1;
-   matInv.mT[8]  = + mT[4]  * b4 - mT[5]  * b2 + mT[7]  * b0;
-   matInv.mT[12] = - mT[4]  * b3 + mT[5]  * b1 - mT[6]  * b0;
-   matInv.mT[1]  = - mT[1]  * b5 + mT[2]  * b4 - mT[3]  * b3;
-   matInv.mT[5]  = + mT[0]  * b5 - mT[2]  * b2 + mT[3]  * b1;
-   matInv.mT[9]  = - mT[0]  * b4 + mT[1]  * b2 - mT[3]  * b0;
-   matInv.mT[13] = + mT[0]  * b3 - mT[1]  * b1 + mT[2]  * b0;
-   matInv.mT[2]  = + mT[13] * a5 - mT[14] * a4 + mT[15] * a3;
-   matInv.mT[6]  = - mT[12] * a5 + mT[14] * a2 - mT[15] * a1;
-   matInv.mT[10] = + mT[12] * a4 - mT[13] * a2 + mT[15] * a0;
-   matInv.mT[14] = - mT[12] * a3 + mT[13] * a1 - mT[14] * a0;
-   matInv.mT[3]  = - mT[9]  * a5 + mT[10] * a4 - mT[11] * a3;
-   matInv.mT[7]  = + mT[8]  * a5 - mT[10] * a2 + mT[11] * a1;
-   matInv.mT[11] = - mT[8]  * a4 + mT[9]  * a2 - mT[11] * a0;
-   matInv.mT[15] = + mT[8]  * a3 - mT[9]  * a1 + mT[10] * a0;
+   matInv.mT[0]  = + mT[5]  * b[5] - mT[6]  * b[4] + mT[7]  * b[3];
+   matInv.mT[4]  = - mT[4]  * b[5] + mT[6]  * b[2] - mT[7]  * b[1];
+   matInv.mT[8]  = + mT[4]  * b[4] - mT[5]  * b[2] + mT[7]  * b[0];
+   matInv.mT[12] = - mT[4]  * b[3] + mT[5]  * b[1] - mT[6]  * b[0];
+   matInv.mT[1]  = - mT[1]  * b[5] + mT[2]  * b[4] - mT[3]  * b[3];
+   matInv.mT[5]  = + mT[0]  * b[5] - mT[2]  * b[2] + mT[3]  * b[1];
+   matInv.mT[9]  = - mT[0]  * b[4] + mT[1]  * b[2] - mT[3]  * b[0];
+   matInv.mT[13] = + mT[0]  * b[3] - mT[1]  * b[1] + mT[2]  * b[0];
+   matInv.mT[2]  = + mT[13] * a[5] - mT[14] * a[4] + mT[15] * a[3];
+   matInv.mT[6]  = - mT[12] * a[5] + mT[14] * a[2] - mT[15] * a[1];
+   matInv.mT[10] = + mT[12] * a[4] - mT[13] * a[2] + mT[15] * a[0];
+   matInv.mT[14] = - mT[12] * a[3] + mT[13] * a[1] - mT[14] * a[0];
+   matInv.mT[3]  = - mT[9]  * a[5] + mT[10] * a[4] - mT[11] * a[3];
+   matInv.mT[7]  = + mT[8]  * a[5] - mT[10] * a[2] + mT[11] * a[1];
+   matInv.mT[11] = - mT[8]  * a[4] + mT[9]  * a[2] - mT[11] * a[0];
+   matInv.mT[15] = + mT[8]  * a[3] - mT[9]  * a[1] + mT[10] * a[0];
 
    // copy the inverse properties
    *this = matInv;
@@ -1146,6 +1160,15 @@ inline Matrix< T > Matrix< T >::Inverse( ) const
 
 template < typename T >
 inline T Matrix< T >::Determinant( ) const
+{
+   T a[6] = { };
+   T b[6] = { };
+
+   return Determinant(a, b);
+}
+
+template < typename T >
+inline T Matrix< T >::Determinant( T a[6], T b[6] ) const
 {
    /*
     the following determinant is calculated below... terms
@@ -1168,21 +1191,21 @@ inline T Matrix< T >::Determinant( ) const
     mT[12] * mT[9] * (mT[2]  * mT[7]  - mT[3]  * mT[6]))
     */
 
-   const T a0 = mT[0]  * mT[5]  - mT[1]  * mT[4];
-   const T a1 = mT[0]  * mT[6]  - mT[2]  * mT[4];
-   const T a2 = mT[0]  * mT[7]  - mT[3]  * mT[4];
-   const T a3 = mT[1]  * mT[6]  - mT[2]  * mT[5];
-   const T a4 = mT[1]  * mT[7]  - mT[3]  * mT[5];
-   const T a5 = mT[2]  * mT[7]  - mT[3]  * mT[6];
-   const T b0 = mT[8]  * mT[13] - mT[9]  * mT[12];
-   const T b1 = mT[8]  * mT[14] - mT[10] * mT[12];
-   const T b2 = mT[8]  * mT[15] - mT[11] * mT[12];
-   const T b3 = mT[9]  * mT[14] - mT[10] * mT[13];
-   const T b4 = mT[9]  * mT[15] - mT[11] * mT[13];
-   const T b5 = mT[10] * mT[15] - mT[11] * mT[14];
+   a[0] = mT[0]  * mT[5]  - mT[1]  * mT[4];
+   a[1] = mT[0]  * mT[6]  - mT[2]  * mT[4];
+   a[2] = mT[0]  * mT[7]  - mT[3]  * mT[4];
+   a[3] = mT[1]  * mT[6]  - mT[2]  * mT[5];
+   a[4] = mT[1]  * mT[7]  - mT[3]  * mT[5];
+   a[5] = mT[2]  * mT[7]  - mT[3]  * mT[6];
+   b[0] = mT[8]  * mT[13] - mT[9]  * mT[12];
+   b[1] = mT[8]  * mT[14] - mT[10] * mT[12];
+   b[2] = mT[8]  * mT[15] - mT[11] * mT[12];
+   b[3] = mT[9]  * mT[14] - mT[10] * mT[13];
+   b[4] = mT[9]  * mT[15] - mT[11] * mT[13];
+   b[5] = mT[10] * mT[15] - mT[11] * mT[14];
 
-   return a0 * b5 - a1 * b4 + a2 * b3 + 
-          a3 * b2 - a4 * b1 + a5 * b0;
+   return a[0] * b[5] - a[1] * b[4] + a[2] * b[3] + 
+          a[3] * b[2] - a[4] * b[1] + a[5] * b[0];
 }
 
 // global typedefs

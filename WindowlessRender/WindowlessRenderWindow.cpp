@@ -14,20 +14,40 @@
 // platform includes
 #include <process.h>
 
+// std includes
+#include <cstring>
+#include <algorithm>
+
 // slow the application down
 #define LET_APP_RUN_WILD 0
 #define LET_SERVER_RUN_WILD 0
 
-WindowlessRenderWindow::WindowlessRenderWindow( ) :
-mServerThread     ( 0 )
+struct WindowlessRenderWindow::ImgData
 {
+   uint32_t       id;
+   uint32_t       width;
+   uint32_t       height;
+   uint32_t       depth;
+   size_t         size;
+   const void *   pData;
+};
+
+WindowlessRenderWindow::WindowlessRenderWindow( ) :
+mCurBuffers    ( 0 ),
+mServerThread  ( 0 )
+{
+   // clear out the buffers
+   std::memset(mTextures, 0x00, sizeof(mTextures));
+   std::memset(mPixelUnpackBuffers, 0x00, sizeof(mPixelUnpackBuffers));
+   std::memset(mCurImgDataToRender, 0x00, sizeof(mCurImgDataToRender));
+
+   // init the critical sections
+   InitializeCriticalSection(&mImgDataPoolMtx);
+   InitializeCriticalSection(&mImgDataToRenderMtx);
 }
 
 WindowlessRenderWindow::~WindowlessRenderWindow( )
 {
-   PostThreadMessage(GetThreadId(reinterpret_cast< HANDLE >(mServerThread)), WM_QUIT, 0, 0);
-   WaitForSingleObject(reinterpret_cast< HANDLE >(mServerThread), INFINITE);
-   CloseHandle(reinterpret_cast< HANDLE >(mServerThread));
 }
 
 bool WindowlessRenderWindow::Create( unsigned int nWidth, unsigned int nHeight,
@@ -84,6 +104,25 @@ bool WindowlessRenderWindow::Create( unsigned int nWidth, unsigned int nHeight,
    return false;
 }
 
+void WindowlessRenderWindow::OnDestroy( )
+{
+   // post and wait for the other thread to quit
+   PostThreadMessage(GetThreadId(reinterpret_cast< HANDLE >(mServerThread)), WM_QUIT, 0, 0);
+   WaitForSingleObject(reinterpret_cast< HANDLE >(mServerThread), INFINITE);
+   CloseHandle(reinterpret_cast< HANDLE >(mServerThread));
+
+   // release the critical sections
+   DeleteCriticalSection(&mImgDataPoolMtx);
+   DeleteCriticalSection(&mImgDataToRenderMtx);
+
+   // release gl buffers
+   glDeleteTextures(2, mTextures);
+   glDeleteBuffers(2, mPixelUnpackBuffers);
+
+   // allow base class to cleanup
+   OpenGLWindow::OnDestroy();
+}
+
 int WindowlessRenderWindow::Run( )
 {
    // create a local timer object...
@@ -128,21 +167,13 @@ int WindowlessRenderWindow::Run( )
 
 LRESULT WindowlessRenderWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-   //switch (uMsg)
-   //{
-   //case WM_SIZE:
-   //   {
-   //   // update the viewport
-   //   glViewport(0, 0, lParam & 0xFFFF, lParam >> 16);
-   //   // update the perspective matrix
-   //   float perspValues[4] = { 0 };
-   //   mPerspective.GetPerspective(perspValues);
-   //   mPerspective.MakePerspective(perspValues[0],
-   //                                static_cast< float >(lParam & 0xFFFF) / static_cast< float >(lParam >> 16),
-   //                                perspValues[2], perspValues[3]);
-   //   }
+   switch (uMsg)
+   {
+   case WM_SIZE:
+      // update the viewport
+      glViewport(0, 0, lParam & 0xFFFF, lParam >> 16);
 
-   //   break;
+      break;
 
    //case WM_KEYDOWN:
    //   {
@@ -210,138 +241,231 @@ LRESULT WindowlessRenderWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM
    //   }
 
    //   break;
-
-   //case WM_MOUSEMOVE:
-   //   {
-   //   // obtain the current x and y locations
-   //   const short curMouseX = (short)(lParam & 0x0000FFFF);
-   //   const short curMouseY = (short)(lParam >> 16);
-
-   //   if (wParam & MK_LBUTTON)
-   //   {
-   //      // delta values
-   //      const short deltaX = curMouseX - mPrevMouseX;
-   //      const short deltaY = curMouseY - mPrevMouseY;
-
-   //      // decompose the camera into yaw and pitch
-   //      float yaw = 0.0f, pitch = 0.0f;
-   //      MatrixHelper::DecomposeYawPitchRollDeg< float >(mCamera, &yaw, &pitch, nullptr);
-
-   //      // go from eye space to world space
-   //      // make sure to multiply by -1 as the final matrix translates world to eye
-   //      Vec3f eye = mCamera.InverseFromOrthogonal() * Vec3f(0.0f, 0.0f, 0.0f) * -1.0f;
-
-   //      // construct the camera matrix
-   //      mCamera = Matrixf::Rotate(pitch + deltaY, 1.0f, 0.0f, 0.0f) *
-   //                Matrixf::Rotate(yaw + deltaX, 0.0f, 1.0f, 0.0f) *
-   //                Matrixf::Translate(eye);
-   //   }
-
-   //   mPrevMouseX = curMouseX;
-   //   mPrevMouseY = curMouseY;
-   //   }
-
-   //   break;
-   //}
+   }
 
    return OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
 }
 
 void WindowlessRenderWindow::RenderScene( )
 {
-   //// create the projview matrix
-   //const Matrixf projview = mPerspective * mCamera;
+   // create the projview matrix
+   const Matrixf projview = Matrixf::Ortho(0.0f, 1.0f, 0.0f, 1.0f, 1.0f, -1.0f);
 
-   //// clear the buffers
-   //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   // clear the buffers
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-   //// enable textures
-   //glEnable(GL_TEXTURE_2D);
+   // copy the current contents over to the texture
+   const uint32_t tex_id = mTextures[mCurBuffers];
+   const uint32_t pbo_id = mPixelUnpackBuffers[mCurBuffers];
 
-   //// enable instanced building shaders
-   //glUseProgram(mBuildingsProgID);
+   if (tex_id && pbo_id)
+   {
+      // get the current image data for this texture...
+      if (const ImgData * const pImgData = mCurImgDataToRender[mCurBuffers])
+      {
+         glBindTexture(GL_TEXTURE_2D, tex_id);
+         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id);
 
-   //{
-   //// update the location of the camera
-   //const GLint pvm_loc = glGetUniformLocation(mBuildingsProgID, "ProjViewMat");
-   //glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, projview);
+         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pImgData->width, pImgData->height, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+         glGenerateMipmap(GL_TEXTURE_2D);
 
-   //// render the instances
-   //for (uint32_t i = 0; i < NUM_BUILDING_TYPES; ++i)
-   //{
-   //   // get the instance
-   //   const BuildingInstance & instance = mBuildingInstances[i];
+         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+         glBindTexture(GL_TEXTURE_2D, 0);
 
-   //   // bind the texture to location 0
-   //   glActiveTexture(GL_TEXTURE0);
-   //   glBindTexture(GL_TEXTURE_2D, instance.mTexID);
+         // release the image data
+         ReleaseImgData(pImgData);
+         mCurImgDataToRender[mCurBuffers] = nullptr;
+      }
 
-   //   // setup buffered data
-   //   glBindVertexArray(instance.mVertArrayID);
+      //tmp
+      //glViewport(0, 0, width, height);
+      glEnable(GL_TEXTURE_2D);
+      glBindTexture(GL_TEXTURE_2D, tex_id);
+      Matrixf ortho; ortho.MakeOrtho(-1, 1, -1, 1, 1, -1);
+      glLoadMatrixf(ortho);
+      glColor3f(1,0,0);
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+      glBegin(GL_QUADS);
+      glTexCoord2d(0, 0); glVertex3d(-1, -1, 0);
+      glTexCoord2d(1, 0); glVertex3d(1, -1, 0);
+      glTexCoord2d(1, 1); glVertex3d(1, 1, 0);
+      glTexCoord2d(0, 1); glVertex3d(-1, 1, 0);
+      glEnd();
+      glLoadIdentity();
+      glDisable(GL_TEXTURE_2D);
+      //tmp
+   }
 
-   //   // draw the instanced buildings
-   //   glDrawElementsInstanced(GL_QUADS, instance.mIdxBufferSize, GL_UNSIGNED_INT, nullptr, instance.mNumInstances);
+   // get the next image data to render
+   const ImgData * const pImgDataToRender = GetNextImgDataToRender();
 
-   //   // unbind buffered data
-   //   glBindVertexArray(0);
-   //}
-   //}
+   if (pImgDataToRender)
+   {
+      // create a texture if one is not there...
+      uint32_t & tex_id = mTextures[(mCurBuffers + 1) % 2];
 
-   //// enable instanced tree shaders
-   //glUseProgram(mTreesProgID);
+      if (!tex_id)
+      {
+         glGenTextures(1, &tex_id);
+         glBindTexture(GL_TEXTURE_2D, tex_id);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pImgDataToRender->width, pImgDataToRender->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+         glBindTexture(GL_TEXTURE_2D, 0);
+      }
 
-   //{
-   //// update the location of the camera
-   //const GLint pvm_loc = glGetUniformLocation(mTreesProgID, "ProjViewMat");
-   //glUniformMatrix4fv(pvm_loc, 1, GL_FALSE, projview);
+      // obtain out pixel unpack buffer
+      const uint32_t pbo_id = [ this, pImgDataToRender ] ( ) -> uint32_t
+      {
+         uint32_t & pbo_id = mPixelUnpackBuffers[(mCurBuffers + 1) % 2];
 
-   //// update the camera location
-   //const GLint cam_loc = glGetUniformLocation(mTreesProgID, "CameraPos");
-   //glUniform3fv(cam_loc, 1, mCamera.InverseFromOrthogonal() * Vec3f(0.0f, 0.0f, 0.0f));
+         if (!pbo_id)
+         {
+            glGenBuffers(1, &pbo_id);
+         }
 
-   //// get the texture coordinates and size locations
-   //const GLint tex_loc = glGetUniformLocation(mTreesProgID, "TexCoords");
-   //const GLint size_loc = glGetUniformLocation(mTreesProgID, "Size");
+         return pbo_id;
+      }();
 
-   //// render the instances
-   //for (uint32_t i = 0; i < NUM_TREE_TYPES; ++i)
-   //{
-   //   // get the instance
-   //   const TreeInstance & instance = mTreeInstances[i];
+      // bind buffer and setup the buffer size...
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id);
+      glBufferData(GL_PIXEL_UNPACK_BUFFER, pImgDataToRender->size, nullptr, GL_STREAM_DRAW);
 
-   //   // update the tex coords and size
-   //   glUniform2fv(size_loc, 1, instance.mSize);
-   //   glUniform2fv(tex_loc, 4, instance.mTexCoords);
+      // copy the data to the buffer
+      void * const pData = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+      std::memcpy(pData, pImgDataToRender->pData, pImgDataToRender->size);
+      glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 
-   //   // bind the texture to location 0
-   //   glActiveTexture(GL_TEXTURE0);
-   //   glBindTexture(GL_TEXTURE_2D, instance.mTexID);
+      // buffer data no longer active
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-   //   // bind the vertex data and setup the stream of data
-   //   glBindBuffer(GL_ARRAY_BUFFER, instance.mVertBufferID);
-   //   glEnableVertexAttribArray(0);
-   //   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+      // save image data for later
+      mCurImgDataToRender[(mCurBuffers + 1) % 2] = pImgDataToRender;
 
-   //   // render the data
-   //   glDrawArrays(GL_POINTS, 0, instance.mNumInstances);
+      // update the current buffer set
+      mCurBuffers = (mCurBuffers + 1) % 2;
+   }
 
-   //   // unbind the buffered data
-   //   glBindBuffer(GL_ARRAY_BUFFER, 0);
-   //}
-   //}
+   // swap the buffers to display
+   SwapBuffers(GetHDC());
+}
 
-   //// disable instanced tree shaders
-   //glUseProgram(0);
+const WindowlessRenderWindow::ImgData * WindowlessRenderWindow::GetNextImgDataToRender( )
+{
+   // should be called only from the main thread
 
-   //// disable texturing
-   //glDisable(GL_TEXTURE_2D);
+   EnterCriticalSection(&mImgDataToRenderMtx);
 
-   //// swap the buffers to display
-   //SwapBuffers(GetHDC());
+   if (!mImgDataToRender.empty())
+   {
+      // get the last rendered image
+      const ImgData * const pData = mImgDataToRender.back();
+      mImgDataToRender.pop_back();
+
+      // release all other images back to other thread
+      std::vector< ImgData * > imgDataToRelease;
+      imgDataToRelease.swap(mImgDataToRender);
+
+      LeaveCriticalSection(&mImgDataToRenderMtx);
+
+      std::for_each(imgDataToRelease.cbegin(),
+                    imgDataToRelease.cend(),
+      [ this ] ( const ImgData * const pImgData ) -> void
+      {
+         ReleaseImgData(pImgData);
+      });
+
+      return pData;
+   }
+
+   LeaveCriticalSection(&mImgDataToRenderMtx);
+
+   return nullptr;
+}
+
+void WindowlessRenderWindow::ReleaseImgData( const ImgData * const pImgData )
+{
+   // can be called by both threads
+
+   EnterCriticalSection(&mImgDataPoolMtx);
+
+   mImgDataPool.push_back(const_cast< ImgData * const >(pImgData));
+
+   LeaveCriticalSection(&mImgDataPoolMtx);
+}
+
+WindowlessRenderWindow::ImgData * WindowlessRenderWindow::GetNextAvailableImgData( const uint32_t width,
+                                                                                   const uint32_t height,
+                                                                                   const uint32_t depth )
+{
+   // should be only be called by the server thread
+
+   ImgData * pImgData = nullptr;
+
+   EnterCriticalSection(&mImgDataPoolMtx);
+
+   if (!mImgDataPool.empty())
+   {
+      // ReleaseImgData cannot unmap the buffer data, so it
+      // needs to be done here... there should only be a few
+      // items here, so just walk the list and reset them...
+      // not efficient, but it gets the job done for now...
+      std::for_each(mImgDataPool.cbegin(),
+                    mImgDataPool.cend(),
+      [ ] ( ImgData * const pImgData )
+      {
+         if (pImgData->pData)
+         {
+            glBindBuffer(GL_PIXEL_PACK_BUFFER, pImgData->id);
+            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+            glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+            pImgData->pData = nullptr;
+         }
+      });
+
+      pImgData = mImgDataPool.back();
+      mImgDataPool.pop_back();
+
+      LeaveCriticalSection(&mImgDataPoolMtx);
+   }
+   else
+   {
+      LeaveCriticalSection(&mImgDataPoolMtx);
+
+      // create a brand new image data set...
+      pImgData = new ImgData;
+      pImgData->width = width;
+      pImgData->height = height;
+      pImgData->depth = depth;
+      pImgData->size = width * height * depth;
+      pImgData->pData = nullptr;
+
+      // generate a buffer for this set
+      glGenBuffers(1, &pImgData->id);
+      glBindBuffer(GL_PIXEL_PACK_BUFFER, pImgData->id);
+      glBufferData(GL_PIXEL_PACK_BUFFER, pImgData->size, nullptr, GL_STREAM_READ);
+      glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+   }
+
+   return pImgData;
+}
+
+void WindowlessRenderWindow::AddImgDataForRendering( ImgData * const pImgData )
+{
+   // should be only be called by the server thread
+
+   EnterCriticalSection(&mImgDataToRenderMtx);
+
+   mImgDataToRender.push_back(pImgData);
+
+   LeaveCriticalSection(&mImgDataToRenderMtx);
 }
 
 uint32_t WindowlessRenderWindow::RunServerThread( )
 {
+   // create a brand new invisible window...
    const HWND wnd = ([ ] ( ) -> HWND
    {
       WNDCLASSEX wnd_class_ex;
@@ -363,20 +487,22 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       return CreateWindowEx(0,
                             wnd_class_ex.lpszClassName,
                             wnd_class_ex.lpszClassName,
-                            WS_VISIBLE,
+                            0,
                             1, 1, 500, 500,
                             nullptr, nullptr,
                             wnd_class_ex.hInstance,
                             nullptr);
    })();
 
+   // setup opengl for this window...
+   // notice, we have a few options turned off that would normally be on...
    const int32_t iAttribs[] =
    {
-      WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+      WGL_DRAW_TO_WINDOW_ARB, GL_FALSE,
       WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB,
       WGL_SWAP_METHOD_ARB,    WGL_SWAP_UNDEFINED_ARB,
       WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-      WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
+      WGL_DOUBLE_BUFFER_ARB,  GL_FALSE,
       WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
       WGL_COLOR_BITS_ARB,     32,
       WGL_DEPTH_BITS_ARB,     24,
@@ -384,15 +510,18 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       0,                      0
    };
 
+   // choose the right pixel format for the job
    int32_t format = 0;
    uint32_t numFormats = 0;
    wglChoosePixelFormatARB(GetDC(wnd), iAttribs, nullptr, 1, &format, &numFormats);
 
+   // still need to call windows version fo SetPixelFormat...
    PIXELFORMATDESCRIPTOR pfd = { 0 };
    DescribePixelFormat(GetDC(wnd), format, sizeof(pfd), &pfd);
    pfd.dwFlags |= PFD_SUPPORT_COMPOSITION;
    SetPixelFormat(GetDC(wnd), format, &pfd);
 
+   // describe the kind of profile to use and create it...
    const int32_t attribList[] =
    {
       WGL_CONTEXT_MAJOR_VERSION_ARB,   4,
@@ -405,16 +534,13 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
    const HGLRC glContext = wglCreateContextAttribsARB(GetDC(wnd), nullptr, attribList);
 
    // should be able to do the following line below to make sure that context
-   // creation doesn't get a default frame and depth buffers, but windows
+   // creation doesn't get default frame and depth buffers, but windows
    // does not allow for this due to opengl32's implementation... for now
    // just create it with the associated dc's and eat the cost...
    //wglMakeContextCurrentARB(nullptr, nullptr, glContext);
-
    wglMakeContextCurrentARB(GetDC(wnd), GetDC(wnd), glContext);
 
-   Timer localTimer;
-
-   // helper function for processing messages
+   // helper function for processing messages on this thread
    const auto PeekMsgs = [ ] ( ) -> bool
    {
       MSG msg;
@@ -437,12 +563,15 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       return true;
    };
 
-   const int32_t width = 500;
-   const int32_t height = 500;
+   // width and height of framebuffer
+   const GLsizei fboWidth = 1024;
+   const GLsizei fboHeight = 1024;
 
+   // basic camera and projection information...
    const Matrixd camera = Matrixd::LookAt(0.0, 4.0, 8.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-   const Matrixd perspective = Matrixd::Perspective(45.0, static_cast< double >(width) / static_cast< double >(height), 1.0, 100.0);
+   const Matrixd perspective = Matrixd::Perspective(45.0, static_cast< double >(fboWidth) / static_cast< double >(fboHeight), 1.0, 100.0);
 
+   // vertex shader used to render into the framebuffer
    const char * const pVertShader =
    "#version 400 \n"
    "layout (location = 0) in vec3 Position; \n"
@@ -456,6 +585,7 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       "gl_Position = ProjViewMat * vec4(Position, 1.0); \n"
    "} \n";
 
+   // fragment shader used to render into the framebuffer
    const char * const pFragShader =
    "#version 400 \n"
    "layout (location = 0) out vec4 FragColor; \n"
@@ -466,15 +596,24 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       "FragColor = Color; \n"
    "} \n";
 
+   // generate a program based on the shaders above...
    const GLuint shaderProgram = glCreateProgram();
    const GLuint vertShader = shader::LoadShaderSrc(GL_VERTEX_SHADER, pVertShader);
    const GLuint fragShader = shader::LoadShaderSrc(GL_FRAGMENT_SHADER, pFragShader);
    shader::LinkShaders(shaderProgram, vertShader, 0, fragShader);
 
-   GLuint vao = 0;
-   glGenVertexArrays(1, &vao);
-   glBindVertexArray(vao);
+   // generate the vertex array information
+   const GLuint vao = [ ] ( ) -> GLuint
+   {
+      GLuint vao = 0;
+      glGenVertexArrays(1, &vao);
+      glBindVertexArray(vao);
 
+      return vao;
+   }();
+
+   // generate vertices for the sides of the box...
+   // this will be stored in the vao...
    const float vertices[] =
    {
       -1.0f, -1.0f,  1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  1.0f,  1.0f, -1.0f, 1.0f,  1.0f,
@@ -484,12 +623,17 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       -1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, -1.0f, -1.0f, 1.0f, -1.0f
    };
 
-   GLuint verts = 0;
-   glGenBuffers(1, &verts);
-   glBindBuffer(GL_ARRAY_BUFFER, verts);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-   glEnableVertexAttribArray(0);
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+   const GLuint verts = [ &vertices ] ( ) -> GLuint
+   {
+      GLuint verts = 0;
+      glGenBuffers(1, &verts);
+      glBindBuffer(GL_ARRAY_BUFFER, verts);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+      glEnableVertexAttribArray(0);
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+      return verts;
+   }();
 
    const float colors[] =
    {
@@ -509,9 +653,47 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
 
    glBindVertexArray(0);
 
+   // generate a texture to render into
+   GLuint fboTex = 0;
+   glGenTextures(1, &fboTex);
+   glBindTexture(GL_TEXTURE_2D, fboTex);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fboWidth, fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   glBindTexture(GL_TEXTURE_2D, 0);
+
+   // attach a render buffer to the framebuffer
+   GLuint rbo = 0;
+   glGenRenderbuffers(1, &rbo);
+   glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, fboWidth, fboHeight);
+   glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+   // attach the color texture to the framebuffer
+   GLuint fbo = 0;
+   glGenFramebuffers(1, &fbo);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
+                          GL_COLOR_ATTACHMENT0,
+                          GL_TEXTURE_2D, fboTex, 0);
+
+   glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                             GL_DEPTH_ATTACHMENT,
+                             GL_RENDERBUFFER,
+                             rbo);
+   
+   // check that the framebuffer is complete
+   const uint32_t frameBufStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+
+   // deativate the framebuffer
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
    glEnable(GL_CULL_FACE);
    glEnable(GL_DEPTH_TEST);
 
+   Timer localTimer;
    const uint64_t startTime = localTimer.GetCurrentTick();
 
    while (PeekMsgs())
@@ -531,6 +713,11 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       const Matrixf projViewModel =
          perspective * camera * Matrixd::Rotate(localTimer.DeltaSec(startTime) * ROTATE_MULTIPLIER, 0.0, 1.0, 0.0);
 
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+      glViewport(0, 0, fboWidth, fboHeight);
+
       glUseProgram(shaderProgram);
 
       const GLint pvm_loc = glGetUniformLocation(shaderProgram, "ProjViewMat");
@@ -541,8 +728,68 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       glDrawArrays(GL_QUADS, 0, sizeof(vertices) / sizeof(*vertices) / 3);
 
       glBindVertexArray(0);
-
+      
       glUseProgram(0);
+      
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+      ImgData * const pImgDataForMapping = GetNextAvailableImgData(fboWidth, fboHeight, 4);
+
+      glBindTexture(GL_TEXTURE_2D, fboTex);
+      glBindBuffer(GL_PIXEL_PACK_BUFFER, pImgDataForMapping->id);
+      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+      ImgData * const pImgDataToRender = [ this ] ( ) -> ImgData *
+      {
+         WGL_ASSERT(mImgDataReadyForMapping.size() <= 1);
+
+         ImgData * pImgData = nullptr;
+
+         if (!mImgDataReadyForMapping.empty())
+         {
+            pImgData = mImgDataReadyForMapping.back();
+            mImgDataReadyForMapping.pop_back();
+         }
+
+         return pImgData;
+      }();
+
+      glBindTexture(GL_TEXTURE_2D, 0);
+
+      if (pImgDataToRender)
+      {
+         glBindBuffer(GL_PIXEL_PACK_BUFFER, pImgDataToRender->id);
+         pImgDataToRender->pData = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+
+         if (pImgDataToRender->pData)
+         {
+            AddImgDataForRendering(pImgDataToRender);
+         }
+         else
+         {
+            ReleaseImgData(pImgDataToRender);
+         }
+      }
+
+      mImgDataReadyForMapping.push_back(pImgDataForMapping);
+
+      ////tmp
+      //glViewport(0, 0, width, height);
+      //glEnable(GL_TEXTURE_2D);
+      //glBindTexture(GL_TEXTURE_2D, fboTex);
+      //Matrixf ortho; ortho.MakeOrtho(-1, 1, -1, 1, 1, -1);
+      //glLoadMatrixf(ortho);
+      //glColor3f(1,0,0);
+      //glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+      //glBegin(GL_QUADS);
+      //glTexCoord2d(0, 0); glVertex3d(-1, -1, 0);
+      //glTexCoord2d(1, 0); glVertex3d(1, -1, 0);
+      //glTexCoord2d(1, 1); glVertex3d(1, 1, 0);
+      //glTexCoord2d(0, 1); glVertex3d(-1, 1, 0);
+      //glEnd();
+      //glLoadIdentity();
+      //glDisable(GL_TEXTURE_2D);
+      ////tmp
 
       // if there is time left, then do some waiting
       if (const double deltaMS = localTimer.DeltaMS(begTick) <= MS_PER_FRAME)
@@ -554,6 +801,28 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       SwapBuffers(GetDC(wnd));
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    }
+
+   const auto DeletePixelPackBuffers = [ ] ( const ImgData * const pImgData ) -> void
+   {
+      if (pImgData->pData)
+      {
+         glBindBuffer(GL_PIXEL_PACK_BUFFER, pImgData->id);
+         glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+         glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+      }
+
+      glDeleteBuffers(1, &pImgData->id);
+
+      delete pImgData;
+   };
+
+   std::for_each(mImgDataPool.cbegin(), mImgDataPool.cend(), DeletePixelPackBuffers);
+   std::for_each(mImgDataToRender.cbegin(), mImgDataToRender.cend(), DeletePixelPackBuffers);
+   std::for_each(mImgDataReadyForMapping.cbegin(), mImgDataReadyForMapping.cend(), DeletePixelPackBuffers);
+
+   glDeleteFramebuffers(1, &fbo);
+   glDeleteRenderbuffers(1, &rbo);
+   glDeleteTextures(1, &fboTex);
 
    glDeleteBuffers(1, &verts);
    glDeleteBuffers(1, &clrs);

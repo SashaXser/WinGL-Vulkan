@@ -14,7 +14,7 @@ public:
    // destructor is not public to make sure
    // that the class must be destroyed internally
    // through message WM_NCDESTROY...
-            Window( );
+   Window( );
 
    // creates the application
    virtual bool Create( unsigned int nWidth,
@@ -38,6 +38,10 @@ public:
 protected:
    // destructor...
    virtual ~Window( );
+
+   // called when the window is about to be destroyed
+   // the opengl context is no longer valid after this call returns
+   virtual void OnDestroy( ) { }
 
    // handles messages passed by the system
    virtual LRESULT MessageHandler( UINT uMsg,
