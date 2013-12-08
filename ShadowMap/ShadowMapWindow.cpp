@@ -95,7 +95,9 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
    {
    case WM_SIZE:
       // update the viewport
-      glViewport(0, 0, lParam & 0xFFFF, lParam >> 16);
+      glViewport(0, 0,
+                 static_cast< GLsizei >(lParam & 0xFFFF),
+                 static_cast< GLsizei >(lParam >> 16));
 
       break;
 

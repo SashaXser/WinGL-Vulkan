@@ -801,9 +801,9 @@ inline void Matrix< T >::MakeOrtho( const T & rLeft, const T & rRight,
                                     const T & rBottom, const T & rTop,
                                     const T & rNear, const T & rFar )
 {
-   const T SX = 2.0 / (rRight - rLeft);
-   const T SY = 2.0 / (rTop - rBottom);
-   const T SZ = -2.0 / (rFar - rNear);
+   const T SX = 2 / (rRight - rLeft);
+   const T SY = 2 / (rTop - rBottom);
+   const T SZ = -2 / (rFar - rNear);
    const T TX = -(rRight + rLeft) / (rRight - rLeft);
    const T TY = -(rTop + rBottom) / (rTop - rBottom);
    const T TZ = -(rFar + rNear) / (rFar - rNear);

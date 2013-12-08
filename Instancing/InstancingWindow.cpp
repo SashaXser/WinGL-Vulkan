@@ -163,7 +163,9 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
    case WM_SIZE:
       {
       // update the viewport
-      glViewport(0, 0, lParam & 0xFFFF, lParam >> 16);
+      glViewport(0, 0,
+                 static_cast< GLsizei >(lParam & 0xFFFF),
+                 static_cast< GLsizei >(lParam >> 16));
       // update the perspective matrix
       float perspValues[4] = { 0 };
       mPerspective.GetPerspective(perspValues);
@@ -372,7 +374,7 @@ void InstancingWindow::CreateInstances( )
       }
 
       // define the number of instances
-      instance.mNumInstances = instanceData[i].size();
+      instance.mNumInstances = static_cast< GLuint >(instanceData[i].size());
       
       // define the instance index ids
       const uint32_t indices[] =
@@ -469,7 +471,7 @@ void InstancingWindow::CreateInstances( )
       memcpy(instance.mTexCoords, coords[i], sizeof(instance.mTexCoords));
 
       // define the number of instances
-      instance.mNumInstances = treeVerts[i].size();
+      instance.mNumInstances = static_cast< GLuint >(treeVerts[i].size());
       
       // set the texture id for the instance
       instance.mTexID = treeTexID;

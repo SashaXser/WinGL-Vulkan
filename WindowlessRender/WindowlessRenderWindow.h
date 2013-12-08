@@ -77,6 +77,9 @@ private:
    // handle to the server thread
    uintptr_t   mServerThread;
 
+   // indicates if the server windows should be shown or hidden
+   bool        mShowServerWnd;
+
    // vectors containing the image data
    CRITICAL_SECTION  mImgDataPoolMtx;
    CRITICAL_SECTION  mImgDataToRenderMtx;
