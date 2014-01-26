@@ -23,6 +23,10 @@
 #define LET_APP_RUN_WILD 0
 #define LET_SERVER_RUN_WILD 0
 
+// user defined messages to change the size of the texture
+const uint32_t WM_INCREASE_FB_SIZE = WM_USER + 1;
+const uint32_t WM_DECREASE_FB_SIZE = WM_USER + 2;
+
 struct WindowlessRenderWindow::ImgData
 {
    uint32_t       id;
@@ -48,7 +52,9 @@ mShowServerWnd    ( false )
    InitializeCriticalSection(&mImgDataToRenderMtx);
 
    // give some instructions
-   std::cout << "S - Show or hide the hidden server window"
+   std::cout << "S - Show or hide the hidden server window" << std::endl
+             << "+ - Increase framebuffer size" << std::endl
+             << "- - Decrease framebuffer size" << std::endl
              << std::ends;
 }
 
@@ -196,6 +202,34 @@ LRESULT WindowlessRenderWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM
       switch (wParam)
       {
       case 'S': mShowServerWnd = !mShowServerWnd; break;
+
+      case VK_OEM_PLUS:
+      case VK_OEM_MINUS:
+         // helper function to release main textures...
+         // this could be done such that the textures could be
+         // reused, but it is just easier to release them now
+         // and have them be recreated...
+
+         const HANDLE complete = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+         PostThreadMessage(GetThreadId(reinterpret_cast< HANDLE >(mServerThread)),
+                           wParam == VK_OEM_PLUS ? WM_INCREASE_FB_SIZE : WM_DECREASE_FB_SIZE,
+                           reinterpret_cast< WPARAM >(complete),
+                           0);
+         WaitForSingleObject(complete, INFINITE);
+         CloseHandle(complete);
+
+         std::for_each(mCurImgDataToRender,
+                       mCurImgDataToRender + sizeof(mCurImgDataToRender) / sizeof(*mCurImgDataToRender),
+         [ this ] ( const ImgData * const pImgData )
+         { 
+            if (pImgData) ReleaseImgData(pImgData);
+         });
+         std::memset(mCurImgDataToRender, 0x00, sizeof(mCurImgDataToRender));
+
+         glDeleteTextures(sizeof(mTextures) / sizeof(*mTextures), mTextures);
+         std::memset(mTextures, 0x00, sizeof(mTextures));
+
+         break;
       }
 
       break;
@@ -399,6 +433,19 @@ WindowlessRenderWindow::ImgData * WindowlessRenderWindow::GetNextAvailableImgDat
       pImgData = mImgDataPool.back();
       mImgDataPool.pop_back();
 
+      // might need to update the buffer size
+      if (pImgData->width != width || pImgData->height != height || pImgData->depth != depth)
+      {
+         pImgData->width = width;
+         pImgData->height = height;
+         pImgData->depth = depth;
+         pImgData->size = width * height * depth;
+
+         glBindBuffer(GL_PIXEL_PACK_BUFFER, pImgData->id);
+         glBufferData(GL_PIXEL_PACK_BUFFER, pImgData->size, nullptr, GL_STREAM_READ);
+         glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+      }
+
       // if we have more than the ideal size, then reduce by a fraction
       const size_t max_ideal_size = 4;
       const size_t max_ideal_size_denom = 4;
@@ -532,36 +579,13 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
    //wglMakeContextCurrentARB(nullptr, nullptr, glContext);
    wglMakeContextCurrentARB(GetDC(wnd), GetDC(wnd), glContext);
 
-   // helper function for processing messages on this thread
-   const auto PeekMsgs = [ ] ( ) -> bool
-   {
-      MSG msg;
-
-      while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) != 0)
-      {
-         if (msg.message == WM_QUIT)
-         {
-            // application has requtested termination
-            return false;
-         }
-         else
-         {
-            // translate and route the message
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-         }
-      }
-
-      return true;
-   };
-
    // width and height of framebuffer
-   const GLsizei fboWidth = 1024;
-   const GLsizei fboHeight = 1024;
+   GLsizei fboWidth = 1024;
+   GLsizei fboHeight = 1024;
 
    // basic camera and projection information...
    const Matrixf camera = Matrixd::LookAt(0.0f, 4.0f, 8.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-   const Matrixf perspective = Matrixd::Perspective(45.0f, static_cast< float >(fboWidth) / static_cast< float >(fboHeight), 1.0f, 100.0f);
+   Matrixf perspective = Matrixd::Perspective(45.0f, static_cast< float >(fboWidth) / static_cast< float >(fboHeight), 1.0f, 100.0f);
 
    // vertex shader used to render into the framebuffer
    const char * const pVertShader =
@@ -688,6 +712,81 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
    // start our local timer
    Timer localTimer;
    const uint64_t startTime = localTimer.GetCurrentTick();
+
+   // helper function for processing messages on this thread
+   const auto PeekMsgs = [ & ] ( ) -> bool
+   {
+      MSG msg;
+
+      while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) != 0)
+      {
+         if (msg.message == WM_QUIT)
+         {
+            // application has requtested termination
+            return false;
+         }
+         if (msg.message == WM_INCREASE_FB_SIZE || msg.message == WM_DECREASE_FB_SIZE)
+         {
+            // constants not to be exceeded
+            const GLsizei MIN_TEX_WIDTH = 1;
+            const GLsizei MAX_TEX_WIDTH = 8192;
+            const GLsizei MIN_TEX_HEIGHT = 1;
+            const GLsizei MAX_TEX_HEIGHT = 8192;
+
+            // make sure not too small or too large
+            if (msg.message == WM_INCREASE_FB_SIZE &&
+                fboWidth < MAX_TEX_WIDTH && fboHeight < MAX_TEX_HEIGHT)
+            {
+               fboWidth *= 2; fboHeight *= 2;
+            }
+            else if (msg.message == WM_DECREASE_FB_SIZE &&
+                     fboWidth > MIN_TEX_WIDTH && fboHeight > MIN_TEX_HEIGHT)
+            {
+               fboWidth /= 2; fboHeight /= 2;
+            }
+
+            // indicate the change
+            std::cout << "New framebuffer size of " << fboWidth << " x " << fboHeight << std::endl << std::ends;
+
+            // increase / decrease the texture size
+            glBindTexture(GL_TEXTURE_2D, fboTex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fboWidth, fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            // increase / decrease the depth component size
+            glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, fboWidth, fboHeight);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+            // update the perspective matrix
+            perspective.MakePerspective(45.0f, static_cast< float >(fboWidth) / static_cast< float >(fboHeight), 1.0f, 100.0f);
+
+            // call to get the image data... all others will be released, as will this one...
+            if (const ImgData * const pImgData = GetNextImgDataToRender())
+            {
+               ReleaseImgData(pImgData);
+            }
+
+            // release anything that might be waiting to finish copying
+            auto * const pWndInst = this;
+            std::for_each(mImgDataReadyForMapping.cbegin(),
+                          mImgDataReadyForMapping.cend(),
+            [ &pWndInst ] ( ImgData * const pImgData ) { pWndInst->ReleaseImgData(pImgData); });
+            mImgDataReadyForMapping.clear();
+
+            // signal the event complete
+            SetEvent(reinterpret_cast< HANDLE >(msg.wParam));
+         }
+         else
+         {
+            // translate and route the message
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+         }
+      }
+
+      return true;
+   };
 
    while (PeekMsgs())
    {
