@@ -87,6 +87,12 @@ int ShadowMapWindow::Run( )
    return appQuitVal;
 }
 
+// temp
+float yaw = 0;
+float pitch = 0;
+float distance = 1.2;
+int prev_x, prev_y;
+
 LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
    LRESULT result = 0;
@@ -101,6 +107,28 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
       break;
 
+   case WM_MOUSEMOVE:
+
+      // temp
+      {
+      int cur_x = lParam & 0xFFFF;
+      int cur_y = lParam >> 16;
+
+      if (wParam & MK_LBUTTON)
+      {
+         int dx = cur_x - prev_x;
+         int dy = cur_y - prev_y;
+
+         yaw += dx;
+         pitch += dy;
+      }
+
+      prev_x = cur_x;
+      prev_y = cur_y;
+      }
+
+      break;
+
    default:
       // default handle the messages
       result = OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
@@ -108,6 +136,12 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
    return result;
 }
+
+#include "assimp/Importer.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
+#include "assimp/mesh.h"
+#include "assimp/vector3.h"
 
 void ShadowMapWindow::RenderScene( )
 {
@@ -117,37 +151,124 @@ void ShadowMapWindow::RenderScene( )
    
 
    // temp
+   static float z = -3;
    Matrixf proj = Matrixf::Perspective(45.0, 4./3., 0.1, 3000.);
-   Matrixf mv = Matrixf::LookAt(100, 20, -100, -100.0f, 0, 100.0f, 0, 1.0f, 0);
+   Matrixf mv = Matrixf::LookAt(0, 0, -distance, -0, 0, 0, 0, 1.0f, 0);
    static float rot = 0;
-   rot += 0.05f;
-   mv *= Matrixf::Rotate(rot, Vec3f(0,1,0));
+   rot += 0.3f;
+   //mv *= Matrixf::Rotate(rot, Vec3f(0,1,0));
+   mv *= Matrixf::Rotate(yaw, Vec3f(0, 1, 0));
+   mv *= Matrixf::Rotate(pitch, Vec3f(1, 0, 0));
+   mv *= Matrixf::Rotate(90.0f, Vec3f(-1, 0, 0));
    glMatrixMode(GL_PROJECTION);
    glLoadMatrixf(proj);
    glMatrixMode(GL_MODELVIEW);
    glLoadMatrixf(mv);
-   glBindVertexArray(mFloor.mVAO);
-   glColor3f(1,1,1);
-   glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, nullptr);
-   glBindVertexArray(mCube.mVAO);
-   glColor3f(1,0,0);
-   glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, nullptr);
-   glBindVertexArray(mPyramid.mVAO);
-   glPushMatrix();
-   glTranslated(20, 0, 0);
-   glColor3f(0,1,0);
-   glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
-   glPopMatrix();
-   glBindVertexArray(mSphere.mVAO);
-   glPushMatrix();
-   glTranslated(-20, 0, 0);
-   glColor3f(0,0,1);
-   glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
-   glPopMatrix();
-   glBindVertexArray(0);
+   //glBindVertexArray(mFloor.mVAO);
+   //glColor3f(1,1,1);
+   //glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, nullptr);
+   //glBindVertexArray(mCube.mVAO);
+   //glColor3f(1,0,0);
+   //glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, nullptr);
+   //glBindVertexArray(mPyramid.mVAO);
+   //glPushMatrix();
+   //glTranslated(20, 0, 0);
+   //glColor3f(0,1,0);
+   //glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
+   //glPopMatrix();
+   //glBindVertexArray(mSphere.mVAO);
+   //glPushMatrix();
+   //glTranslated(-20, 0, 0);
+   //glColor3f(0,0,1);
+   //glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
+   //glPopMatrix();
+   //glBindVertexArray(0);
 
- 
+   /*{
+   static Assimp::Importer impoter;
+   static const aiScene * pScene =
+      impoter.ReadFile(".\\enterpriseE(3DS)\\Yacht_body.3ds",
+                                  aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+   
 
+   for (size_t num_meshes = 0; num_meshes < pScene->mNumMeshes; ++num_meshes)
+   {
+      for (size_t num_verts = 0; num_verts < pScene->mMeshes[num_meshes]->mNumVertices; ++num_verts)
+      {
+         glBegin(GL_POINTS);
+         glVertex3fv(&pScene->mMeshes[num_meshes]->mVertices[num_verts].x);
+         glEnd();
+      }
+   }
+   }
+
+   {
+   static Assimp::Importer impoter2;
+   static const aiScene * pScene2 =
+      impoter2.ReadFile(".\\enterpriseE(3DS)\\Yacht_wings_up.3ds",
+                       aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+
+   for (size_t num_meshes = 0; num_meshes < pScene2->mNumMeshes; ++num_meshes)
+   {
+      for (size_t num_verts = 0; num_verts < pScene2->mMeshes[num_meshes]->mNumVertices; ++num_verts)
+      {
+         glBegin(GL_POINTS);
+         glVertex3fv(&pScene2->mMeshes[num_meshes]->mVertices[num_verts].x);
+         glEnd();
+      }
+   }
+   }*/
+
+   {
+   static Assimp::Importer impoter2;
+   static const aiScene * pScene2 =
+      impoter2.ReadFile(".\\enterprise-e\\1701e_hull_7.3ds",
+                       aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+
+   for (size_t num_meshes = 0; num_meshes < pScene2->mNumMeshes; ++num_meshes)
+   {
+      for (size_t num_verts = 0; num_verts < pScene2->mMeshes[num_meshes]->mNumVertices; ++num_verts)
+      {
+         glBegin(GL_POINTS);
+         glVertex3fv(&pScene2->mMeshes[num_meshes]->mVertices[num_verts].x);
+         glEnd();
+      }
+   }
+   }
+
+   {
+   static Assimp::Importer impoter2;
+   static const aiScene * pScene2 =
+      impoter2.ReadFile(".\\enterprise-e\\1701e_saucer_down_5.3ds",
+                       aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+
+   for (size_t num_meshes = 0; num_meshes < pScene2->mNumMeshes; ++num_meshes)
+   {
+      for (size_t num_verts = 0; num_verts < pScene2->mMeshes[num_meshes]->mNumVertices; ++num_verts)
+      {
+         glBegin(GL_POINTS);
+         glVertex3fv(&pScene2->mMeshes[num_meshes]->mVertices[num_verts].x);
+         glEnd();
+      }
+   }
+   }
+
+   {
+   static Assimp::Importer impoter2;
+   static const aiScene * pScene2 =
+      impoter2.ReadFile(".\\enterprise-e\\1701e_saucer_top_6.3ds",
+                       aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+
+   for (size_t num_meshes = 0; num_meshes < pScene2->mNumMeshes; ++num_meshes)
+   {
+      for (size_t num_verts = 0; num_verts < pScene2->mMeshes[num_meshes]->mNumVertices; ++num_verts)
+      {
+         glBegin(GL_POINTS);
+         glVertex3fv(&pScene2->mMeshes[num_meshes]->mVertices[num_verts].x);
+         glEnd();
+      }
+   }
+   }
 
    // swap the front and back
    SwapBuffers(GetHDC());
