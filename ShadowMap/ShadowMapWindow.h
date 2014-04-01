@@ -15,7 +15,7 @@ public:
    // destructor is not public to make sure
    // that the class must be destroyed internally
    // through message WM_NCDESTROY...
-            ShadowMapWindow( );
+   ShadowMapWindow( );
 
    // creates the application
    virtual bool Create( unsigned int nWidth,
@@ -43,10 +43,12 @@ private:
       // vao id
       GLuint   mVAO;
       // vbo ids
+      size_t   mVertSize;
       GLuint   mVertBufID;
       GLuint   mIdxBufID;
       GLuint   mTexBufID;
       GLuint   mNormBufID;
+      GLuint   mClrBufID;
       // texture id
       GLuint   mTexID;
    };
@@ -56,16 +58,10 @@ private:
 
    // generates the scene data
    void GenerateSceneData( );
-   void GenerateFloor( );
-   void GenerateCube( );
-   void GenerateSphere( );
-   void GeneratePyramid( );
+   void GenerateEnterpriseE( );
 
    // renderable objects
-   Renderable  mFloor;
-   Renderable  mCube;
-   Renderable  mSphere;
-   Renderable  mPyramid;
+   Renderable  mEnterpriseE;
 
 };
 
