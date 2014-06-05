@@ -49,6 +49,7 @@ set(PROJECT_NAME_SHADOW_MAP         ShadowMap)
 set(PROJECT_NAME_SMOKE_PART_SYS     SmokeParticleSystem)
 set(PROJECT_NAME_INSTANCING         Instancing)
 set(PROJECT_NAME_WINDOWLESS_RENDER  WindowlessRender)
+set(PROJECT_NAME_TESS_TRI           TessellationTriangle)
 
 add_subdirectory(./ext-src/glew-1.9.0)
 add_subdirectory(./ext-src/assimp-3.0.1270)
@@ -59,6 +60,7 @@ add_subdirectory(./ShadowMap)
 add_subdirectory(./SmokeParticleSystem)
 add_subdirectory(./Instancing)
 add_subdirectory(./WindowlessRender)
+add_subdirectory(./TessellationTriangle)
 
 # move assimp and dependencies into ext-src folder
 set_target_properties(${PROJECT_NAME_ASSIMP} PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")

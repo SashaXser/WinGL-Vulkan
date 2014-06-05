@@ -32,13 +32,13 @@ OpenGLWindow::~OpenGLWindow( )
 bool OpenGLWindow::Create( unsigned int nWidth,
                            unsigned int nHeight,
                            const char * pWndTitle,
-                           const void ** pInitParams )
+                           const OpenGLInit * const pInitParams )
 {
    // create the main window
    if (Window::Create(nWidth, nHeight, pWndTitle, NULL))
    {
       // create the opengl context
-      return CreateOpenGLContext(reinterpret_cast< const OpenGLInit ** >(pInitParams));
+      return CreateOpenGLContext(pInitParams);
    }
 
    return false;
@@ -57,7 +57,7 @@ void OpenGLWindow::OnDestroy( )
    Window::OnDestroy();
 }
 
-bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
+bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit * pInitParams )
 {
    if (pInitParams)
    {
@@ -102,7 +102,7 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
          pfd.dwFlags |= PFD_SUPPORT_COMPOSITION;
          SetPixelFormat(mHDC, format, &pfd);
 
-         for (; !mGLContext && *pInitParams; ++pInitParams)
+         for (; !mGLContext && pInitParams->nMajorVer; ++pInitParams)
          {
             // create a new context
             int attribList[] =
@@ -115,18 +115,18 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit ** pInitParams )
             };
 
             // create the specified context...
-            attribList[1] = (*pInitParams)->nMajorVer;
-            attribList[3] = (*pInitParams)->nMinorVer;
-            attribList[5] = (*pInitParams)->bCompatibleContext ?
+            attribList[1] = pInitParams->nMajorVer;
+            attribList[3] = pInitParams->nMinorVer;
+            attribList[5] = pInitParams->bCompatibleContext ?
                             WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB :
                             WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
-            attribList[7] = (*pInitParams)->bEnableDebug ?
+            attribList[7] = pInitParams->bEnableDebug ?
                             WGL_CONTEXT_DEBUG_BIT_ARB : 0;
-            attribList[7] |= (*pInitParams)->bEnableForwardCompatibleContext ?
+            attribList[7] |= pInitParams->bEnableForwardCompatibleContext ?
                              WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0;
 
             // save the debug flag
-            mDebugRequested = (*pInitParams)->bEnableDebug;
+            mDebugRequested = pInitParams->bEnableDebug;
 
             // store a 2.1 value and the requested
             // context in two byte of data
@@ -201,7 +201,52 @@ bool OpenGLWindow::AttachToDebugContext( )
       // if the arb is not supported, try the amd extensions...
       if (gl::IsExtensionSupported("GL_ARB_debug_output"))
       {
-         WGL_ASSERT(!"OpenGLWindow::DetachFromDebugContext - Needs implementation");
+         // mark the context for synchronous callbacks
+         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+         // make the callback into the static function and pass this as the param...
+         glDebugMessageCallback(&OpenGLWindow::DebugContextCallbackARB, this);
+
+         // list out all the source
+         const unsigned int sources[] =
+         {
+            GL_DEBUG_SOURCE_API,
+            GL_DEBUG_SOURCE_WINDOW_SYSTEM,
+            GL_DEBUG_SOURCE_SHADER_COMPILER,
+            GL_DEBUG_SOURCE_THIRD_PARTY,
+            GL_DEBUG_SOURCE_APPLICATION,
+            GL_DEBUG_SOURCE_OTHER
+         };
+
+         // list out all the types
+         const unsigned int types[] =
+         {
+            GL_DEBUG_TYPE_ERROR,
+            GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR,
+            GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR,
+            GL_DEBUG_TYPE_PORTABILITY,
+            GL_DEBUG_TYPE_PERFORMANCE,
+            GL_DEBUG_TYPE_OTHER
+         };
+
+         // list out all the severities
+         const unsigned int severities[] =
+         {
+            GL_DEBUG_SEVERITY_HIGH,
+            GL_DEBUG_SEVERITY_MEDIUM,
+            GL_DEBUG_SEVERITY_LOW
+         };
+
+         for (size_t source = 0; source < sizeof(sources) / sizeof(*sources); ++source)
+         {
+            for (size_t type = 0; type < sizeof(types) / sizeof(*types); ++type)
+            {
+               for (size_t severity = 0; severity < sizeof(severities) / sizeof(*severities); ++severity)
+               {
+                  glDebugMessageControl(sources[source], types[type], severities[severity], 0, NULL, GL_TRUE);
+               }
+            }
+         }
       }
       else if (gl::IsExtensionSupported("GL_AMD_debug_output"))
       {
@@ -245,7 +290,52 @@ void OpenGLWindow::DetachFromDebugContext( )
       // if the arb is not supported, try the amd extensions...
       if (gl::IsExtensionSupported("GL_ARB_debug_output"))
       {
-         WGL_ASSERT(!"OpenGLWindow::DetachFromDebugContext - Needs implementation"); 
+         // mark the context for asynchronous callbacks
+         glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+         // make the callback into the static function and pass this as the param...
+         glDebugMessageCallback(NULL, NULL);
+
+         // list out all the source
+         const unsigned int sources[] =
+         {
+            GL_DEBUG_SOURCE_API,
+            GL_DEBUG_SOURCE_WINDOW_SYSTEM,
+            GL_DEBUG_SOURCE_SHADER_COMPILER,
+            GL_DEBUG_SOURCE_THIRD_PARTY,
+            GL_DEBUG_SOURCE_APPLICATION,
+            GL_DEBUG_SOURCE_OTHER
+         };
+
+         // list out all the types
+         const unsigned int types[] =
+         {
+            GL_DEBUG_TYPE_ERROR,
+            GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR,
+            GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR,
+            GL_DEBUG_TYPE_PORTABILITY,
+            GL_DEBUG_TYPE_PERFORMANCE,
+            GL_DEBUG_TYPE_OTHER
+         };
+
+         // list out all the severities
+         const unsigned int severities[] =
+         {
+            GL_DEBUG_SEVERITY_HIGH,
+            GL_DEBUG_SEVERITY_MEDIUM,
+            GL_DEBUG_SEVERITY_LOW
+         };
+
+         for (size_t source = 0; source < sizeof(sources) / sizeof(*sources); ++source)
+         {
+            for (size_t type = 0; type < sizeof(types) / sizeof(*types); ++type)
+            {
+               for (size_t severity = 0; severity < sizeof(severities) / sizeof(*severities); ++severity)
+               {
+                  glDebugMessageControl(sources[source], types[type], severities[severity], 0, NULL, GL_FALSE);
+               }
+            }
+         }
       }
       else if (gl::IsExtensionSupported("GL_AMD_debug_output"))
       {
@@ -325,4 +415,48 @@ void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
                                                       const char * message,
                                                       void * userParams )
 {
+   // message string to output
+   std::stringstream ssMsg;
+
+   // put the pieces together
+   ssMsg << "DebugContextCallbackARB" << std::endl
+         << "ID: " << id << " - SOURCE: ";
+
+   switch (source)
+   {
+   case GL_DEBUG_SOURCE_API:                 ssMsg << "API"; break;
+   case GL_DEBUG_SOURCE_WINDOW_SYSTEM:       ssMsg << "Window System"; break;
+   case GL_DEBUG_SOURCE_SHADER_COMPILER:     ssMsg << "Shader Compiler"; break;
+   case GL_DEBUG_SOURCE_THIRD_PARTY:         ssMsg << "Third Party"; break;
+   case GL_DEBUG_SOURCE_APPLICATION:         ssMsg << "Application"; break;
+   case GL_DEBUG_SOURCE_OTHER:               ssMsg << "Other"; break;
+   default:                                  ssMsg << "??default??"; break;
+   }
+
+   ssMsg << " - TYPE: ";
+
+   switch (type)
+   {
+   case GL_DEBUG_TYPE_ERROR:                 ssMsg << "Error"; break;
+   case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:   ssMsg << "Deprecated Behavior"; break;
+   case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:    ssMsg << "Undefined Behavior"; break;
+   case GL_DEBUG_TYPE_PORTABILITY:           ssMsg << "Portability"; break;
+   case GL_DEBUG_TYPE_PERFORMANCE:           ssMsg << "Performance"; break;
+   case GL_DEBUG_TYPE_OTHER:                 ssMsg << "Other"; break;
+   default:                                  ssMsg << "??default??"; break;
+   }
+
+   ssMsg << " - SEVERITY: ";
+
+   switch (severity)
+   {
+   case GL_DEBUG_SEVERITY_HIGH:    ssMsg << "HIGH"; break;
+   case GL_DEBUG_SEVERITY_MEDIUM:  ssMsg << "MEDIUM"; break;
+   case GL_DEBUG_SEVERITY_LOW:     ssMsg << "LOW"; break;
+   }
+
+   ssMsg << std::endl << "MSG: " << message << std::endl;
+
+   // output to the debug out stream
+   std::cout << ssMsg.str();
 }

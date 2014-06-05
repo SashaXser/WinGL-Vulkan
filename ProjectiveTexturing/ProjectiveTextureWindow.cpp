@@ -46,26 +46,16 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
                                       const char * pWndTitle,
                                       const void * pInitParams )
 {
-   // initialize with a 4.0 context
-   const OpenGLWindow::OpenGLInit glInit40 =
-   {
-      4, 0, true, true, false
-   };
-
-   // initialize with a 3.2 context
-   const OpenGLWindow::OpenGLInit glInit32 =
-   {
-      3, 2, true, false, false
-   };
-
    // initialize 40 first, then 32 second, else nothing
-   const OpenGLWindow::OpenGLInit * glInit[] =
+   const OpenGLWindow::OpenGLInit glInit[] =
    {
-      &glInit40, &glInit32, NULL
+      { 4, 0, true, true, false },
+      { 3, 2, true, false, false },
+      { 0 }
    };
 
    // call base class to init
-   if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle, reinterpret_cast< const void ** >(glInit)))
+   if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle, glInit))
    {
       // make the context current
       MakeCurrent();

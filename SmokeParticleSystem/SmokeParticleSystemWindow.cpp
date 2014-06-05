@@ -36,20 +36,15 @@ bool SmokeParticleSystemWindow::Create( unsigned int nWidth,
                                         const char * pWndTitle,
                                         const void * pInitParams )
 {
-   // initialize with a 3.2 context
-   OpenGLWindow::OpenGLInit glInit32 =
-   {
-      3, 2, true, false, false
-   };
-
    // initialize 32 else nothing
-   const OpenGLWindow::OpenGLInit * glInit[] =
+   const OpenGLWindow::OpenGLInit glInit[] =
    {
-      &glInit32, NULL
+      { 3, 2, true, false, false },
+      { 0 }
    };
 
    // call base class to init
-   if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle, reinterpret_cast< const void ** >(glInit)))
+   if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle, glInit))
    {
       // make the context current
       MakeCurrent();

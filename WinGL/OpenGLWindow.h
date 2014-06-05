@@ -27,7 +27,7 @@ public:
    virtual bool Create( unsigned int nWidth,
                         unsigned int nHeight,
                         const char * pWndTitle,
-                        const void ** pInitParams = NULL );
+                        const OpenGLInit * const pInitParams = NULL );
 
 protected:
    // destructor...
@@ -71,7 +71,7 @@ private:
                                                   void * userParams );
 
    // creates an OpenGL context
-   bool CreateOpenGLContext( const OpenGLInit ** pInitParams );
+   bool CreateOpenGLContext( const OpenGLInit * pInitParams );
 
    // releases the OpenGL context
    void ReleaseOpenGLContext( );

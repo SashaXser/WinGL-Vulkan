@@ -66,43 +66,18 @@ bool WindowlessRenderWindow::Create( unsigned int nWidth, unsigned int nHeight,
                                      const char * pWndTitle, const void ** pInitParams )
 {
    // initialize gl context params
-   const OpenGLWindow::OpenGLInit glInit41D =
+   const OpenGLWindow::OpenGLInit glInit[] =
    {
-      4, 1, true, true, false
+      { 4, 1, true, true, false },
+      { 4, 1, true, false, false },
+      { 4, 0, true, true, false },
+      { 4, 0, true, false, false },
+      { 3, 3, true, true, false },
+      { 3, 3, true, false, false },
+      { 0 }
    };
 
-   const OpenGLWindow::OpenGLInit glInit41 =
-   {
-      4, 1, true, false, false
-   };
-
-   const OpenGLWindow::OpenGLInit glInit40D =
-   {
-      4, 0, true, true, false
-   };
-
-   const OpenGLWindow::OpenGLInit glInit40 =
-   {
-      4, 0, true, false, false
-   };
-
-   const OpenGLWindow::OpenGLInit glInit33D =
-   {
-      3, 3, true, true, false
-   };
-
-   const OpenGLWindow::OpenGLInit glInit33 =
-   {
-      3, 3, true, false, false
-   };
-
-   const OpenGLWindow::OpenGLInit * glInit[] =
-   {
-      &glInit41D, &glInit41, &glInit40D, &glInit40, &glInit33D, &glInit33, nullptr
-   };
-
-   if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle,
-                            reinterpret_cast< const void ** >(glInit)))
+   if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle, glInit))
    {
       // make the gl context active
       MakeCurrent();
