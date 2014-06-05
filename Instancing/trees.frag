@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec4 FragColor;
 
-layout (location = 0) uniform sampler2D TreeTex;
+uniform sampler2D TreeTex;
 
 in vec2 TexCoord;
 

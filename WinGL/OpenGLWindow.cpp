@@ -2,6 +2,7 @@
 #include "OpenGLWindow.h"
 #include "OpenGLExtensions.h"
 #include "WglAssert.h"
+#include "AllocConsole.h"
 
 // opengl includes
 #include <GL/glew.h>
@@ -174,8 +175,13 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit * pInitParams )
    // if there is a context, then init glew
    if (mGLContext)
    {
+
       MakeCurrent();
+      
+      // init glew and attach to debug context
       glewInit();
+      AttachToDebugContext();
+
       ReleaseCurrent();
    }
 
@@ -197,6 +203,9 @@ bool OpenGLWindow::AttachToDebugContext( )
    // make sure that the debug context was requsted
    if (mDebugRequested)
    {
+      // allocate the console
+      AllocateDebugConsole();
+
       // check to see if the arb is supported...
       // if the arb is not supported, try the amd extensions...
       if (gl::IsExtensionSupported("GL_ARB_debug_output"))
