@@ -40,9 +40,6 @@ bool TessellationTriangleWindow::Create( unsigned int nWidth,
    {
       // make the context current
       MakeCurrent();
-
-      // attach to the debug context
-      AttachToDebugContext();
   
       return true;
    }

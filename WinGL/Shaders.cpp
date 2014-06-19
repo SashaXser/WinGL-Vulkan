@@ -78,10 +78,14 @@ GLuint LoadShaderFile( const GLenum type, const std::string & file )
    return 0;
 }
 
-bool LinkShaders( const GLuint prog, const GLuint vert, const GLuint geom, const GLuint frag )
+bool LinkShaders( const GLuint prog,
+                  const GLuint vert, const GLuint geom, const GLuint frag,
+                  const GLuint tess_ctrl, const GLuint tess_eval )
 {
    // attach all the shaders
    if (vert) glAttachShader(prog, vert);
+   if (tess_ctrl) glAttachShader(prog, tess_ctrl);
+   if (tess_eval) glAttachShader(prog, tess_eval);
    if (geom) glAttachShader(prog, geom);
    if (frag) glAttachShader(prog, frag);
 

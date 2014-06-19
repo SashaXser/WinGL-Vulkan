@@ -18,7 +18,9 @@ GLuint LoadShaderSrc( const GLenum type, const std::string & src );
 
 GLuint LoadShaderFile( const GLenum type, const std::string & file );
 
-bool LinkShaders( const GLuint prog, const GLuint vert, const GLuint geom, const GLuint frag );
+bool LinkShaders( const GLuint prog,
+                  const GLuint vert, const GLuint geom, const GLuint frag,
+                  const GLuint tess_ctrl = 0, const GLuint tess_eval = 0 );
 
 } // namespace shader
 
