@@ -414,6 +414,12 @@ void __stdcall OpenGLWindow::DebugContextCallbackAMD( unsigned int id,
 
    // output to the debug out stream
    std::cout << ssMsg.str();
+
+   // output to the debug output window is debugger present
+   if (IsDebuggerPresent())
+   {
+      OutputDebugString(ssMsg.str().c_str());
+   }
 }
 
 void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
@@ -468,4 +474,10 @@ void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
 
    // output to the debug out stream
    std::cout << ssMsg.str();
+
+   // output to the debug output window is debugger present
+   if (IsDebuggerPresent())
+   {
+      OutputDebugString(ssMsg.str().c_str());
+   }
 }
