@@ -12,7 +12,10 @@
 //#include <cstdint>
 //#include <iostream>
 
-TessellationTriangleWindow::TessellationTriangleWindow( )
+TessellationTriangleWindow::TessellationTriangleWindow( ) :
+mTriProgID        ( 0 ),
+mTriVertArray     ( false ),
+mTriVertBuffer    ( GL_ARRAY_BUFFER )
 {
 }
 
@@ -40,6 +43,10 @@ bool TessellationTriangleWindow::Create( unsigned int nWidth,
    {
       // make the context current
       MakeCurrent();
+
+      // construct the scene
+      InitShaders();
+      InitVertices();
   
       return true;
    }
@@ -52,6 +59,26 @@ bool TessellationTriangleWindow::Create( unsigned int nWidth,
    return false;
 }
 
+// hack begin
+const char * const pVertSrc =
+   "#version 410\n" \
+   "uniform mat4 mvp;\n" \
+   "layout (location = 0) in vec3 vert_position;\n" \
+   "void main( )\n" \
+   "{\n" \
+   "gl_Position = mvp * vec4(vert_position, 1.0f);\n" \
+   "}";
+const char * const pFragSrc =
+   "#version 410\n" \
+   "layout (location = 0) out vec4 FragColor;\n" \
+   "void main( )\n" \
+   "{\n" \
+   "FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n" \
+   "}";
+#include "Matrix.h"
+#include "Shaders.h"
+// hack end
+
 int TessellationTriangleWindow::Run( )
 {
    // app quit variables
@@ -63,6 +90,17 @@ int TessellationTriangleWindow::Run( )
       // process all the app messages and then render the scene
       if (!(bQuit = PeekAppMessages(appQuitVal)))
       {
+         // hack job begin
+         mTriVertArray.Bind();
+         glUseProgram(mTriProgID);
+         Matrixf mvp = Matrixf::Ortho(-2.0f, 2, -2, 2, -100, 100) * Matrixf::LookAt(0.0f, 0, -10, 0, 0, 0, 0, 1, 0);
+         GLint loc = glGetUniformLocation(mTriProgID, "mvp");
+         glUniformMatrix4fv(loc, 1, GL_FALSE, mvp);
+         glDrawArrays(GL_LINE_LOOP, 0, 3);
+         glUseProgram(0);
+         mTriVertArray.Unbind();
+         SwapBuffers(GetHDC());
+         // hack job end
       }
    }
 
@@ -83,3 +121,43 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
    return result;
 }
 
+void TessellationTriangleWindow::InitShaders( )
+{
+
+   // hack job begin
+   
+   mTriProgID = glCreateProgram();
+   GLuint vert = shader::LoadShaderSrc(GL_VERTEX_SHADER, pVertSrc);
+   GLuint frag = shader::LoadShaderSrc(GL_FRAGMENT_SHADER, pFragSrc);
+   shader::LinkShaders(mTriProgID, vert, 0, frag);
+
+   // hack job end
+
+}
+
+void TessellationTriangleWindow::InitVertices( )
+{
+   const float vertices[][3] =
+   {
+      {  0.0f,     1.0f, 0.0f },
+      { -1.1547f, -1.0f, 0.0f },
+      {  1.1547f, -1.0f, 0.0f }
+   };
+
+   // generate the vertex array
+   mTriVertArray.GenArray();
+   mTriVertArray.Bind();
+
+   // create, fill, and define vertex buffer data
+   mTriVertBuffer.GenBuffer();
+   mTriVertBuffer.Bind();
+   mTriVertBuffer.BufferData(sizeof(vertices), vertices, GL_STATIC_DRAW);
+   mTriVertBuffer.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+   // enable vertex array index 0
+   mTriVertArray.EnableVertexAttribArray(0);
+
+   // unbind data objects
+   mTriVertBuffer.Unbind();
+   mTriVertArray.Unbind();
+}

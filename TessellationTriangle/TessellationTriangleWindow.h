@@ -3,6 +3,8 @@
 
 // wingl includes
 #include "OpenGLWindow.h"
+#include "VertexArrayObject.h"
+#include "VertexBufferObject.h"
 
 // gl includes
 #include "GL/glew.h"
@@ -37,6 +39,16 @@ protected:
                                    LPARAM lParam );
 
 private:
+   // initialize routines
+   void InitShaders( );
+   void InitVertices( );
+
+   // defines the simple triangle shader
+   GLuint      mTriProgID;
+
+   // defines the triangle vertices
+   VertexArrayObject    mTriVertArray;
+   VertexBufferObject   mTriVertBuffer;
 
 };
 
