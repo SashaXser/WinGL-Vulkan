@@ -16,6 +16,10 @@ set(WIN_GL_SRC
 ./Timer.h
 ./Vector3.h
 ./Vector4.h
+./VertexArrayObject.cpp
+./VertexArrayObject.h
+./VertexBufferObject.cpp
+./VertexBufferObject.h
 ./WglAssert.cpp
 ./WglAssert.h
 ./Window.cpp
