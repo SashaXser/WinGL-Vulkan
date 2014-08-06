@@ -8,11 +8,15 @@ class Timer
 {
 public:
    // constructor / destructor
-            Timer( );
-           ~Timer( );
+    Timer( );
+   ~Timer( );
 
    // obtains the current tick
    long long   GetCurrentTick( ) const;
+
+   // obtains the current time
+   double      GetCurrentTimeSec( ) const;
+   double      GetCurrentTimeMS( ) const;
 
    // returns the delta time
    long long   DeltaTick( const long long & rTick ) const;
@@ -22,18 +26,31 @@ public:
    // waits a set period of time
    void  Wait( unsigned long nMS ) const;
 
+
+
 private:
-   // private member variables
-   const double   mMSecPerTick;
+   // private static member variables
+   static const double  MSEC_PER_TICK;
 
 };
 
-inline Timer::Timer( ) :
-mMSecPerTick   ( 0.0 )
+namespace details
+{
+
+double GetDeltaTimeMSecPerTick( )
 {
    long long freqCPU = 0;
    QueryPerformanceFrequency(reinterpret_cast< LARGE_INTEGER * >(&freqCPU));
-   const_cast< double & >(mMSecPerTick) = 1000.0 / freqCPU;
+
+   return 1000.0 / freqCPU;
+}
+
+} // namespace details
+
+const double Timer::MSEC_PER_TICK = details::GetDeltaTimeMSecPerTick();
+
+inline Timer::Timer( )
+{
 }
 
 inline Timer::~Timer( )
@@ -47,6 +64,16 @@ inline long long Timer::GetCurrentTick( ) const
    return curTick;
 }
 
+inline double Timer::GetCurrentTimeSec( ) const
+{
+   return GetCurrentTimeMS() * 0.001;
+}
+
+inline double Timer::GetCurrentTimeMS( ) const
+{
+   return GetCurrentTick() * MSEC_PER_TICK;
+}
+
 inline long long Timer::DeltaTick( const long long & rTick ) const
 {
    return GetCurrentTick() - rTick;
@@ -54,7 +81,7 @@ inline long long Timer::DeltaTick( const long long & rTick ) const
 
 inline double Timer::DeltaMS( const long long & rTick ) const
 {
-   return DeltaTick(rTick) * mMSecPerTick;
+   return DeltaTick(rTick) * MSEC_PER_TICK;
 }
 
 inline double Timer::DeltaSec( const long long & rTick ) const
