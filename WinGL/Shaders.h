@@ -22,6 +22,8 @@ bool LinkShaders( const GLuint prog,
                   const GLuint vert, const GLuint geom, const GLuint frag,
                   const GLuint tess_ctrl = 0, const GLuint tess_eval = 0 );
 
+bool LinkShader( const GLuint prog );
+
 } // namespace shader
 
 #endif // _SHADERS_H_

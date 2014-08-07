@@ -3,6 +3,7 @@
 
 // wingl includes
 #include "OpenGLWindow.h"
+#include "ShaderProgram.h"
 #include "VertexArrayObject.h"
 #include "VertexBufferObject.h"
 
@@ -44,7 +45,7 @@ private:
    void InitVertices( );
 
    // defines the simple triangle shader
-   GLuint      mTriProgID;
+   ShaderProgram        mTriShaderProg;
 
    // defines the triangle vertices
    VertexArrayObject    mTriVertArray;

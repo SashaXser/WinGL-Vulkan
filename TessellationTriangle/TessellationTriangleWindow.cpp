@@ -13,7 +13,6 @@
 //#include <iostream>
 
 TessellationTriangleWindow::TessellationTriangleWindow( ) :
-mTriProgID        ( 0 ),
 mTriVertArray     ( false ),
 mTriVertBuffer    ( GL_ARRAY_BUFFER )
 {
@@ -127,22 +126,26 @@ int TessellationTriangleWindow::Run( )
          glClear(GL_COLOR_BUFFER_BIT);
          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
          mTriVertArray.Bind();
-         glUseProgram(mTriProgID);
+         //glUseProgram(mTriProgID);
+         mTriShaderProg.Enable();
          static float rot = 0.0f; rot += 0.01f;
          Matrixf mvp = Matrixf::Ortho(-1.2f, 1.2f, -1.2, 1.2, -100, 100) * Matrixf::LookAt(0.0f, 0, -10, 0, 0, 0, 0, 1, 0) * Matrixf::Rotate(rot, 0, 1, 0);
-         GLint loc = glGetUniformLocation(mTriProgID, "mvp");
-         GLint inner = glGetUniformLocation(mTriProgID, "inner");
-         float outer_values[] = { std::abs(std::sin(Timer().GetCurrentTimeSec())) * 1, 
-                                std::abs(std::sin(Timer().GetCurrentTimeSec())) * 1,
-                                std::abs(std::sin(Timer().GetCurrentTimeSec())) * 1};
-         GLint outer = glGetUniformLocation(mTriProgID, "outer");
-         float inner_value = (std::abs(std::sin(Timer().GetCurrentTimeSec()))) * 1;
-         glUniform3fv(outer, 1, outer_values);
-         glUniform1f(inner, inner_value);
+         GLint loc = mTriShaderProg.GetUniformLocation("mvp");
+         GLint inner = mTriShaderProg.GetUniformLocation("inner");
+         float outer_values[] = { std::abs(std::sin(Timer().GetCurrentTimeSec())) * 50, 
+                                std::abs(std::sin(Timer().GetCurrentTimeSec())) * 50,
+                                std::abs(std::sin(Timer().GetCurrentTimeSec())) * 50};
+         GLint outer = mTriShaderProg.GetUniformLocation("outer");
+         float inner_value = (std::abs(std::sin(Timer().GetCurrentTimeSec()))) * 50;
+         //glUniform3fv(outer, 1, outer_values);
+         mTriShaderProg.SetUniformValue("outer", outer_values);
+         //glUniform1f(inner, inner_value);
+         mTriShaderProg.SetUniformValue("inner", inner_value);
          glUniformMatrix4fv(loc, 1, GL_FALSE, mvp);
          glPatchParameteri(GL_PATCH_VERTICES, 3);
          glDrawArrays(GL_PATCHES, 0, 3);
-         glUseProgram(0);
+         //glUseProgram(0);
+         mTriShaderProg.Disable();
          mTriVertArray.Unbind();
          SwapBuffers(GetHDC());
          // hack job end
@@ -170,13 +173,17 @@ void TessellationTriangleWindow::InitShaders( )
 {
 
    // hack job begin
-   
-   mTriProgID = glCreateProgram();
-   GLuint vert = shader::LoadShaderSrc(GL_VERTEX_SHADER, pVertSrc);
-   GLuint frag = shader::LoadShaderSrc(GL_FRAGMENT_SHADER, pFragSrc);
-   GLuint tctrl = shader::LoadShaderSrc(GL_TESS_CONTROL_SHADER, pTCtrlSrc);
-   GLuint teval = shader::LoadShaderSrc(GL_TESS_EVALUATION_SHADER, pTEvalSrc);
-   shader::LinkShaders(mTriProgID, vert, 0, frag, tctrl, teval);
+  
+   //GLuint vert = shader::LoadShaderSrc(GL_VERTEX_SHADER, pVertSrc);
+   //GLuint frag = shader::LoadShaderSrc(GL_FRAGMENT_SHADER, pFragSrc);
+   //GLuint tctrl = shader::LoadShaderSrc(GL_TESS_CONTROL_SHADER, pTCtrlSrc);
+   //GLuint teval = shader::LoadShaderSrc(GL_TESS_EVALUATION_SHADER, pTEvalSrc);
+   //shader::LinkShaders(mTriProgID, vert, 0, frag, tctrl, teval);
+   mTriShaderProg.Attach(GL_VERTEX_SHADER, pVertSrc);
+   mTriShaderProg.Attach(GL_FRAGMENT_SHADER, pFragSrc);
+   mTriShaderProg.Attach(GL_TESS_CONTROL_SHADER, pTCtrlSrc);
+   mTriShaderProg.Attach(GL_TESS_EVALUATION_SHADER, pTEvalSrc);
+   mTriShaderProg.Link();
 
    // hack job end
 

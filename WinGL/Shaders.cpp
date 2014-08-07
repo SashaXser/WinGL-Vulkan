@@ -1,12 +1,14 @@
 // local includes
 #include "Shaders.h"
 
-// stl includes
+// std includes
 #include <fstream>
 #include <sstream>
+#include <cstdint>
 #include <iostream>
 
-#include <stdint.h>
+// platform includes
+#include <windows.h>
 
 namespace shader
 {
@@ -89,6 +91,12 @@ bool LinkShaders( const GLuint prog,
    if (geom) glAttachShader(prog, geom);
    if (frag) glAttachShader(prog, frag);
 
+   // link the shaders to the program
+   return LinkShader(prog);
+}
+
+bool LinkShader( const GLuint prog )
+{
    // link the shaders to the program
    glLinkProgram(prog);
 
