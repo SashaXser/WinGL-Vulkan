@@ -1,8 +1,8 @@
 // local includes
 #include "TessellationTriangleWindow.h"
-//#include "Matrix.h"
+#include "Matrix.h"
 //#include "Vector3.h"
-//#include "WglAssert.h"
+#include "WglAssert.h"
 //#include "MatrixHelper.h"
 //#include "OpenGLExtensions.h"
 
@@ -11,11 +11,20 @@
 //#include <cstdlib>
 //#include <cstdint>
 //#include <iostream>
+#include <algorithm>
+
+template < typename T, size_t N >
+char (& array_size_t( const T (&)[N]) )[N];
+
+#define array_size( array ) sizeof(array_size_t((array)))
 
 TessellationTriangleWindow::TessellationTriangleWindow( ) :
-mTriVertArray     ( false ),
-mTriVertBuffer    ( GL_ARRAY_BUFFER )
+mTriYaw              ( 0.0f ),
+mInnerTessDivides    ( 1.0f )
 {
+   std::for_each(mOuterTessDivides,
+                 mOuterTessDivides + array_size(mOuterTessDivides),
+                 [ ] ( float & outer ) { outer = 1.0f; });
 }
 
 TessellationTriangleWindow::~TessellationTriangleWindow( )
@@ -34,6 +43,10 @@ bool TessellationTriangleWindow::Create( unsigned int nWidth,
       { 4, 4, false, false, false },
       { 4, 3, false, true, false },
       { 4, 3, false, false, false },
+      { 4, 2, false, true, false },
+      { 4, 2, false, false, false },
+      { 4, 1, false, true, false },
+      { 4, 1, false, false, false },
       { 0 }
    };
 
@@ -44,72 +57,28 @@ bool TessellationTriangleWindow::Create( unsigned int nWidth,
       MakeCurrent();
 
       // construct the scene
-      InitShaders();
-      InitVertices();
+      const bool shaders_init = InitShaders();
+      const bool vertices_init = InitVertices();
+
+      // provide some information to the user if there is an error
+      if (!shaders_init || !vertices_init)
+      {
+         WglMsgBox("Resource Error", !shaders_init ? "Unable to find external shader files!" : "Unable to allocate vertex buffer!");
+      }
   
-      return true;
+      return shaders_init && vertices_init;
    }
    else
    {
+      // unable to initialize the gl context
+      WglMsgBox("OpenGL Error", "Unable to allocate 4.1 GL context!  Application shutdown!");
+
       // post the quit message
       PostQuitMessage(-1);
    }
 
    return false;
 }
-
-// hack begin
-const char * const pVertSrc =
-   "#version 410\n" \
-   "layout (location = 0) in vec3 vert_position;\n" \
-   "uniform mat4 mvp;\n" \
-   "out vec4 vert_world_pos_cs;\n" \
-   "void main( )\n" \
-   "{\n" \
-   //"vert_world_pos_cs = vec4(vert_position, 1.0f);\n" \
-
-   "gl_Position = mvp * vec4(vert_position, 1.0f);\n" \
-   "}";
-const char * const pFragSrc =
-   "#version 410\n" \
-   "layout (location = 0) out vec4 FragColor;\n" \
-   "void main( )\n" \
-   "{\n" \
-   "FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n" \
-   "}";
-const char * const pTCtrlSrc =
-   "#version 410\n" \
-   "layout (vertices = 3) out;\n" \
-   "in vec4 vert_world_pos_cs[];\n" \
-   "out vec4 vert_world_pos_es[];\n" \
-   "uniform vec3 outer;\n" \
-   "uniform float inner;\n" \
-   "void main( )\n" \
-   "{\n" \
-   "gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;\n" \
-   "if (gl_InvocationID==0)\n" \
-   "{\n" \
-   "gl_TessLevelOuter[0] = outer.x;\n" \
-   "gl_TessLevelOuter[1] = outer.y;\n" \
-   "gl_TessLevelOuter[2] = outer.z;\n" \
-   "gl_TessLevelInner[0] = inner;\n" \
-   "}\n" \
-   "}\n";
-const char * const pTEvalSrc =
-   "#version 410\n" \
-   "uniform mat4 mvp;\n" \
-   "layout (triangles, equal_spacing, ccw) in;\n" \
-   "in vec4 vert_world_pos_es[];\n" \
-   "void main( )\n" \
-   "{\n" \
-   //"gl_Position = mvp * vec4((gl_TessCoord.x * vert_world_pos_es[0].xyz), 1.0f);\n" \
-
-   "gl_Position = mvp * gl_in[0].gl_Position * gl_TessCoord.x + gl_in[1].gl_Position * gl_TessCoord.y + gl_in[2].gl_Position * gl_TessCoord.z;\n" \
-   "}\n";
-#include "Matrix.h"
-#include "Shaders.h"
-#include "Timer.h"
-// hack end
 
 int TessellationTriangleWindow::Run( )
 {
@@ -122,33 +91,53 @@ int TessellationTriangleWindow::Run( )
       // process all the app messages and then render the scene
       if (!(bQuit = PeekAppMessages(appQuitVal)))
       {
-         // hack job begin
+         // clear the back buffer
          glClear(GL_COLOR_BUFFER_BIT);
+
+         // enable line mode to see the tess on the triangle
          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-         mTriVertArray.Bind();
-         //glUseProgram(mTriProgID);
+
+         // enable the shader
          mTriShaderProg.Enable();
-         static float rot = 0.0f; rot += 0.01f;
-         Matrixf mvp = Matrixf::Ortho(-1.2f, 1.2f, -1.2, 1.2, -100, 100) * Matrixf::LookAt(0.0f, 0, -10, 0, 0, 0, 0, 1, 0) * Matrixf::Rotate(rot, 0, 1, 0);
-         GLint loc = mTriShaderProg.GetUniformLocation("mvp");
-         GLint inner = mTriShaderProg.GetUniformLocation("inner");
-         float outer_values[] = { std::abs(std::sin(Timer().GetCurrentTimeSec())) * 50, 
-                                std::abs(std::sin(Timer().GetCurrentTimeSec())) * 50,
-                                std::abs(std::sin(Timer().GetCurrentTimeSec())) * 50};
-         GLint outer = mTriShaderProg.GetUniformLocation("outer");
-         float inner_value = (std::abs(std::sin(Timer().GetCurrentTimeSec()))) * 50;
-         //glUniform3fv(outer, 1, outer_values);
-         mTriShaderProg.SetUniformValue("outer", outer_values);
-         //glUniform1f(inner, inner_value);
-         mTriShaderProg.SetUniformValue("inner", inner_value);
-         glUniformMatrix4fv(loc, 1, GL_FALSE, mvp);
-         glPatchParameteri(GL_PATCH_VERTICES, 3);
+
+         // enable the buffer to visualize
+         mTriVertArray.Bind();
+
+         // create a projection matrix combined with the rotation matrix
+         const Matrixf mvp = Matrixf::Ortho(-1.2f, 1.2f, -1.2f, 1.2f, -100.0f, 100.0f) *
+                             Matrixf::LookAt(0.0f, 0.0f, -10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f) *
+                             Matrixf::Rotate(mTriYaw, 0.0f, 1.0f, 0.0f);
+
+         // load the uniform variables in the program
+         // todo: change names
+         mTriShaderProg.SetUniformValue("inner", mInnerTessDivides);
+         mTriShaderProg.SetUniformValue("outer", mOuterTessDivides);
+         mTriShaderProg.SetUniformMatrix< 1, 4, 4 >("mvp", mvp);
+
+         // begin drawing the triangle
          glDrawArrays(GL_PATCHES, 0, 3);
-         //glUseProgram(0);
-         mTriShaderProg.Disable();
+
+         ShaderProgram blah;
+         blah.AttachFile(GL_VERTEX_SHADER, "triangle.vert");
+         blah.AttachFile(GL_FRAGMENT_SHADER, "triangle.frag");
+         blah.Link();
+         blah.Enable();
+         float * p;
+         blah.SetUniformMatrix< 1, 4, 4 >("mvp", p);
+         blah.SetUniformMatrix< 1, 4, 4 >("mvp", mvp);
+         glDrawArrays(GL_LINE_LOOP, 0, 3);
+
+         // disable the buffer to visualize
          mTriVertArray.Unbind();
+
+         // disable the shader
+         mTriShaderProg.Disable();
+
+         // disable line mode
+         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+         // present the new view
          SwapBuffers(GetHDC());
-         // hack job end
       }
    }
 
@@ -161,6 +150,41 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
 
    switch (uMsg)
    {
+   case WM_CHAR:
+
+      switch (wParam)
+      {
+      case '1':
+      case '2':
+         mOuterTessDivides[0] = std::max(1.0f, mOuterTessDivides[0] + (wParam == '2' ? 0.5f : -0.5f));
+
+         break;
+
+      case '3':
+      case '4':
+         mOuterTessDivides[1] = std::max(1.0f, mOuterTessDivides[1] + (wParam == '4' ? 0.5f : -0.5f));
+
+         break;
+
+      case '5':
+      case '6':
+         mOuterTessDivides[2] = std::max(1.0f, mOuterTessDivides[2] + (wParam == '6' ? 0.5f : -0.5f));
+
+         break;
+
+      case '7':
+      case '8':
+         mInnerTessDivides = std::max(1.0f, mInnerTessDivides + (wParam == '8' ? 0.5f : -0.5f));
+
+         break;
+
+      case 'a':
+      case 's':
+         mTriYaw += wParam == 'a' ? 1.0f : -1.0f;
+
+         break;
+      }
+
    default:
       // default handle the messages
       result = OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
@@ -169,27 +193,17 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
    return result;
 }
 
-void TessellationTriangleWindow::InitShaders( )
+bool TessellationTriangleWindow::InitShaders( )
 {
+   mTriShaderProg.AttachFile(GL_VERTEX_SHADER, "triangle.vert");
+   mTriShaderProg.AttachFile(GL_FRAGMENT_SHADER, "triangle.frag");
+   mTriShaderProg.AttachFile(GL_TESS_CONTROL_SHADER, "triangle.tctrl");
+   mTriShaderProg.AttachFile(GL_TESS_EVALUATION_SHADER, "triangle.teval");
 
-   // hack job begin
-  
-   //GLuint vert = shader::LoadShaderSrc(GL_VERTEX_SHADER, pVertSrc);
-   //GLuint frag = shader::LoadShaderSrc(GL_FRAGMENT_SHADER, pFragSrc);
-   //GLuint tctrl = shader::LoadShaderSrc(GL_TESS_CONTROL_SHADER, pTCtrlSrc);
-   //GLuint teval = shader::LoadShaderSrc(GL_TESS_EVALUATION_SHADER, pTEvalSrc);
-   //shader::LinkShaders(mTriProgID, vert, 0, frag, tctrl, teval);
-   mTriShaderProg.Attach(GL_VERTEX_SHADER, pVertSrc);
-   mTriShaderProg.Attach(GL_FRAGMENT_SHADER, pFragSrc);
-   mTriShaderProg.Attach(GL_TESS_CONTROL_SHADER, pTCtrlSrc);
-   mTriShaderProg.Attach(GL_TESS_EVALUATION_SHADER, pTEvalSrc);
-   mTriShaderProg.Link();
-
-   // hack job end
-
+   return mTriShaderProg.Link();
 }
 
-void TessellationTriangleWindow::InitVertices( )
+bool TessellationTriangleWindow::InitVertices( )
 {
    const float vertices[][3] =
    {
@@ -203,7 +217,7 @@ void TessellationTriangleWindow::InitVertices( )
    mTriVertArray.Bind();
 
    // create, fill, and define vertex buffer data
-   mTriVertBuffer.GenBuffer();
+   mTriVertBuffer.GenBuffer(GL_ARRAY_BUFFER);
    mTriVertBuffer.Bind();
    mTriVertBuffer.BufferData(sizeof(vertices), vertices, GL_STATIC_DRAW);
    mTriVertBuffer.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(*vertices), 0);
@@ -214,4 +228,6 @@ void TessellationTriangleWindow::InitVertices( )
    // unbind data objects
    mTriVertBuffer.Unbind();
    mTriVertArray.Unbind();
+
+   return mTriVertArray && mTriVertBuffer;
 }

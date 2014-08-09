@@ -41,8 +41,17 @@ protected:
 
 private:
    // initialize routines
-   void InitShaders( );
-   void InitVertices( );
+   bool InitShaders( );
+   bool InitVertices( );
+
+   // controls the amount of rotation on the triangle
+   float    mTriYaw;
+
+   // controls the amount of tess points on the edges
+   float    mOuterTessDivides[3];
+
+   // controls the amount of tess points inside the triangle
+   float    mInnerTessDivides;
 
    // defines the simple triangle shader
    ShaderProgram        mTriShaderProg;
