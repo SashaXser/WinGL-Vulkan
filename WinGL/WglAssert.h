@@ -47,4 +47,6 @@ int __WglAssertMsgBox( const char * const pCaption, const char * const pMessage 
 
 #endif // _DEBUG
 
+int WglMsgBox( const char * const pCaption, const char * const pMessage );
+
 #endif // _WGL_ASSERT_H_

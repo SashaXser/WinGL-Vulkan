@@ -28,3 +28,9 @@ int __WglAssertMsgBox( const char * const pCaption,
 }
 
 #endif // _DEBUG
+
+// function to bring up a message box
+int WglMsgBox( const char * const pCaption, const char * const pMessage )
+{
+   return MessageBox(NULL, pMessage, pCaption, MB_OK | MB_ICONINFORMATION);
+}
