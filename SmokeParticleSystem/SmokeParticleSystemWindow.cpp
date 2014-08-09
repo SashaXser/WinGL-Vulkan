@@ -12,6 +12,9 @@
 #include <gl/gl.h>
 #include <gl/glu.h>
 
+// std includes
+#include <algorithm>
+
 // global defines
 #ifdef _DEBUG
 #define VALIDATE_OPENGL_FRAME( ) \
@@ -176,8 +179,8 @@ LRESULT SmokeParticleSystemWindow::MessageHandler( UINT uMsg,
          yaw += deltaX;
          pitch += deltaY;
          // cap pitch
-         pitch = min(90.0, pitch);
-         pitch = max(-90.0, pitch);
+         pitch = std::min(90.0, pitch);
+         pitch = std::max(-90.0, pitch);
          // get the current camera world position
          modelViewMat.MakeInverseFromOrthogonal();
          Vec3d camEye = modelViewMat * Vec3d(0.0, 0.0, 0.0);

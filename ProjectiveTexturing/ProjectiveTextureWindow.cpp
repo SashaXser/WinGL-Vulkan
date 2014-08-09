@@ -12,6 +12,7 @@
 
 // stl includes
 #include <iostream>
+#include <algorithm>
 
 // global defines
 #define VALIDATE_OPENGL() WGL_ASSERT(glGetError() == GL_NO_ERROR)
@@ -591,8 +592,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          dYaw += nXDelta;
          dPitch += nYDelta;
          // make sure to cap pitch to plus or minus 90
-         dPitch = min(dPitch, 90.0);
-         dPitch = max(dPitch, -90.0);
+         dPitch = std::min(dPitch, 90.0);
+         dPitch = std::max(dPitch, -90.0);
          // create a rotation matrix centered
          // around the up and view direction vectors...
          Matrixd matYaw, matPitch;
