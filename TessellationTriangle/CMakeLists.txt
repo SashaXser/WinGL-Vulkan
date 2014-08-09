@@ -8,7 +8,6 @@ set(SHADER_SRC
 triangle.frag
 triangle.tctrl
 triangle.teval
-triangle.geom
 triangle.vert
 )
 
@@ -26,5 +25,4 @@ target_link_libraries(${PROJECT_NAME_TESS_TRI} ${PROJECT_NAME_WIN_GL})
 copy_to_bin(triangle.frag)
 copy_to_bin(triangle.tctrl)
 copy_to_bin(triangle.teval)
-copy_to_bin(triangle.geom)
 copy_to_bin(triangle.vert)
