@@ -22,6 +22,25 @@ extern const GLint INVALID_UNIFORM_LOCATION;
 
 class ShaderProgram
 {
+private:
+   // private structures
+   // determines if a variable has a floating point operator call
+   template < typename T >
+   struct has_floating_point_pointer_operator
+   {
+      typedef char yes_type;
+      typedef long no_type;
+
+      template < typename U, U > struct validator { };
+
+      template < typename V > static yes_type validate( const validator< float * (V::*) ( ), &V::operator float * > * );
+      template < typename V > static yes_type validate( const validator< double * (V::*) ( ), &V::operator double * > * );
+
+      template < typename V > static no_type validate( ... );
+
+      static const bool value = sizeof(validate< T >(nullptr)) == sizeof(yes_type);
+   };
+
 public:
    // static function that gets the current program
    static GLuint GetCurrentProgram( );
@@ -64,7 +83,12 @@ public:
    template < GLsizei COUNT, typename T > bool SetUniformValue( const GLint uniform, const T & t1 );
    template < GLsizei SIZE, typename T > bool SetUniformValue( const GLint uniform, const T & t1, const GLsizei count );
    
-   template < GLsizei COUNT, GLsizei COL, GLsizei ROW, typename T > bool SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose = false );
+   template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
+   bool SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose = false,
+                          const typename std::enable_if< has_floating_point_pointer_operator< T >::value >::type * const unused = nullptr );
+   template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
+   bool SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose = false,
+                          const typename std::enable_if< !has_floating_point_pointer_operator< T >::value >::type * const unused = nullptr );
    template < typename T, size_t COL, size_t ROW > bool SetUniformMatrix( const GLint uniform, const T (&t1)[COL][ROW], const GLboolean transpose = false );
    template < typename T, GLsizei COUNT, size_t COL, size_t ROW > bool SetUniformMatrix( const GLint uniform, const T (&t1)[COUNT][COL][ROW], const GLboolean transpose = false );
 
@@ -75,16 +99,13 @@ public:
    template < GLsizei COUNT, typename T > bool SetUniformValue( const std::string & uniform, const T & t1 );
    template < GLsizei SIZE, typename T > bool SetUniformValue( const std::string & uniform, const T & t1, const GLsizei count );
 
-   template < GLsizei COUNT, GLsizei COL, GLsizei ROW, typename T > bool SetUniformMatrix( const std::string & uniform, const T & t1, const GLboolean transpose = false );
+   template < GLsizei COUNT, size_t COL, size_t ROW, typename T > bool SetUniformMatrix( const std::string & uniform, const T & t1, const GLboolean transpose = false );
    template < typename T, size_t COL, size_t ROW > bool SetUniformMatrix( const std::string & uniform, const T (&t1)[COL][ROW], const GLboolean transpose = false );
    template < typename T, GLsizei COUNT, size_t COL, size_t ROW > bool SetUniformMatrix( const std::string & uniform, const T (&t1)[COUNT][COL][ROW], const GLboolean transpose = false );
 
 private:
    // private typedefs
    typedef std::map< const std::string, const GLint > UniformLocationCtr;
-
-   // private helper templates to determine type
-   // todo: type selector stuff broken
 
    // prohibit certain actions
    ShaderProgram( const ShaderProgram & );
@@ -354,12 +375,26 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, c
    return true;
 }
 
-template < GLsizei COUNT, GLsizei COL, GLsizei ROW, typename T >
-inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose )
+template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
+inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose,
+                                             const typename std::enable_if< has_floating_point_pointer_operator< T >::value >::type * const unused )
 {
    __VALIDATE_SHADER_UNIFORM((uniform));
 
-   typedef std::remove_const< std::remove_pointer< std::remove_extent< type_selector< T >::type >::type >::type >::type Type;
+   typedef UniformValueSelector< T::type >::array_dims< COL, ROW > array_dims;
+
+   UniformValueSelector< T::type >::SetMatrix(uniform, t1, COUNT, transpose, array_dims());
+
+   return true;
+}
+
+template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
+inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose,
+                                             const typename std::enable_if< !has_floating_point_pointer_operator< T >::value >::type * const unused )
+{
+   __VALIDATE_SHADER_UNIFORM((uniform));
+
+   typedef std::remove_const< std::remove_pointer< std::remove_extent< T >::type >::type >::type Type;
    typedef UniformValueSelector< Type >::array_dims< COL, ROW > array_dims;
 
    UniformValueSelector< Type >::SetMatrix(uniform, t1, COUNT, transpose, array_dims());
@@ -481,8 +516,8 @@ inline bool ShaderProgram::SetUniformValue( const std::string & uniform, const T
    return modified;
 }
 
-template < GLsizei COUNT, GLsizei COL, GLsizei ROW, typename T >
-bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T & t1, const GLboolean transpose )
+template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
+inline bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T & t1, const GLboolean transpose )
 {
    bool modified = false;
 
@@ -497,7 +532,7 @@ bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T & t1,
 }
 
 template < typename T, size_t COL, size_t ROW >
-bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T (&t1)[COL][ROW], const GLboolean transpose )
+inline bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T (&t1)[COL][ROW], const GLboolean transpose )
 {
    bool modified = false;
 
@@ -512,7 +547,7 @@ bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T (&t1)
 }
 
 template < typename T, GLsizei COUNT, size_t COL, size_t ROW >
-bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T (&t1)[COUNT][COL][ROW], const GLboolean transpose )
+inline bool ShaderProgram::SetUniformMatrix( const std::string & uniform, const T (&t1)[COUNT][COL][ROW], const GLboolean transpose )
 {
    bool modified = false;
 

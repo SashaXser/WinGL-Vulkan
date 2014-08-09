@@ -1,16 +1,10 @@
 // local includes
 #include "TessellationTriangleWindow.h"
 #include "Matrix.h"
-//#include "Vector3.h"
 #include "WglAssert.h"
-//#include "MatrixHelper.h"
-//#include "OpenGLExtensions.h"
 
 // std includes
-//#include <vector>
-//#include <cstdlib>
-//#include <cstdint>
-//#include <iostream>
+#include <iostream>
 #include <algorithm>
 
 template < typename T, size_t N >
@@ -117,15 +111,15 @@ int TessellationTriangleWindow::Run( )
          // begin drawing the triangle
          glDrawArrays(GL_PATCHES, 0, 3);
 
+         // hack until i figure out sep shader programs
          ShaderProgram blah;
          blah.AttachFile(GL_VERTEX_SHADER, "triangle.vert");
          blah.AttachFile(GL_FRAGMENT_SHADER, "triangle.frag");
          blah.Link();
          blah.Enable();
-         float * p;
-         blah.SetUniformMatrix< 1, 4, 4 >("mvp", p);
          blah.SetUniformMatrix< 1, 4, 4 >("mvp", mvp);
          glDrawArrays(GL_LINE_LOOP, 0, 3);
+         // end hack
 
          // disable the buffer to visualize
          mTriVertArray.Unbind();
@@ -178,11 +172,34 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
 
          break;
 
+      case 'q':
+      case 'w':
+         mTriYaw += wParam == 'q' ? 0.5f : -0.5f;
+
+         break;
+
       case 'a':
       case 's':
          mTriYaw += wParam == 'a' ? 1.0f : -1.0f;
 
          break;
+
+      case 'z':
+      case 'x':
+         mTriYaw += wParam == 'z' ? 3.0f : -3.0f;
+
+         break;
+      }
+
+      {
+      // update text on the window
+      std::stringstream txt;
+      txt << "Bottom: " << mOuterTessDivides[0]
+          << " - Left: " << mOuterTessDivides[1]
+          << " - Right: " << mOuterTessDivides[2]
+          << " - Inner: " << mInnerTessDivides
+          << std::ends;
+      SetWindowText(GetHWND(), txt.str().c_str());
       }
 
    default:
