@@ -15,7 +15,7 @@ public:
    static GLuint GetCurrentVAO( );
 
    // constructor / destructor
-    VertexArrayObject( const bool auto_create = false );
+    VertexArrayObject( );
    ~VertexArrayObject( );
 
    // allow for move operations
@@ -24,7 +24,7 @@ public:
 
    // returns the vao id
    GLuint Handle( ) const { return mVAO; }
-   operator GLuint ( ) const { Handle(); }
+   operator GLuint ( ) const { return Handle(); }
 
    // generate / delete array
    void GenArray( );

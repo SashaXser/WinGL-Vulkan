@@ -18,7 +18,7 @@ public:
    static GLuint GetCurrentVBO( );
 
    // constructor / destructor
-    VertexBufferObject( const GLenum type, const bool auto_create = false );
+    VertexBufferObject( );
    ~VertexBufferObject( );
 
    // allow for move operations
@@ -27,10 +27,10 @@ public:
 
    // returns the vao id
    GLuint Handle( ) const { return mVBO; }
-   operator GLuint ( ) const { Handle(); }
+   operator GLuint ( ) const { return Handle(); }
 
    // generate / delete buffer
-   void GenBuffer( );
+   void GenBuffer( const GLenum type );
    void DeleteBuffer( );
 
    // bind / unbind the vbo
@@ -58,7 +58,6 @@ public:
 
 private:
    // prohibit certain actions
-   VertexBufferObject( );
    VertexBufferObject( const VertexBufferObject & );
    VertexBufferObject & operator = ( const VertexBufferObject & );
 

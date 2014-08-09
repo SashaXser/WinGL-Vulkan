@@ -13,13 +13,11 @@ GLuint VertexBufferObject::GetCurrentVBO( )
    return static_cast< GLuint >(vbo);
 }
 
-VertexBufferObject::VertexBufferObject( const GLenum type, const bool auto_create ) :
+VertexBufferObject::VertexBufferObject( ) :
 mVBO     ( 0 ),
-mType    ( type ),
+mType    ( GL_ARRAY_BUFFER ),
 mBound   ( false )
 {
-
-   if (auto_create) GenBuffer();
 }
 
 VertexBufferObject::~VertexBufferObject( )
@@ -49,9 +47,11 @@ VertexBufferObject & VertexBufferObject::operator = ( VertexBufferObject && vbo 
    return *this;
 }
 
-void VertexBufferObject::GenBuffer( )
+void VertexBufferObject::GenBuffer( const GLenum type )
 {
    WGL_ASSERT(!mVBO);
+
+   mType = type;
 
    glGenBuffers(1, &mVBO);
 }

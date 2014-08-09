@@ -13,11 +13,10 @@ GLuint VertexArrayObject::GetCurrentVAO( )
    return static_cast< GLuint >(vao);
 }
 
-VertexArrayObject::VertexArrayObject( const bool auto_create ) :
+VertexArrayObject::VertexArrayObject( ) :
 mVAO     ( 0 ),
 mBound   ( false )
 {
-   if (auto_create) GenArray();
 }
 
 VertexArrayObject::~VertexArrayObject( )
