@@ -53,6 +53,21 @@ ShaderProgram & ShaderProgram::operator = ( ShaderProgram && program )
    return *this;
 }
 
+bool ShaderProgram::Attach( const GLenum shader, const GLuint shader_obj )
+{
+   bool attached = false;
+
+   if ((mShaderProg || (mShaderProg = glCreateProgram())) && shader_obj)
+   {
+      // attach the shader to the program...
+      glAttachShader(mShaderProg, shader_obj);
+
+      attached = true;
+   }
+
+   return attached;
+}
+
 bool ShaderProgram::Attach( const GLenum shader, const std::string & src )
 {
    bool attached = false;
@@ -65,9 +80,9 @@ bool ShaderProgram::Attach( const GLenum shader, const std::string & src )
          glAttachShader(mShaderProg, shader_obj);
          // release the reference from the shader...
          glDeleteShader(shader_obj);
-      }
 
-      attached = true;
+         attached = true;
+      }
    }
 
    return attached;
@@ -85,12 +100,52 @@ bool ShaderProgram::AttachFile( const GLenum shader, const std::string & file )
          glAttachShader(mShaderProg, shader_obj);
          // release the reference from the shader...
          glDeleteShader(shader_obj);
-      }
 
-      attached = true;
+         attached = true;
+      }
    }
 
    return attached;
+}
+
+std::vector< GLuint > ShaderProgram::GetAttachedShaders( const GLenum shader ) const
+{
+   std::vector< GLuint > shaders;
+
+   if (mShaderProg)
+   {
+      // obtain the maximum number of attached shaders
+      const GLint num_attached_shaders = [ this ] ( ) -> GLint
+      {
+         GLint num_attached_shaders = 0;
+         glGetProgramiv(mShaderProg, GL_ATTACHED_SHADERS, &num_attached_shaders);
+
+         return num_attached_shaders;
+      }();
+
+      if (num_attached_shaders)
+      {
+         // obtain all the shader names attached to this program
+         shaders.resize(num_attached_shaders);
+         glGetAttachedShaders(mShaderProg, num_attached_shaders, nullptr, &shaders[0]);
+
+         // validate for the existance of the shader type requested
+         const auto end = std::remove_if(shaders.begin(), shaders.end(),
+         [ &shader ] ( const GLint shader_obj ) -> bool
+         {
+            // obtain the shader type
+            GLint shader_type = 0;
+            glGetShaderiv(shader_obj, GL_SHADER_TYPE, &shader_type);
+            
+            return shader != shader_type;
+         });
+
+         // resize to only include those types that match shader
+         shaders.erase(end, shaders.end());
+      }
+   }
+
+   return shaders;
 }
 
 bool ShaderProgram::Link( )

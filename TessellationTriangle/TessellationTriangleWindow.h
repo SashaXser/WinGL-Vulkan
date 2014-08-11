@@ -55,6 +55,7 @@ private:
 
    // defines the simple triangle shader
    ShaderProgram        mTriShaderProg;
+   ShaderProgram        mCtrlPtsShaderProg;
 
    // defines the triangle vertices
    VertexArrayObject    mTriVertArray;

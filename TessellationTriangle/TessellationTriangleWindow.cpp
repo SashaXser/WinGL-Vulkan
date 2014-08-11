@@ -103,29 +103,27 @@ int TessellationTriangleWindow::Run( )
                              Matrixf::Rotate(mTriYaw, 0.0f, 1.0f, 0.0f);
 
          // load the uniform variables in the program
-         // todo: change names
          mTriShaderProg.SetUniformValue("inner", mInnerTessDivides);
          mTriShaderProg.SetUniformValue("outer", mOuterTessDivides);
          mTriShaderProg.SetUniformMatrix< 1, 4, 4 >("mvp", mvp);
+         mTriShaderProg.SetUniformValue("color", 1.0f, 0.0f, 0.0f, 1.0f);
 
          // begin drawing the triangle
          glDrawArrays(GL_PATCHES, 0, 3);
 
-         // hack until i figure out sep shader programs
-         ShaderProgram blah;
-         blah.AttachFile(GL_VERTEX_SHADER, "triangle.vert");
-         blah.AttachFile(GL_FRAGMENT_SHADER, "triangle.frag");
-         blah.Link();
-         blah.Enable();
-         blah.SetUniformMatrix< 1, 4, 4 >("mvp", mvp);
+         // enalbe the control points shader
+         mCtrlPtsShaderProg.Enable();
+         mCtrlPtsShaderProg.SetUniformMatrix< 1, 4, 4 >("mvp", mvp);
+         mCtrlPtsShaderProg.SetUniformValue("color", 1.0f, 1.0f, 1.0f, 1.0f);
+
+         // begin drawing the control points
          glDrawArrays(GL_LINE_LOOP, 0, 3);
-         // end hack
 
          // disable the buffer to visualize
          mTriVertArray.Unbind();
 
          // disable the shader
-         mTriShaderProg.Disable();
+         mCtrlPtsShaderProg.Disable();
 
          // disable line mode
          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -251,7 +249,15 @@ bool TessellationTriangleWindow::InitShaders( )
    mTriShaderProg.AttachFile(GL_TESS_CONTROL_SHADER, "triangle.tctrl");
    mTriShaderProg.AttachFile(GL_TESS_EVALUATION_SHADER, "triangle.teval");
 
-   return mTriShaderProg.Link();
+   const auto vert_shaders = mTriShaderProg.GetAttachedShaders(GL_VERTEX_SHADER);
+   const auto frag_shaders = mTriShaderProg.GetAttachedShaders(GL_FRAGMENT_SHADER);
+
+   WGL_ASSERT(vert_shaders.size() == 1 && frag_shaders.size() == 1);
+
+   mCtrlPtsShaderProg.Attach(GL_VERTEX_SHADER, vert_shaders[0]);
+   mCtrlPtsShaderProg.Attach(GL_FRAGMENT_SHADER, frag_shaders[0]);
+
+   return mTriShaderProg.Link() && mCtrlPtsShaderProg.Link();
 }
 
 bool TessellationTriangleWindow::InitVertices( )

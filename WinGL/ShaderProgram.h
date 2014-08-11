@@ -14,6 +14,7 @@
 // std includes
 #include <map>
 #include <string>
+#include <vector>
 #include <cstring>
 #include <type_traits>
 
@@ -58,8 +59,12 @@ public:
    operator GLuint ( ) const { return Handle(); }
 
    // attaches a program to the shader
+   bool Attach( const GLenum shader, const GLuint shader_obj );
    bool Attach( const GLenum shader, const std::string & src );
    bool AttachFile( const GLenum shader, const std::string & file );
+
+   // get shader from the program
+   std::vector< GLuint > GetAttachedShaders( const GLenum shader ) const;
 
    // links all the attached shaders together
    bool Link( );
