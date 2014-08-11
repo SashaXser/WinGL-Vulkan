@@ -150,25 +150,25 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
       {
       case '1':
       case '2':
-         mOuterTessDivides[0] = std::max(1.0f, mOuterTessDivides[0] + (wParam == '2' ? 0.5f : -0.5f));
+         mOuterTessDivides[0] = std::max(1.0f, mOuterTessDivides[0] + (wParam == '2' ? 1.0f : -1.0f));
 
          break;
 
       case '3':
       case '4':
-         mOuterTessDivides[1] = std::max(1.0f, mOuterTessDivides[1] + (wParam == '4' ? 0.5f : -0.5f));
+         mOuterTessDivides[1] = std::max(1.0f, mOuterTessDivides[1] + (wParam == '4' ? 1.0f : -1.0f));
 
          break;
 
       case '5':
       case '6':
-         mOuterTessDivides[2] = std::max(1.0f, mOuterTessDivides[2] + (wParam == '6' ? 0.5f : -0.5f));
+         mOuterTessDivides[2] = std::max(1.0f, mOuterTessDivides[2] + (wParam == '6' ? 1.0f : -1.0f));
 
          break;
 
       case '7':
       case '8':
-         mInnerTessDivides = std::max(1.0f, mInnerTessDivides + (wParam == '8' ? 0.5f : -0.5f));
+         mInnerTessDivides = std::max(1.0f, mInnerTessDivides + (wParam == '8' ? 1.0f : -1.0f));
 
          break;
 
@@ -202,6 +202,30 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
       SetWindowText(GetHWND(), txt.str().c_str());
       }
 
+      break;
+
+   case WM_SIZE:
+      {
+      // determine the width and height of the new size
+      const GLsizei width = static_cast< GLsizei >(lParam & 0xFFFF);
+      const GLsizei height = static_cast< GLsizei >(lParam >> 16);
+
+      // is width greater than the height
+      const bool width_greater_than_height = width > height;
+
+      // determine the starting location
+      const GLint x = width_greater_than_height ? (width - height) / 2 : 0;
+      const GLint y = width_greater_than_height ? 0 : (height - width) / 2;
+
+      // determine the square size to display
+      const GLsizei length = width_greater_than_height ? height : width;
+
+      // set the viewports new location
+      glViewport(x, y, length, length);
+      }
+
+      break;
+
    default:
       // default handle the messages
       result = OpenGLWindow::MessageHandler(uMsg, wParam, lParam);
@@ -212,6 +236,16 @@ LRESULT TessellationTriangleWindow::MessageHandler( UINT uMsg, WPARAM wParam, LP
 
 bool TessellationTriangleWindow::InitShaders( )
 {
+   // determine the maximum number of tesselation levels
+   std::cout << "GL_MAX_TESS_GEN_LEVEL: " <<
+   [ ] ( ) -> GLint
+   {
+      GLint max_tess_level = 0;
+      glGetIntegerv(GL_MAX_TESS_GEN_LEVEL, &max_tess_level);
+
+      return max_tess_level;
+   }() << std::endl;
+
    mTriShaderProg.AttachFile(GL_VERTEX_SHADER, "triangle.vert");
    mTriShaderProg.AttachFile(GL_FRAGMENT_SHADER, "triangle.frag");
    mTriShaderProg.AttachFile(GL_TESS_CONTROL_SHADER, "triangle.tctrl");
