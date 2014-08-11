@@ -182,6 +182,12 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit * pInitParams )
       glewInit();
       AttachToDebugContext();
 
+      // print out some information about the context
+      std::cout << "   GL Vendor: " << glGetString(GL_VENDOR) << std::endl
+                << " GL Renderer: " << glGetString(GL_RENDERER) << std::endl
+                << "  GL Version: " << glGetString(GL_VERSION) << std::endl
+                << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+
       ReleaseCurrent();
    }
 
