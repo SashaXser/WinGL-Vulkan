@@ -233,7 +233,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    {
       Assimp::Importer model_import;
       const aiScene * const pSceneHull =
-         model_import.ReadFile(pFilename, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+         model_import.ReadFile(pFilename, aiProcess_Triangulate /*| aiProcess_GenSmoothNormals | aiProcess_FlipUVs*/);
 
       WGL_ASSERT(pSceneHull);
 
