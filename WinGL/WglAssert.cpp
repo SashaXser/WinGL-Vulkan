@@ -1,10 +1,10 @@
-#ifdef _DEBUG
-
 // local includes
 #include "WglAssert.h"
 
 // platform includes
 #include <windows.h>
+
+#ifdef _DEBUG
 
 // assert function that brings up a message box and
 // displays the assert...
