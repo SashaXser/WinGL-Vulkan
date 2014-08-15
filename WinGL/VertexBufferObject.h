@@ -1,6 +1,9 @@
 #ifndef _VERTEX_BUFFER_OBJECT_H_
 #define _VERTEX_BUFFER_OBJECT_H_
 
+// local includes
+#include "WglAssert.h"
+
 // platform includes
 #include "Window.h"
 
@@ -48,6 +51,10 @@ public:
    uint8_t * MapBuffer( const GLenum access );
    void UnmapBuffer( );
 
+   // gets the size of the buffered data
+   size_t Size( ) const;
+   template < typename T > size_t Size( ) const;
+
    // sets up vertex attributes
    void VertexAttribPointer( const GLuint index,
                              const GLint size,
@@ -62,14 +69,32 @@ private:
    VertexBufferObject & operator = ( const VertexBufferObject & );
 
    // identifies the vbo
-   GLuint   mVBO;
+   GLuint      mVBO;
 
    // indicates the type of buffer target
-   GLenum   mType;
+   GLenum      mType;
+
+   // indicates the size of the buffer data in bytes
+   size_t      mSize;
 
    // indicates if the vbo is bound
-   bool     mBound;
+   bool        mBound;
 
 };
+
+inline size_t VertexBufferObject::Size( ) const
+{
+   return mSize;
+}
+
+template < typename T >
+inline size_t VertexBufferObject::Size( ) const
+{
+   WGL_ASSERT(Size() % sizeof(T) == 0);
+
+   return Size() / sizeof(T);
+}
+
+typedef VertexBufferObject VBO;
 
 #endif // _VERTEX_BUFFER_OBJECT_H_

@@ -1,4 +1,6 @@
 set(SHADOW_MAP_SRC
+enterprise.frag
+enterprise.vert
 Main.cpp
 ShadowMapWindow.cpp
 ShadowMapWindow.h
@@ -18,3 +20,5 @@ target_link_libraries(${PROJECT_NAME_SHADOW_MAP} ${PROJECT_NAME_WIN_GL})
 target_link_libraries(${PROJECT_NAME_SHADOW_MAP} ${PROJECT_NAME_ASSIMP})
 
 copy_to_bin(enterprise-e)
+copy_to_bin(enterprise.frag)
+copy_to_bin(enterprise.vert)

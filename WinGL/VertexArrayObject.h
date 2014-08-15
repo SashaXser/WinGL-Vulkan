@@ -54,4 +54,6 @@ private:
 
 };
 
+typedef VertexArrayObject VAO;
+
 #endif // _VERTEX_ARRAY_OBJECT_H_

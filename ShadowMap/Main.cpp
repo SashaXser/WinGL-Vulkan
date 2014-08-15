@@ -9,7 +9,16 @@ int WINAPI WinMain( HINSTANCE hInstance,
                     LPSTR lpCmdLine,
                     int nShowCmd )
 {
+   // indicates success or failure
+   int error = -1;
+
+   // create the window
    ShadowMapWindow * const pSMW = new ShadowMapWindow();
-   pSMW->Create(200, 200, "Shadow Map Window");
-   return pSMW->Run();
+   if (pSMW->Create(200, 200, "Shadow Map Window"))
+   {
+      // begin displaying the window
+      error = pSMW->Run();
+   }
+
+   return error;
 }

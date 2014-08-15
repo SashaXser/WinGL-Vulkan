@@ -1,6 +1,5 @@
 // local includes
 #include "VertexBufferObject.h"
-#include "WglAssert.h"
 
 // std includes
 #include <algorithm>
@@ -16,6 +15,7 @@ GLuint VertexBufferObject::GetCurrentVBO( )
 VertexBufferObject::VertexBufferObject( ) :
 mVBO     ( 0 ),
 mType    ( GL_ARRAY_BUFFER ),
+mSize    ( 0 ),
 mBound   ( false )
 {
 }
@@ -89,6 +89,8 @@ void VertexBufferObject::BufferData( const GLsizeiptr size, const GLvoid * const
    WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO() == mVBO);
 
    glBufferData(mType, size, pData, usage);
+
+   mSize = size;
 }
 
 void VertexBufferObject::BufferSubData( const GLintptr offset, const GLsizeiptr size, const GLvoid * const pData )

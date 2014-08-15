@@ -38,6 +38,13 @@ init; \
 WGL_ASSERT( exp ); \
 }
 
+#define WGL_ASSERT_INIT_DEINIT( init, exp, deinit ) \
+{ \
+init; \
+WGL_ASSERT( exp ); \
+deinit; \
+}
+
 int __WglAssertMsgBox( const char * const pCaption, const char * const pMessage );
 
 #else

@@ -21,7 +21,6 @@
 
 ShadowMapWindow::ShadowMapWindow( )
 {
-   memset(&mEnterpriseE, 0x00, sizeof(mEnterpriseE));
 }
 
 ShadowMapWindow::~ShadowMapWindow( )
@@ -52,6 +51,14 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
 
       // create the specific data
       GenerateSceneData();
+
+      // setup the shaders
+      if (!mEnterpriseE.mProgram.AttachFile(GL_VERTEX_SHADER, "enterprise.vert") ||
+          !mEnterpriseE.mProgram.AttachFile(GL_FRAGMENT_SHADER, "enterprise.frag") ||
+          !mEnterpriseE.mProgram.Link())
+      {
+         return false;
+      }
 
       // enable specific state
       glEnable(GL_CULL_FACE);
@@ -94,6 +101,7 @@ float distance = 1.2;
 int prev_x, prev_y;
 
 Matrixf mv = Matrixf::LookAt(0, -distance, 0, -0, 0, 0, 0, 0.0f, 1.0f);
+Matrixf mvn = Matrixf::LookAt(0, 0, 0, -0, -1, 0, 0, 0.0f, 1.0f);
 const Matrixf proj = Matrixf::Perspective(45.0f, 4.f/3.f, 0.01f, 3000.f);
 
 LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
@@ -130,6 +138,8 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
          const Vec3f eye(mv.mT + 12);
          mv = (Matrixf::Translate(eye) * Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
                Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
+         mvn = (Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
+               Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
       }
 
       prev_x = cur_x;
@@ -140,7 +150,7 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
    case WM_MOUSEWHEEL:
       {
-      const float delta = static_cast< int16_t >((wParam & 0xFFFF0000) >> 16) / static_cast< float >(WHEEL_DELTA) * 0.01;
+      const float delta = static_cast< int16_t >((wParam & 0xFFFF0000) >> 16) / static_cast< float >(WHEEL_DELTA) * 0.01f;
 
       const Vec3f view_dir = MatrixHelper::GetViewVector(mv);
       mv.MakeInverse();
@@ -171,30 +181,19 @@ void ShadowMapWindow::RenderScene( )
    
 
    // temp
-   glMatrixMode(GL_PROJECTION);
-   glLoadMatrixf(proj);
-   glMatrixMode(GL_MODELVIEW);
-   glLoadMatrixf(mv);
-   glBindVertexArray(mEnterpriseE.mVAO);
-   glDrawArrays(GL_TRIANGLES, 0, mEnterpriseE.mVertSize / 3);
-   //glColor3f(1,1,1);
-   //glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, nullptr);
-   //glBindVertexArray(mCube.mVAO);
-   //glColor3f(1,0,0);
-   //glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, nullptr);
-   //glBindVertexArray(mPyramid.mVAO);
-   //glPushMatrix();
-   //glTranslated(20, 0, 0);
-   //glColor3f(0,1,0);
-   //glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
-   //glPopMatrix();
-   //glBindVertexArray(mSphere.mVAO);
-   //glPushMatrix();
-   //glTranslated(-20, 0, 0);
-   //glColor3f(0,0,1);
-   //glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
-   //glPopMatrix();
-   glBindVertexArray(0);
+   static float light_dir = 0.0f;
+   mEnterpriseE.mProgram.Enable();
+   mEnterpriseE.mProgram.SetUniformValue("light_dir", std::sin(light_dir), 0.0f, std::cos(light_dir));
+   mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("projection", proj);
+   mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("model_view", mv);
+   mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mvn);
+   light_dir += 0.0005f;
+
+   mEnterpriseE.mVAO.Bind();
+
+   glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mEnterpriseE.mVertBuf.Size< float >() / 3));
+
+   mEnterpriseE.mVAO.Unbind();
 
 
    // swap the front and back
@@ -265,8 +264,8 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    ReadModel(".\\enterprise-e\\1701e_saucer_top_6.3ds");
 
    // create the vao
-   glGenVertexArrays(1, &mEnterpriseE.mVAO);
-   glBindVertexArray(mEnterpriseE.mVAO);
+   mEnterpriseE.mVAO.GenArray();
+   mEnterpriseE.mVAO.Bind();
 
    // there should always be a vao here
    WGL_ASSERT(mEnterpriseE.mVAO);
@@ -276,26 +275,30 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       std::cout << "Error : Unable to generate VAO" << std::endl;
    }
 
-   // create the vbo
-   glGenBuffers(1, &mEnterpriseE.mVertBufID);
-   glBindBuffer(GL_ARRAY_BUFFER, mEnterpriseE.mVertBufID);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(decltype(vertices.front())), &vertices.front(), GL_STATIC_DRAW);
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+   // create the vbos
+   mEnterpriseE.mVertBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mEnterpriseE.mVertBuf.Bind();
+   mEnterpriseE.mVertBuf.BufferData(vertices.size() * sizeof(decltype(vertices.front())), &vertices.front(), GL_STATIC_DRAW);
+   mEnterpriseE.mVertBuf.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(vertices.front())) * 3, 0);
    glEnableVertexAttribArray(0);
+   mEnterpriseE.mVertBuf.Unbind();
 
-   glGenBuffers(1, &mEnterpriseE.mClrBufID);
-   glBindBuffer(GL_ARRAY_BUFFER, mEnterpriseE.mClrBufID);
-   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(decltype(colors.front())), &colors.front(), GL_STATIC_DRAW);
-   glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 0, nullptr);
-   glColorPointer(3, GL_FLOAT, 0, nullptr);
-   glEnableClientState(GL_COLOR_ARRAY);
+   mEnterpriseE.mClrBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mEnterpriseE.mClrBuf.Bind();
+   mEnterpriseE.mClrBuf.BufferData(colors.size() * sizeof(decltype(colors.front())), &colors.front(), GL_STATIC_DRAW);
+   mEnterpriseE.mClrBuf.VertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(colors.front())) * 3, 0);
    glEnableVertexAttribArray(1);
+   mEnterpriseE.mClrBuf.Unbind();
 
-   // save off the number of vertices
-   mEnterpriseE.mVertSize = vertices.size();
+   mEnterpriseE.mNormBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mEnterpriseE.mNormBuf.Bind();
+   mEnterpriseE.mNormBuf.BufferData(normals.size() * sizeof(decltype(normals.front())), &normals.front(), GL_STATIC_DRAW);
+   mEnterpriseE.mNormBuf.VertexAttribPointer(2, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(normals.front())) * 3, 0);
+   glEnableVertexAttribArray(2);
+   mEnterpriseE.mNormBuf.Unbind();
 
    // disable the vao
-   glBindVertexArray(0);
+   mEnterpriseE.mVAO.Unbind();
 }
 
 //void ShadowMapWindow::GenerateFloor( )

@@ -3,6 +3,9 @@
 
 // wingl includes
 #include "OpenGLWindow.h"
+#include "ShaderProgram.h"
+#include "VertexArrayObject.h"
+#include "VertexBufferObject.h"
 
 // gl includes
 #include "GL/glew.h"
@@ -40,17 +43,24 @@ private:
    // defines a basic renderable object
    struct Renderable
    {
+      Renderable( ) :
+      mIdxBufID   ( 0 ),
+      mTexBufID   ( 0 ),
+      mTexID      ( 0 )
+      { }
+
       // vao id
-      GLuint   mVAO;
+      VAO            mVAO;
       // vbo ids
-      size_t   mVertSize;
-      GLuint   mVertBufID;
-      GLuint   mIdxBufID;
-      GLuint   mTexBufID;
-      GLuint   mNormBufID;
-      GLuint   mClrBufID;
+      VBO            mVertBuf;
+      GLuint         mIdxBufID;
+      GLuint         mTexBufID;
+      VBO            mNormBuf;
+      VBO            mClrBuf;
       // texture id
-      GLuint   mTexID;
+      GLuint         mTexID;
+      // shader program
+      ShaderProgram  mProgram;
    };
 
    // renders the scene
