@@ -44,7 +44,6 @@ private:
    struct Renderable
    {
       Renderable( ) :
-      mIdxBufID   ( 0 ),
       mTexBufID   ( 0 ),
       mTexID      ( 0 )
       { }
@@ -53,7 +52,7 @@ private:
       VAO            mVAO;
       // vbo ids
       VBO            mVertBuf;
-      GLuint         mIdxBufID;
+      VBO            mIdxBuf;
       GLuint         mTexBufID;
       VBO            mNormBuf;
       VBO            mClrBuf;

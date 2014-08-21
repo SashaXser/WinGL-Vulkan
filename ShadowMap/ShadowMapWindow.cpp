@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <iostream>
+#include <algorithm>
 
 ShadowMapWindow::ShadowMapWindow( )
 {
@@ -191,7 +192,8 @@ void ShadowMapWindow::RenderScene( )
 
    mEnterpriseE.mVAO.Bind();
 
-   glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mEnterpriseE.mVertBuf.Size< float >() / 3));
+   //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mEnterpriseE.mVertBuf.Size< float >() / 3));
+   glDrawElements(GL_TRIANGLES, mEnterpriseE.mIdxBuf.Size< uint32_t >(), GL_UNSIGNED_INT, nullptr);
 
    mEnterpriseE.mVAO.Unbind();
 
@@ -211,6 +213,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    std::vector< float > colors;
    std::vector< float > normals;
    std::vector< float > vertices;
+   std::vector< uint32_t > indices;
 
    const auto GenColors = [ ] ( const size_t size, std::vector< float > & colors )
    {
@@ -227,13 +230,12 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             colors.push_back(b);
          }
       }
-   };
+   }; 
 
    const auto ReadModel = [ & ] ( const char * const pFilename )
    {
       Assimp::Importer model_import;
-      const aiScene * const pSceneHull =
-         model_import.ReadFile(pFilename, aiProcess_Triangulate /*| aiProcess_GenSmoothNormals | aiProcess_FlipUVs*/);
+      const aiScene * const pSceneHull = model_import.ReadFile(pFilename, 0);
 
       WGL_ASSERT(pSceneHull);
 
@@ -247,9 +249,27 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             const aiVector3D * const pNormals = pCurMesh->mNormals;
             const size_t num_verts = pCurMesh->mNumVertices;
 
+            // there should always be triangles in this model...
+            WGL_ASSERT(pCurMesh->mPrimitiveTypes == aiPrimitiveType_TRIANGLE);
+
             GenColors(num_verts, colors);
             normals.insert(normals.end(), &pNormals->x, &pNormals->x + num_verts * 3);
             vertices.insert(vertices.end(), &pVertices->x, &pVertices->x + num_verts * 3);
+
+            // establish what the base index for this model is
+            const uint32_t base_index = static_cast< uint32_t >(indices.size());
+
+            // read in all the faces for the mesh
+            std::for_each(pCurMesh->mFaces, pCurMesh->mFaces + pCurMesh->mNumFaces,
+            [ & ] ( const aiFace & cur_face )
+            {
+               // should always be three indices that make up this triangle
+               WGL_ASSERT(cur_face.mNumIndices == 3);
+
+               indices.push_back(base_index + cur_face.mIndices[0]);
+               indices.push_back(base_index + cur_face.mIndices[1]);
+               indices.push_back(base_index + cur_face.mIndices[2]);
+            });
          }
       }
       else
@@ -297,8 +317,16 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    glEnableVertexAttribArray(2);
    mEnterpriseE.mNormBuf.Unbind();
 
+   // create the index buffer
+   mEnterpriseE.mIdxBuf.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+   mEnterpriseE.mIdxBuf.Bind();
+   mEnterpriseE.mIdxBuf.BufferData(indices.size() * sizeof(decltype(indices.front())), &indices.front(), GL_STATIC_DRAW);
+
    // disable the vao
    mEnterpriseE.mVAO.Unbind();
+
+   // must unbind the index buffer after unbinding the vao
+   mEnterpriseE.mIdxBuf.Unbind();
 }
 
 //void ShadowMapWindow::GenerateFloor( )
