@@ -4,10 +4,16 @@
 // std includes
 #include <algorithm>
 
-GLuint VertexBufferObject::GetCurrentVBO( )
+GLuint VertexBufferObject::GetCurrentVBO( const GLenum type )
 {
    GLint vbo = 0;
-   glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);
+
+   switch (type)
+   {
+   case GL_ARRAY_BUFFER:         glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);         break;
+   case GL_ELEMENT_ARRAY_BUFFER: glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &vbo); break;
+   default: WGL_ASSERT(!"Need To Fill In This VBO Type!!!"); break;
+   }
 
    return static_cast< GLuint >(vbo);
 }
@@ -60,8 +66,8 @@ void VertexBufferObject::DeleteBuffer( )
 {
    if (mVBO)
    {
-      WGL_ASSERT((mBound && VertexBufferObject::GetCurrentVBO() == mVBO) ||
-                 (!mBound && VertexBufferObject::GetCurrentVBO() != mVBO));
+      WGL_ASSERT((mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO) ||
+                 (!mBound && VertexBufferObject::GetCurrentVBO(mType) != mVBO));
 
       // if the vbo is bound, unbind it...
       if (mBound) glBindBuffer(mType, 0);
@@ -86,7 +92,7 @@ void VertexBufferObject::Unbind( )
 
 void VertexBufferObject::BufferData( const GLsizeiptr size, const GLvoid * const pData, const GLenum usage )
 {
-   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO() == mVBO);
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
 
    glBufferData(mType, size, pData, usage);
 
@@ -95,21 +101,21 @@ void VertexBufferObject::BufferData( const GLsizeiptr size, const GLvoid * const
 
 void VertexBufferObject::BufferSubData( const GLintptr offset, const GLsizeiptr size, const GLvoid * const pData )
 {
-   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO() == mVBO);
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
 
    glBufferSubData(mType, offset, size, pData);
 }
 
 uint8_t * VertexBufferObject::MapBuffer( const GLenum access )
 {
-   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO() == mVBO);
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
 
    return static_cast< uint8_t * >(glMapBuffer(mType, access));
 }
 
 void VertexBufferObject::UnmapBuffer( )
 {
-   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO() == mVBO);
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
 
    glUnmapBuffer(mType);
 }
@@ -121,7 +127,7 @@ void VertexBufferObject::VertexAttribPointer( const GLuint index,
                                               const GLsizei stride,
                                               const GLuint offset )
 {
-   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO() == mVBO);
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
 
    glVertexAttribPointer(index, size, type, normalized, stride, reinterpret_cast< GLvoid * >(offset));
 }

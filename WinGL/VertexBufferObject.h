@@ -18,7 +18,7 @@ class VertexBufferObject
 {
 public:
    // static function that gets the currently bound vbo
-   static GLuint GetCurrentVBO( );
+   static GLuint GetCurrentVBO( const GLenum type );
 
    // constructor / destructor
     VertexBufferObject( );
