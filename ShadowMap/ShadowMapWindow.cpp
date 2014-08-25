@@ -100,10 +100,12 @@ float yaw = 0;
 float pitch = 0;
 float distance = 1.2;
 int prev_x, prev_y;
+bool light_per_pixel = false;
 
-Matrixf mv = Matrixf::LookAt(0, -distance, 0, -0, 0, 0, 0, 0.0f, 1.0f);
-Matrixf mvn = Matrixf::LookAt(0, 0, 0, -0, -1, 0, 0, 0.0f, 1.0f);
+Matrixf mv = Matrixf::LookAt(0, -distance, 1.0f, 0, 0, 1.0f, 0, 0.0f, 1.0f);
+Matrixf mvn = mv.Inverse().Transpose();
 const Matrixf proj = Matrixf::Perspective(45.0f, 4.f/3.f, 0.01f, 3000.f);
+
 
 LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
@@ -139,8 +141,7 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
          const Vec3f eye(mv.mT + 12);
          mv = (Matrixf::Translate(eye) * Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
                Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
-         mvn = (Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
-               Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
+         mvn = mv.Inverse().Transpose();
       }
 
       prev_x = cur_x;
@@ -151,7 +152,8 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
    case WM_MOUSEWHEEL:
       {
-      const float delta = static_cast< int16_t >((wParam & 0xFFFF0000) >> 16) / static_cast< float >(WHEEL_DELTA) * 0.01f;
+      const float multiplier = wParam & MK_CONTROL ? 10.0f : wParam & MK_SHIFT ? 20.0f : 1.0f;
+      const float delta = static_cast< int16_t >((wParam & 0xFFFF0000) >> 16) / static_cast< float >(WHEEL_DELTA) * 0.005f * multiplier;
 
       const Vec3f view_dir = MatrixHelper::GetViewVector(mv);
       mv.MakeInverse();
@@ -159,8 +161,15 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
       const Vec3f eye(Vec3f(mv.mT + 12) + view_dir.UnitVector() * delta);
       mv = (Matrixf::Translate(eye) * Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
             Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
+      mvn = mv.Inverse().Transpose();
 
       }
+
+      break;
+
+   case WM_CHAR:
+      if (wParam == 'l' || wParam == 'L')
+         light_per_pixel = !light_per_pixel;
 
       break;
 
@@ -185,15 +194,20 @@ void ShadowMapWindow::RenderScene( )
    static float light_dir = 0.0f;
    mEnterpriseE.mProgram.Enable();
    mEnterpriseE.mProgram.SetUniformValue("light_dir", std::sin(light_dir), 0.0f, std::cos(light_dir));
+   //mEnterpriseE.mProgram.SetUniformValue("light_dir", 0.0f, 0.0f, -1.0f);
    mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("projection", proj);
    mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("model_view", mv);
    mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mvn);
+   mEnterpriseE.mProgram.SetUniformValue("light_per_pixel", light_per_pixel ? 1 : 0);
+
+   Vec4f en = mvn * Vec4f(0.0f, 0.0f, 1.0f, 0.0f);
+
    light_dir += 0.0005f;
 
    mEnterpriseE.mVAO.Bind();
 
    //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mEnterpriseE.mVertBuf.Size< float >() / 3));
-   glDrawElements(GL_TRIANGLES, mEnterpriseE.mIdxBuf.Size< uint32_t >(), GL_UNSIGNED_INT, nullptr);
+   glDrawElements(GL_TRIANGLES, static_cast< GLsizei >(mEnterpriseE.mIdxBuf.Size< uint32_t >()), GL_UNSIGNED_INT, nullptr);
 
    mEnterpriseE.mVAO.Unbind();
 
@@ -235,17 +249,32 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    const auto ReadModel = [ & ] ( const char * const pFilename )
    {
       Assimp::Importer model_import;
-      const aiScene * const pSceneHull = model_import.ReadFile(pFilename, 0);
+      const aiScene * const pScene = model_import.ReadFile(pFilename, 0);
 
-      WGL_ASSERT(pSceneHull);
+      WGL_ASSERT(pScene);
 
-      if (pSceneHull)
+      if (pScene)
       {
-         for (size_t cur_mesh = 0; cur_mesh < pSceneHull->mNumMeshes; ++cur_mesh)
+         auto beg = pScene->mMaterials;
+         auto end = pScene->mMaterials + pScene->mNumMaterials;
+
+         while (beg != end)
+         {
+            if ((*beg)->GetTextureCount(aiTextureType_DIFFUSE))
+            {
+               aiString path;
+               (*beg)->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+               ++beg;
+               continue;
+            }
+            ++beg;
+         }
+
+         for (size_t cur_mesh = 0; cur_mesh < pScene->mNumMeshes; ++cur_mesh)
          {
             // obatin all the required data for this mesh...
-            const aiMesh * const pCurMesh = pSceneHull->mMeshes[cur_mesh];
-            const aiVector3D *const pVertices = pCurMesh->mVertices;
+            const aiMesh * const pCurMesh = pScene->mMeshes[cur_mesh];
+            const aiVector3D * const pVertices = pCurMesh->mVertices;
             const aiVector3D * const pNormals = pCurMesh->mNormals;
             const size_t num_verts = pCurMesh->mNumVertices;
 
@@ -282,6 +311,32 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    ReadModel(".\\enterprise-e\\1701e_hull_7.3ds");
    ReadModel(".\\enterprise-e\\1701e_saucer_down_5.3ds");
    ReadModel(".\\enterprise-e\\1701e_saucer_top_6.3ds");
+
+   //vertices.push_back(-5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
+   //vertices.push_back(-5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
+   //vertices.push_back(5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
+   //vertices.push_back(5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
+   //vertices.push_back(-5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
+   //vertices.push_back(5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
+
+   //colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.0f);
+   //colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.0f);
+   //colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.0f);
+   //colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f);
+   //colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f);
+   //colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f);
+
+   //Vec3f right(10.0f, 0.0f, 1.0f); right.Normalize();
+   //Vec3f left(-10.0f, 0.0f, 1.0f); left.Normalize();
+   //normals.insert(normals.end(), left.mT, left.mT + 3);
+   //normals.insert(normals.end(), left.mT, left.mT + 3);
+   //normals.insert(normals.end(), right.mT, right.mT + 3);
+   //normals.insert(normals.end(), right.mT, right.mT + 3);
+   //normals.insert(normals.end(), left.mT, left.mT + 3);
+   //normals.insert(normals.end(), right.mT, right.mT + 3);
+
+   //indices.push_back(0); indices.push_back(1); indices.push_back(2);
+   //indices.push_back(3); indices.push_back(4); indices.push_back(5);
 
    // create the vao
    mEnterpriseE.mVAO.GenArray();
