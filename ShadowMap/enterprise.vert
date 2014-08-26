@@ -24,7 +24,7 @@ void main( )
    {
       vec4 frag_normal_eye = model_view_normal * vec4(vert_normal, 0.0f);
       vec4 light_dir_eye = model_view * vec4(-1.0f * light_dir, 0.0f);
-      float diffuse_intensity = max(dot(frag_normal_eye.xyz, light_dir_eye.xyz), 0.0f);
+      float diffuse_intensity = max(dot(normalize(frag_normal_eye.xyz), normalize(light_dir_eye.xyz)), 0.0f);
       float ambient_intensity = 0.05f;
 
       frag_color = frag_color * diffuse_intensity + ambient_intensity;

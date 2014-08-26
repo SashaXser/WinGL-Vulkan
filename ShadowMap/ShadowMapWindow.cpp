@@ -15,6 +15,7 @@
 
 // std includes
 #include <vector>
+#include <cstring>
 #include <cstdlib>
 #include <cstdint>
 #include <iostream>
@@ -98,11 +99,10 @@ int ShadowMapWindow::Run( )
 // temp
 float yaw = 0;
 float pitch = 0;
-float distance = 1.2;
 int prev_x, prev_y;
-bool light_per_pixel = false;
+bool light_per_pixel = true;
 
-Matrixf mv = Matrixf::LookAt(0, -distance, 1.0f, 0, 0, 1.0f, 0, 0.0f, 1.0f);
+Matrixf mv = Matrixf::LookAt(0, 40.0f, 100.0f, 0, 40.0f, 0.0f, 0, 1.0f, 0.0f);
 Matrixf mvn = mv.Inverse().Transpose();
 const Matrixf proj = Matrixf::Perspective(45.0f, 4.f/3.f, 0.01f, 3000.f);
 
@@ -139,7 +139,7 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
          mv.MakeInverse();
 
          const Vec3f eye(mv.mT + 12);
-         mv = (Matrixf::Translate(eye) * Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
+         mv = (Matrixf::Translate(eye) /** Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f)*/ *
                Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
          mvn = mv.Inverse().Transpose();
       }
@@ -152,14 +152,14 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
    case WM_MOUSEWHEEL:
       {
-      const float multiplier = wParam & MK_CONTROL ? 10.0f : wParam & MK_SHIFT ? 20.0f : 1.0f;
+      const float multiplier = wParam & MK_CONTROL ? 50.0f : wParam & MK_SHIFT ? 100.0f : 1.0f;
       const float delta = static_cast< int16_t >((wParam & 0xFFFF0000) >> 16) / static_cast< float >(WHEEL_DELTA) * 0.005f * multiplier;
 
       const Vec3f view_dir = MatrixHelper::GetViewVector(mv);
       mv.MakeInverse();
 
       const Vec3f eye(Vec3f(mv.mT + 12) + view_dir.UnitVector() * delta);
-      mv = (Matrixf::Translate(eye) * Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f) *
+      mv = (Matrixf::Translate(eye) /** Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f)*/ *
             Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
       mvn = mv.Inverse().Transpose();
 
@@ -244,7 +244,38 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             colors.push_back(b);
          }
       }
-   }; 
+   };
+
+   const auto ConstructChildNodeMatrix = [ ] ( const char * const pNodeName, const aiScene * const pScene ) -> Matrixf
+   {
+      const aiNode * const * ppChildrenBeg = pScene->mRootNode->mChildren;
+      const aiNode * const * ppChildrenEnd = pScene->mRootNode->mChildren + pScene->mRootNode->mNumChildren;
+
+      const uint32_t node_name_id = std::stoul(pNodeName);
+
+      const auto ppNode =
+         std::find_if(ppChildrenBeg, ppChildrenEnd,
+         [ & ] ( const aiNode * const pNode ) -> bool
+         {
+            const auto pID =
+               std::find_if(pNode->mMeshes, pNode->mMeshes + pNode->mNumMeshes,
+               [ & ] ( const uint32_t id ) { return node_name_id == id; });
+
+            return pID != pNode->mMeshes + pNode->mNumMeshes;
+         });
+
+      Matrixf model_matrix;
+
+      if (ppNode)
+      {
+         for (const aiNode * pNode = *ppNode; pNode; pNode = pNode->mParent)
+         {
+            model_matrix = Matrixf(&pNode->mTransformation.a1).Transpose() * model_matrix;
+         }
+      }
+
+      return model_matrix;
+   };
 
    const auto ReadModel = [ & ] ( const char * const pFilename )
    {
@@ -278,12 +309,21 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             const aiVector3D * const pNormals = pCurMesh->mNormals;
             const size_t num_verts = pCurMesh->mNumVertices;
 
+            // temp - find better way
+            Matrixf mesh_matrix = ConstructChildNodeMatrix(pCurMesh->mName.C_Str(), pScene);
+
             // there should always be triangles in this model...
             WGL_ASSERT(pCurMesh->mPrimitiveTypes == aiPrimitiveType_TRIANGLE);
 
             GenColors(num_verts, colors);
             normals.insert(normals.end(), &pNormals->x, &pNormals->x + num_verts * 3);
-            vertices.insert(vertices.end(), &pVertices->x, &pVertices->x + num_verts * 3);
+            //vertices.insert(vertices.end(), &pVertices->x, &pVertices->x + num_verts * 3);
+            // temp - find better way
+            for (int i = 0; num_verts > i; ++i)
+            {
+               Vec3f verts = mesh_matrix * Vec3f(&((pVertices + i)->x));
+               vertices.insert(vertices.end(), verts.mT, verts.mT + 3);
+            }
 
             // establish what the base index for this model is
             const uint32_t base_index = static_cast< uint32_t >(indices.size());
@@ -308,9 +348,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    };
 
    // read all the models in
-   ReadModel(".\\enterprise-e\\1701e_hull_7.3ds");
-   ReadModel(".\\enterprise-e\\1701e_saucer_down_5.3ds");
-   ReadModel(".\\enterprise-e\\1701e_saucer_top_6.3ds");
+   ReadModel(".\\enterprise\\Enterp TOS - Arena.3DS");
 
    //vertices.push_back(-5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
    //vertices.push_back(-5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
