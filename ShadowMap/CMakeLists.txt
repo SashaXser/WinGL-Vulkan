@@ -19,6 +19,6 @@ endif (PROJECTS_USE_GLEW_STATIC)
 target_link_libraries(${PROJECT_NAME_SHADOW_MAP} ${PROJECT_NAME_WIN_GL})
 target_link_libraries(${PROJECT_NAME_SHADOW_MAP} ${PROJECT_NAME_ASSIMP})
 
-copy_to_bin(enterprise-e)
+copy_to_bin(enterprise)
 copy_to_bin(enterprise.frag)
 copy_to_bin(enterprise.vert)
