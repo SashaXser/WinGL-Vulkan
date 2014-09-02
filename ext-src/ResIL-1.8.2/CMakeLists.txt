@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.0.0)
+
 if (NOT TARGET ${PROJECT_NAME_ZLIB})
    add_subdirectory("./input libs/zlib-1.2.8")
 endif ( )
@@ -113,22 +115,14 @@ source_group(ext-lib\\jpeg FILES ${RES_IL_EXT_LIBS_JPEG})
 source_group(ext-lib\\lcms2 FILES ${RES_IL_EXT_LIBS_LCMS2})
 source_group(ext-lib\\tiff FILES ${RES_IL_EXT_LIBS_TIFF})
 
-include_directories(./internal)
-include_directories(./include)
-include_directories(./src-il/include)
-include_directories("./input libs/jasper-1.900.1/src/libjasper/include")
-include_directories("./input libs/jpegsr9a")
-include_directories("./input libs/lcms2-2.5/include")
-include_directories("./input libs/tiff-4.0.3/libtiff")
+target_include_directories(resil PRIVATE ./internal)
+target_include_directories(resil PUBLIC ./include)
+target_include_directories(resil PRIVATE ./src-il/include)
+target_include_directories(resil PRIVATE "./input libs/jasper-1.900.1/src/libjasper/include")
+target_include_directories(resil PRIVATE "./input libs/jpegsr9a")
+target_include_directories(resil PRIVATE "./input libs/lcms2-2.5/include")
+target_include_directories(resil PRIVATE "./input libs/tiff-4.0.3/libtiff")
 
-#set_target_properties(${PROJECT_NAME_RES_IL} PROPERTIES COMPILE_DEFINITIONS "GLEW_STATIC")
-
-#target_link_libraries(${PROJECT_NAME_RES_IL} opengl32.lib)
-#target_link_libraries(${PROJECT_NAME_GLEW_DYNAMIC} opengl32.lib)
-
-#target_link_libraries(glewinfo ${PROJECT_NAME_RES_IL})
-#target_link_libraries(visualinfo ${PROJECT_NAME_RES_IL})
-
-target_link_libraries(resil public png16_static)
+target_link_libraries(resil PUBLIC png16_static)
 
 set_target_properties(resil PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/resil")
