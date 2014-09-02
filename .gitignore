@@ -1,2 +1,4 @@
 bin
 VS*
+build
+ext-src/ResIL-1.8.2/internal/

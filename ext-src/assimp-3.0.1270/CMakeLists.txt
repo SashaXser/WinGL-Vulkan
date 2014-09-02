@@ -224,3 +224,7 @@ if(CMAKE_CPACK_COMMAND AND UNIX AND OPT_BUILD_PACKAGES)
   include(CPack)
   include(DebSourcePPA)
 endif()
+
+# add the include directory to the target include interface
+target_include_directories(assimp INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+

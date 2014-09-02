@@ -22,7 +22,7 @@ set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_RELEASE})
 
 # needed packages
 find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIR})
+#include_directories(${ZLIB_INCLUDE_DIR})
 
 if(NOT WIN32)
   find_library(M_LIBRARY
@@ -68,7 +68,7 @@ set(CMAKE_DEBUG_POSTFIX "d")
 # pnglibconf.h in the build directory.)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/pnglibconf.h.prebuilt
                ${CMAKE_CURRENT_BINARY_DIR}/pnglibconf.h)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+#include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # OUR SOURCES
 set(libpng_public_hdrs
@@ -118,7 +118,7 @@ if(PNG_DEBUG)
 endif()
 
 # NOW BUILD OUR TARGET
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${ZLIB_INCLUDE_DIR})
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${ZLIB_INCLUDE_DIR})
 
 unset(PNG_LIB_TARGETS)
 
@@ -361,4 +361,8 @@ endif()
 # to create msvc import lib for mingw compiled shared lib
 # pexports libpng.dll > libpng.def
 # lib /def:libpng.def /machine:x86
+
+# setup the include directories on this target to be used by other targets and itself
+target_include_directories(${PNG_LIB_NAME_STATIC} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(${PNG_LIB_NAME_STATIC} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

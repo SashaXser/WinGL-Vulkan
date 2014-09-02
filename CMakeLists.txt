@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0.0)
+
+# update the cmake module path
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/ext-src/cmake-modules" ${CMAKE_MODULE_PATH})
 
 macro(copy_to_bin file)
    foreach(config IN LISTS CMAKE_CONFIGURATION_TYPES)
@@ -13,7 +16,7 @@ set(CMAKE_CONFIGURATION_TYPES
     
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-project(win-gl)
+project(win-gl LANGUAGES C CXX)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP /D _CRT_SECURE_NO_WARNINGS /D WIN32_LEAN_AND_MEAN /D VC_EXTRA_LEAN /D NOMINMAX")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /D _CRT_SECURE_NO_WARNINGS /D WIN32_LEAN_AND_MEAN /D VC_EXTRA_LEAN /D NOMINMAX")
@@ -23,36 +26,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(EXT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext-src)
 set(EXT_SRC_IDE_FOLDER ext-src)
 
-# glew project defines
-set(PROJECTS_USE_GLEW_STATIC TRUE)
-
-# assimp project defines
-set(BUILD_TESTS OFF)
-set(BUILD_STATIC_LIB ON)
-set(OPT_BUILD_PACKAGES OFF)
-set(BUILD_ASSIMP_TOOLS OFF)
-set(BUILD_ASSIMP_SAMPLES OFF)
-set(ENABLE_BOOST_WORKAROUND ON)
+set(PROJECTS_USE_GLEW_STATIC YES)
 
 # just in case an install happens, just install locally...
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install")
 
-set(PROJECT_NAME_GLEW_STATIC        glew_static)
-set(PROJECT_NAME_GLEW_DYNAMIC       glew_shared)
-set(PROJECT_NAME_ASSIMP             assimp)
-set(PROJECT_NAME_ZLIB               zlib)
-set(PROJECT_NAME_ASSIMP_UNINSTALL   uninstall)
-set(PROJECT_NAME_WIN_GL             WinGL)
-set(PROJECT_NAME_PROJ_TEX           ProjectiveTexturing)
-set(PROJECT_NAME_RENDER_TGT         RenderTarget)
-set(PROJECT_NAME_SHADOW_MAP         ShadowMap)
-set(PROJECT_NAME_SMOKE_PART_SYS     SmokeParticleSystem)
-set(PROJECT_NAME_INSTANCING         Instancing)
-set(PROJECT_NAME_WINDOWLESS_RENDER  WindowlessRender)
-set(PROJECT_NAME_TESS_TRI           TessellationTriangle)
-
-add_subdirectory(./ext-src/glew-1.9.0)
-add_subdirectory(./ext-src/assimp-3.0.1270)
+add_subdirectory(./ext-src)
 add_subdirectory(./WinGL)
 add_subdirectory(./ProjectiveTexturing)
 add_subdirectory(./RenderTarget)
@@ -61,8 +40,3 @@ add_subdirectory(./SmokeParticleSystem)
 add_subdirectory(./Instancing)
 add_subdirectory(./WindowlessRender)
 add_subdirectory(./TessellationTriangle)
-
-# move assimp and dependencies into ext-src folder
-set_target_properties(${PROJECT_NAME_ASSIMP} PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
-set_target_properties(${PROJECT_NAME_ZLIB} PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
-set_target_properties(${PROJECT_NAME_ASSIMP_UNINSTALL} PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
