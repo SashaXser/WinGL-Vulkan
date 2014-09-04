@@ -98,7 +98,7 @@ typedef long long unsigned int ILuint64;
 
 
 #include <limits.h>
-#ifdef _UNICODE
+#if defined _UNICODE || defined _RESIL_IS_UNICODE
 	#ifndef _WIN32_WCE
 		#include <wchar.h>
 	#endif
@@ -115,7 +115,7 @@ typedef long long unsigned int ILuint64;
 	#define ILconst_string char const *
 
 	#define PathCharMod "%s"
-#endif //_UNICODE
+#endif //_UNICODE || _RESIL_IS_UNICODE
 
 #define IL_FALSE			0
 #define IL_TRUE				1
