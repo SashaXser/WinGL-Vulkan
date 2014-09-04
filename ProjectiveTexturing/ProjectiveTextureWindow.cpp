@@ -11,6 +11,8 @@
 #include <gl/gl.h>
 
 // stl includes
+#include <memory>
+#include <cstdint>
 #include <iostream>
 #include <algorithm>
 
@@ -496,9 +498,9 @@ void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
 void ProjectiveTextureWindow::LoadTexture( )
 {
    // load the texture data
-   unsigned char * pTexture = NULL;
+   std::shared_ptr< uint8_t > pTexture = NULL;
 
-   if (ReadRGB("BMLogo.rgb", mTexWidth, mTexHeight, &pTexture))
+   if (ReadRGB("BMLogo.rgb", mTexWidth, mTexHeight, pTexture))
    {
       // generate a texture id
       glGenTextures(1, &mLogoTex);
@@ -522,13 +524,10 @@ void ProjectiveTextureWindow::LoadTexture( )
                    0,
                    GL_RGBA,
                    GL_UNSIGNED_BYTE,
-                   pTexture);
+                   pTexture.get());
 
       // release the bound texture
       glBindTexture(GL_TEXTURE_2D, 0);
-
-      // release the texture
-      delete [] pTexture;
    }
 }
 

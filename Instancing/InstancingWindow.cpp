@@ -12,6 +12,7 @@
 #include <GL/GL.h>
 
 // stl includes
+#include <memory>
 #include <vector>
 #include <sstream>
 #include <iomanip>
@@ -259,23 +260,20 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
 void InstancingWindow::CreateInstances( )
 {
    // create a texture object
-   uint8_t * pTexture = nullptr;
    uint32_t width = 0, height = 0;
-   ReadRGB("buildings.rgb", width, height, &pTexture);
+   std::shared_ptr< uint8_t > pTexture = nullptr;
+   ReadTexture("buildings.rgb", GL_BGRA, width, height, pTexture);
 
    GLuint texID = 0;
    glGenTextures(1, &texID);
    glBindTexture(GL_TEXTURE_2D, texID);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexture);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexture.get());
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glGenerateMipmap(GL_TEXTURE_2D);
    glBindTexture(GL_TEXTURE_2D, 0);
-
-   // release the texture
-   delete [] pTexture;
 
    // defines a temp hold for the instanced data
    struct InstanceData
@@ -384,21 +382,18 @@ void InstancingWindow::CreateInstances( )
    }
 
    // create a tree texture object
-   ReadRGB("trees.rgb", width, height, &pTexture);
+   ReadTexture("trees.rgb", GL_BGRA, width, height, pTexture);
 
    GLuint treeTexID = 0;
    glGenTextures(1, &treeTexID);
    glBindTexture(GL_TEXTURE_2D, treeTexID);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexture);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexture.get());
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glGenerateMipmap(GL_TEXTURE_2D);
    glBindTexture(GL_TEXTURE_2D, 0);
-
-   // release the texture
-   delete [] pTexture;
 
    // start setting up the instanced data for the trees
    std::vector< std::vector< Vec3f > > treeVerts(NUM_TREE_TYPES);

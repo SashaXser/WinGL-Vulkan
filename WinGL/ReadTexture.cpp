@@ -1,36 +1,45 @@
 // local includes
 #include "ReadTexture.h"
+#include "WglAssert.h"
 
-// stl includes
-#include <fstream>
+// std includes
+#include <string>
+#include <cstring>
+#include <cstdlib>
 
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-////////////////////////// ReadPNG //////////////////////////////
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
+// resil includes
+#include <il/il.h>
 
-bool ReadPNG( const char * pFilename,
-              unsigned int & rWidth,
-              unsigned int & rHeight,
-              unsigned char ** ppTexBuffer )
+namespace details
 {
-   return false;
+
+// called to shutdown resil
+void ShutdownResIL( )
+{
+   ilShutDown();
 }
 
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-////////////////////////// ReadTGA //////////////////////////////
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-
-bool ReadTGA( const char * pFilename,
-              unsigned int & rWidth,
-              unsigned int & rHeight,
-              unsigned char ** ppTexBuffer )
+// use the crt initialization stage to init resil
+bool InitResIL( )
 {
-   return false;
+   // install an exit handler for resil
+   std::atexit(&ShutdownResIL);
+
+   // init the library
+   ilInit();
+
+   // enable the lower left for all files
+   ilEnable(IL_ORIGIN_SET);
+   ilSetInteger(IL_ORIGIN_MODE, IL_ORIGIN_LOWER_LEFT);
+
+   // make sure there are no errors
+   return ilGetError() == IL_NO_ERROR;
 }
+
+// indicates if resil was initialized
+static const bool resil_inited = InitResIL();
+
+} // namespace details
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -38,160 +47,123 @@ bool ReadTGA( const char * pFilename,
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-// local functions to swap data
-template < class T > T SwapData16( const T & rT )
+bool ReadRGB( const char * const pFilename,
+              uint32_t & width,
+              uint32_t & height,
+              std::shared_ptr< uint8_t > & pTexBuffer )
 {
-   // create a local type
-   T t;
-   // create a pointer to the reference
-   const char * pRefData = (const char *)&rT;
-   // create a pointer to the local type
-   char * pLocalData = (char *)&t;
-   // move the data to the little endian format
-   *pLocalData = *(pRefData + 1);
-   *(pLocalData + 1) = *pRefData;
-   // return the local type
-   return t;
+   return ReadTexture(pFilename, width, height, pTexBuffer);
 }
 
-template < class T > T SwapData32( const T & rT )
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+//////////////////////// ReadTexture ////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+bool ReadTexture( const char * const pFilename,
+                  uint32_t & width,
+                  uint32_t & height,
+                  std::shared_ptr< uint8_t > & pTexBuffer )
 {
-   // create a local type
-   T t;
-   // create a pointer to the reference
-   const char * pRefData = (const char *)&rT;
-   // create a pointer to the local type
-   char * pLocalData = (char *)&t;
-   // move the data to the little endian format
-   *pLocalData       = *(pRefData + 3);
-   *(pLocalData + 1) = *(pRefData + 2);
-   *(pLocalData + 2) = *(pRefData + 1);
-   *(pLocalData + 3) = *pRefData;
-   // return the local type
-   return t;
+   return ReadTexture(pFilename, GL_RGBA, width, height, pTexBuffer);
 }
 
-typedef struct RGBHeader
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////// ReadTexture Template ////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+template < typename T > struct il_type;
+template < > struct il_type< uint8_t > { static const ILenum type = IL_UNSIGNED_BYTE; };
+template < > struct il_type< uint16_t > { static const ILenum type = IL_UNSIGNED_SHORT; };
+template < > struct il_type< uint32_t > { static const ILenum type = IL_UNSIGNED_INT; };
+template < > struct il_type< float > { static const ILenum type = IL_FLOAT; };
+
+template < typename T >
+bool ReadTexture( const char * const pFilename,
+                  const GLenum format,
+                  uint32_t & width,
+                  uint32_t & height,
+                  std::shared_ptr< T > & pTexBuffer )
 {
-   short          nMagic;
-   char           nStorage;
-   char           nBpc;
-   unsigned short nDimension;
-   unsigned short nXSize;
-   unsigned short nYSize;
-   unsigned short nZSize;
-   long           nPixMin;
-   long           nPixMax;
-   char           nDummy[4];
-   char           nImageName[80];
-   long           nColorMap;
-   char           nDummy2[404];
-} RGBHeaderType;
+   // image library should be good to go
+   WGL_ASSERT(details::resil_inited);
 
-bool ReadUncompressedImage( const RGBHeader & rHeader,
-                            std::istream & rInput,
-                            unsigned char ** ppTexBuffer )
-{ 
-   // determine the image size
-   const unsigned int nImgSize = rHeader.nXSize * rHeader.nYSize;
+   bool read = false;
 
-   // create a local image format
-   unsigned char * pImage = new unsigned char[nImgSize * rHeader.nZSize];
-   // read in all the image data
-   rInput.read((char *)pImage, nImgSize * rHeader.nZSize);
-
-   // point to the components
-   unsigned char * pRed   = rHeader.nZSize >= 1 ? pImage : NULL;
-   unsigned char * pGreen = rHeader.nZSize >= 2 ? pImage + nImgSize : NULL;
-   unsigned char * pBlue  = rHeader.nZSize >= 3 ? pImage + nImgSize * 2 : NULL;
-   unsigned char * pAlpha = rHeader.nZSize >= 4 ? pImage + nImgSize * 3 : NULL;
-
-   // create the image
-   *ppTexBuffer = new unsigned char[nImgSize * 4];
-
-   // create a local pointer to the image
-   unsigned char * pTempImage = *ppTexBuffer;
-
-   // set the image data from the file
-   for (unsigned int i = 0; i < nImgSize; i++)
+   // is the format supported???
+   const ILenum il_format = [ &format ] ( ) -> ILenum
    {
-      // set the image attributes
-      *(pTempImage++) = pBlue  ? *pBlue++  : 0xFF;
-      *(pTempImage++) = pGreen ? *pGreen++ : 0xFF;
-      *(pTempImage++) = pRed   ? *pRed++   : 0xFF;
-      *(pTempImage++) = pAlpha ? *pAlpha++ : 0xFF;
-   }
+      ILenum il_format = IL_FORMAT_NOT_SUPPORTED;
 
-   // release the temp image
-   delete [] pImage;
-
-   return true;
-}
-
-bool ReadCompressedRLEImage( const RGBHeader & rHeader,
-                             std::istream & rInput,
-                             unsigned char ** ppTexBuffer )
-{
-   return false;
-}
-
-bool ReadRGB( const char * pFilename,
-              unsigned int & rWidth,
-              unsigned int & rHeight,
-              unsigned char ** ppTexBuffer )
-{
-   // local(s)
-   bool bRead = false;
-
-   // create a input file stream
-   std::ifstream fInputStream;
-   // open the stream
-   fInputStream.open(pFilename, std::ios_base::in | std::ios_base::binary);
-
-   // make sure the file is open
-   if (fInputStream.is_open())
-   {
-      // create a local header
-      RGBHeader rgbHeader;
-      // read the local header
-      fInputStream.read((char *)&rgbHeader, sizeof(rgbHeader));
-      // need to convert the header to little endian
-      rgbHeader.nMagic     = SwapData16(rgbHeader.nMagic);
-      rgbHeader.nDimension = SwapData16(rgbHeader.nDimension);
-      rgbHeader.nXSize     = SwapData16(rgbHeader.nXSize);
-      rgbHeader.nYSize     = SwapData16(rgbHeader.nYSize);
-      rgbHeader.nZSize     = SwapData16(rgbHeader.nZSize);
-      rgbHeader.nPixMin    = SwapData32(rgbHeader.nPixMin);
-      rgbHeader.nPixMax    = SwapData32(rgbHeader.nPixMax);
-      rgbHeader.nColorMap  = SwapData32(rgbHeader.nColorMap);
-      // dimensions of 3 or greater are valid
-      // bpc is only valid if it is a 1
-      // color map values of 0x00 are only valid
-      if (rgbHeader.nDimension >= 0x03 &&
-          rgbHeader.nBpc == 0x01       &&
-          rgbHeader.nColorMap == 0x00)
+      switch (format)
       {
-         // determine the type of image format
-         if (rgbHeader.nStorage)
-         {
-            bRead = ReadCompressedRLEImage(rgbHeader, fInputStream, ppTexBuffer);
-         }
-         else
-         {
-            bRead = ReadUncompressedImage(rgbHeader, fInputStream, ppTexBuffer);
-         }
+      case GL_RGB:   il_format = IL_RGB;  break;
+      case GL_RGBA:  il_format = IL_RGBA; break;
+      case GL_BGR:   il_format = IL_BGR;  break;
+      case GL_BGRA:  il_format = IL_BGRA; break;
+      default: il_format = IL_FORMAT_NOT_SUPPORTED; break;
+      }
 
-         if (bRead)
+      return il_format;
+   }();
+
+   if (il_format != IL_FORMAT_NOT_SUPPORTED)
+   {
+      // create an image handle for reading
+      const ILuint image_handle = ilGenImage();
+
+      // bind the image for processing
+      ilBindImage(image_handle);
+
+      // try to load the image
+      if (const ILboolean image_loaded =
+          ilLoadImage(std::wstring(pFilename, pFilename + std::strlen(pFilename)).c_str()))
+      {
+         // get the width and height of the image
+         width = static_cast< uint32_t >(ilGetInteger(IL_IMAGE_WIDTH));
+         height = static_cast< uint32_t >(ilGetInteger(IL_IMAGE_HEIGHT));
+
+         // determine the number of bytes per pixel
+         const uint32_t Bpp = [ &format ] ( ) -> uint32_t
          {
-            // save off the texture width and height
-            rWidth = rgbHeader.nXSize;
-            rHeight = rgbHeader.nYSize;
+            uint32_t Bpp = 0;
+
+            switch (format)
+            {
+            case GL_RGB:   Bpp = 3; break;
+            case GL_RGBA:  Bpp = 4; break;
+            case GL_BGR:   Bpp = 3; break;
+            case GL_BGRA:  Bpp = 4; break;
+            default:       Bpp = 0; break;
+            }
+
+            return Bpp;
+         }();
+
+         if (Bpp)
+         {
+            // create buffer large enough to hold texture
+            pTexBuffer.reset(new T[width * height * Bpp]);
+
+            // copy the data into the buffer
+            ilCopyPixels(0, 0, 0, width, height, 1, il_format, il_type< T >::type, pTexBuffer.get());
+
+            // image has been read
+            read = true;
          }
       }
 
-      // close the input stream
-      fInputStream.close();
+      // done with the image, so release it
+      ilDeleteImage(image_handle);
    }
 
-   return bRead;
+   return read;
 }
+
+template bool ReadTexture< uint8_t >( const char * const, const GLenum, uint32_t &, uint32_t &, std::shared_ptr< uint8_t > & );
+template bool ReadTexture< uint16_t >( const char * const, const GLenum, uint32_t &, uint32_t &, std::shared_ptr< uint16_t > & );
+template bool ReadTexture< uint32_t >( const char * const, const GLenum, uint32_t &, uint32_t &, std::shared_ptr< uint32_t > & );
+template bool ReadTexture< float >( const char * const, const GLenum, uint32_t &, uint32_t &, std::shared_ptr< float > & );

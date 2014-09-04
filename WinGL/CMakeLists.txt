@@ -42,3 +42,5 @@ if (PROJECTS_USE_GLEW_STATIC)
 else (PROJECTS_USE_GLEW_STATIC)
    target_link_libraries(WinGL PUBLIC glew_shared)
 endif (PROJECTS_USE_GLEW_STATIC)
+
+target_link_libraries(WinGL PUBLIC resil)
