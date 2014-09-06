@@ -11,7 +11,7 @@ set(ENABLE_BOOST_WORKAROUND ON)
 # do a lookup of zlib first, so other cmake module paths are not overwritten...
 find_package(ZLIB REQUIRED)
 
-add_subdirectory(./glew-1.9.0)
+add_subdirectory(./glew-1.11.0)
 add_subdirectory(./assimp-3.0.1270)
 add_subdirectory(./resil-1.8.2)
 
