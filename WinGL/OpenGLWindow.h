@@ -4,6 +4,9 @@
 // local includes
 #include "Window.h"
 
+// std includes
+#include <cstdint>
+
 class OpenGLWindow : public Window
 {
 public:
@@ -44,10 +47,19 @@ protected:
    BOOL MakeCurrent( ) { return wglMakeCurrent(GetDC(GetHWND()), mGLContext); }
    BOOL ReleaseCurrent( ) { return wglMakeCurrent(GetDC(GetHWND()), NULL); }
 
+   // determines if the context is current
+   BOOL ContextIsCurrent( ) const { return wglGetCurrentContext() == mGLContext; }
+
    // attaches debug out to the application...
    // a debug context must be requested for this to work...
    bool AttachToDebugContext( );
    void DetachFromDebugContext( );
+
+   // allow for inserts into the debug message structure
+   void PostDebugMessage( const uint32_t type,
+                          const uint32_t id,
+                          const uint32_t severity,
+                          const char * const pMsg );
 
 private:
    // prohibit copy constructor
@@ -56,17 +68,17 @@ private:
    OpenGLWindow & operator = ( const OpenGLWindow & );
 
    // private static debug context callbacks
-   static void __stdcall DebugContextCallbackAMD( unsigned int id,
-                                                  unsigned int category,
-                                                  unsigned int severity,
-                                                  int length,
+   static void __stdcall DebugContextCallbackAMD( uint32_t id,
+                                                  uint32_t category,
+                                                  uint32_t severity,
+                                                  int32_t length,
                                                   const char * message,
                                                   void * userParams );
-   static void __stdcall DebugContextCallbackARB( unsigned int source,
-                                                  unsigned int type,
-                                                  unsigned int id,
-                                                  unsigned int severity,
-                                                  int length,
+   static void __stdcall DebugContextCallbackARB( uint32_t source,
+                                                  uint32_t type,
+                                                  uint32_t id,
+                                                  uint32_t severity,
+                                                  int32_t length,
                                                   const char * message,
                                                   const void * userParams );
 

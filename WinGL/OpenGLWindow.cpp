@@ -10,6 +10,7 @@
 #include <gl/gl.h>
 
 // stl includes
+#include <cstring>
 #include <sstream>
 #include <iostream>
 
@@ -378,6 +379,34 @@ void OpenGLWindow::DetachFromDebugContext( )
             glDebugMessageEnableAMD(*(pDebugCat + i), GL_DEBUG_SEVERITY_LOW_AMD, 0, NULL, GL_FALSE);
          }
       }
+   }
+}
+
+void OpenGLWindow::PostDebugMessage( const uint32_t type,
+                                     const uint32_t id,
+                                     const uint32_t severity,
+                                     const char * const pMsg )
+{
+   // make sure that a debug context was requested...
+   if (mDebugRequested && ContextIsCurrent())
+   {
+      // check to see if the arb is supported...
+      // if the arb is not supported, try the amd extensions...
+      if (gl::IsExtensionSupported("GL_ARB_debug_output"))
+      {
+         // standard extension is supported here...
+         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, type, id, severity, static_cast< int32_t >(std::strlen(pMsg)), pMsg);
+      }
+      else if (gl::IsExtensionSupported("GL_AMD_debug_output"))
+      {
+         // amd extension is supported here...
+         glDebugMessageInsertAMD(GL_DEBUG_CATEGORY_APPLICATION_AMD, severity, id, static_cast< int32_t >(std::strlen(pMsg)), pMsg);
+      }
+   }
+   else
+   {
+      // no debug context requested, so issue the message ourselves
+      OpenGLWindow::DebugContextCallbackARB(GL_DEBUG_SOURCE_APPLICATION, type, id, severity, static_cast< int32_t >(std::strlen(pMsg)), pMsg, nullptr);
    }
 }
 
