@@ -68,7 +68,7 @@ private:
                                                   unsigned int severity,
                                                   int length,
                                                   const char * message,
-                                                  void * userParams );
+                                                  const void * userParams );
 
    // creates an OpenGL context
    bool CreateOpenGLContext( const OpenGLInit * pInitParams );

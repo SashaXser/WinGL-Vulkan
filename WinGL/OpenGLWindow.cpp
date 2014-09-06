@@ -434,7 +434,7 @@ void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
                                                       unsigned int severity,
                                                       int length,
                                                       const char * message,
-                                                      void * userParams )
+                                                      const void * userParams )
 {
    // message string to output
    std::stringstream ssMsg;
