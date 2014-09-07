@@ -10,14 +10,17 @@ uniform mat4 model_view_normal;
 layout (location = 0) in vec3 vert_position;
 layout (location = 1) in vec3 vert_color;
 layout (location = 2) in vec3 vert_normal;
+layout (location = 3) in vec3 tex_coords;
 
 smooth out vec3 frag_color;
 smooth out vec3 frag_normal;
+smooth out vec2 frag_tex_coords;
 
 void main( )
 {
    frag_color = vert_color;
    frag_normal = vert_normal;
+   frag_tex_coords = tex_coords.xy;
    gl_Position = projection * model_view * vec4(vert_position, 1.0f);
 
    if (!light_per_pixel)

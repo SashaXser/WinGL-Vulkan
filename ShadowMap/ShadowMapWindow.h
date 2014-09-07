@@ -3,13 +3,6 @@
 
 // wingl includes
 #include "OpenGLWindow.h"
-#include "ShaderProgram.h"
-#include "VertexArrayObject.h"
-#include "VertexBufferObject.h"
-
-// gl includes
-#include "GL/glew.h"
-#include <GL/GL.h>
 
 class ShadowMapWindow : public OpenGLWindow
 {
@@ -34,33 +27,18 @@ protected:
    // destructor
    virtual ~ShadowMapWindow( );
 
+   // called when the window is about to be destroyed
+   // the opengl context is no longer valid after this call returns
+   virtual void OnDestroy( ) override;
+
    // handles messages passed by the system
    virtual LRESULT MessageHandler( UINT uMsg,
                                    WPARAM wParam,
                                    LPARAM lParam );
 
 private:
-   // defines a basic renderable object
-   struct Renderable
-   {
-      Renderable( ) :
-      mTexBufID   ( 0 ),
-      mTexID      ( 0 )
-      { }
-
-      // vao id
-      VAO            mVAO;
-      // vbo ids
-      VBO            mVertBuf;
-      VBO            mIdxBuf;
-      GLuint         mTexBufID;
-      VBO            mNormBuf;
-      VBO            mClrBuf;
-      // texture id
-      GLuint         mTexID;
-      // shader program
-      ShaderProgram  mProgram;
-   };
+   // forward declarations
+   struct Renderable;
 
    // renders the scene
    void RenderScene( );
@@ -70,7 +48,7 @@ private:
    void GenerateEnterpriseE( );
 
    // renderable objects
-   Renderable  mEnterpriseE;
+   Renderable *   mpEnterpriseE;
 
 };
 

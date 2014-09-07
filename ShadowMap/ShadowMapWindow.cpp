@@ -3,30 +3,94 @@
 #include "Matrix.h"
 #include "Vector3.h"
 #include "WglAssert.h"
+#include "ReadTexture.h"
 #include "MatrixHelper.h"
+#include "ShaderProgram.h"
 #include "OpenGLExtensions.h"
+#include "VertexArrayObject.h"
+#include "VertexBufferObject.h"
 
-// assimp includes
+// assimp 
 #include "assimp/mesh.h"
+#include "assimp/types.h"
 #include "assimp/scene.h"
 #include "assimp/vector3.h"
+#include "assimp/material.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 
 // std includes
+#include <map>
+#include <memory>
+#include <string>
 #include <vector>
+#include <sstream>
 #include <cstring>
 #include <cstdlib>
 #include <cstdint>
-#include <iostream>
+#include <utility>
 #include <algorithm>
 
-ShadowMapWindow::ShadowMapWindow( )
+// gl includes
+#include "GL/glew.h"
+#include <GL/GL.h>
+
+// defines a basic renderable object
+struct ShadowMapWindow::Renderable
+{
+   // typedefs
+   typedef std::vector< GLuint > TextureCtr;
+   typedef std::multimap< GLuint, std::pair< GLuint, GLsizei > > RenderBucket;
+
+   // vao id
+   VAO      mVAO;
+   // vbo ids
+   VBO      mVertBuf;
+   VBO      mIdxBuf;
+   VBO      mTexBuf;
+   VBO      mNormBuf;
+   VBO      mClrBuf;
+   // texture container
+   TextureCtr     mTexIDs;
+   // shader program
+   ShaderProgram  mProgram;
+   // defines the render order by texture
+   // unit... group multiple items together...
+   RenderBucket   mRenderBuckets;
+};
+
+ShadowMapWindow::ShadowMapWindow( ) :
+mpEnterpriseE     ( new Renderable )
 {
 }
 
 ShadowMapWindow::~ShadowMapWindow( )
 {
+   WGL_ASSERT(!mpEnterpriseE);
+}
+
+void ShadowMapWindow::OnDestroy( )
+{
+   // should still have a valid context
+   WGL_ASSERT(ContextIsCurrent());
+
+   // release all the textures...
+   // need to move the textures into an object...
+   std::for_each(mpEnterpriseE->mTexIDs.cbegin(),
+                 mpEnterpriseE->mTexIDs.cend(),
+   [ ] ( const GLuint tex_id )
+   {
+      if (glIsTexture(tex_id))
+      {
+         glDeleteTextures(1, &tex_id);
+      }
+   });
+
+   // clean up the enterprise model
+   delete mpEnterpriseE; mpEnterpriseE = nullptr;
+
+   // call the base class to clean things up
+   OpenGLWindow::OnDestroy();
 }
 
 bool ShadowMapWindow::Create( unsigned int nWidth,
@@ -37,8 +101,7 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
    // initialize 40 first, then 32 second, else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
    {
-      { 4, 0, true, true, false }, 
-      { 3, 3, true, false, false },
+      { 4, 4, false, true, false }, 
       { 0 }
    };
 
@@ -55,9 +118,9 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
       GenerateSceneData();
 
       // setup the shaders
-      if (!mEnterpriseE.mProgram.AttachFile(GL_VERTEX_SHADER, "enterprise.vert") ||
-          !mEnterpriseE.mProgram.AttachFile(GL_FRAGMENT_SHADER, "enterprise.frag") ||
-          !mEnterpriseE.mProgram.Link())
+      if (!mpEnterpriseE->mProgram.AttachFile(GL_VERTEX_SHADER, "enterprise.vert") ||
+          !mpEnterpriseE->mProgram.AttachFile(GL_FRAGMENT_SHADER, "enterprise.frag") ||
+          !mpEnterpriseE->mProgram.Link())
       {
          return false;
       }
@@ -70,6 +133,9 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
    }
    else
    {
+      // issue an error from the application that it could not be created
+      PostDebugMessage(GL_DEBUG_TYPE_ERROR, 1, GL_DEBUG_SEVERITY_HIGH, "Unable To Create 4.4 OpenGL Context");
+
       // post the quit message
       PostQuitMessage(-1);
    }
@@ -192,24 +258,54 @@ void ShadowMapWindow::RenderScene( )
 
    // temp
    static float light_dir = 0.0f;
-   mEnterpriseE.mProgram.Enable();
-   mEnterpriseE.mProgram.SetUniformValue("light_dir", std::sin(light_dir), 0.0f, std::cos(light_dir));
-   //mEnterpriseE.mProgram.SetUniformValue("light_dir", 0.0f, 0.0f, -1.0f);
-   mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("projection", proj);
-   mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("model_view", mv);
-   mEnterpriseE.mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mvn);
-   mEnterpriseE.mProgram.SetUniformValue("light_per_pixel", light_per_pixel ? 1 : 0);
+   mpEnterpriseE->mProgram.Enable();
+   mpEnterpriseE->mProgram.SetUniformValue("light_dir", std::sin(light_dir), 0.0f, std::cos(light_dir));
+   //mpEnterpriseE->mProgram.SetUniformValue("light_dir", 0.0f, 0.0f, -1.0f);
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("projection", proj);
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view", mv);
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mvn);
+   mpEnterpriseE->mProgram.SetUniformValue("light_per_pixel", light_per_pixel ? 1 : 0);
 
    Vec4f en = mvn * Vec4f(0.0f, 0.0f, 1.0f, 0.0f);
 
    light_dir += 0.0005f;
 
-   mEnterpriseE.mVAO.Bind();
+   mpEnterpriseE->mVAO.Bind();
 
-   //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mEnterpriseE.mVertBuf.Size< float >() / 3));
-   glDrawElements(GL_TRIANGLES, static_cast< GLsizei >(mEnterpriseE.mIdxBuf.Size< uint32_t >()), GL_UNSIGNED_INT, nullptr);
+   //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mpEnterpriseE->mVertBuf.Size< float >() / 3));
+   //glDrawElements(GL_TRIANGLES, static_cast< GLsizei >(mpEnterpriseE->mIdxBuf.Size< uint32_t >()), GL_UNSIGNED_INT, nullptr);
 
-   mEnterpriseE.mVAO.Unbind();
+   GLuint current_tex_id = 0;
+   auto rbucketBeg = mpEnterpriseE->mRenderBuckets.cbegin();
+   const auto rbucketEnd = mpEnterpriseE->mRenderBuckets.cend();
+
+   for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
+   {
+      GLuint rbucket_tex_id = mpEnterpriseE->mTexIDs[rbucketBeg->first];
+
+      if (current_tex_id != rbucket_tex_id)
+      {
+         current_tex_id = rbucket_tex_id;
+
+         glActiveTexture(GL_TEXTURE0);
+         glBindTexture(GL_TEXTURE_2D, rbucket_tex_id);
+
+         if (!current_tex_id)
+         {
+            mpEnterpriseE->mProgram.SetUniformValue("tex_unit_0_active", 0);
+         }
+         else
+         {
+            mpEnterpriseE->mProgram.SetUniformValue("tex_unit_0_active", 1);
+         }
+      }
+
+      glDrawElements(GL_TRIANGLES, rbucketBeg->second.second, GL_UNSIGNED_INT, reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
+   }
+
+   glBindTexture(GL_TEXTURE_2D, 0);
+
+   mpEnterpriseE->mVAO.Unbind();
 
 
    // swap the front and back
@@ -227,7 +323,9 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    std::vector< float > colors;
    std::vector< float > normals;
    std::vector< float > vertices;
+   std::vector< float > tex_coords;
    std::vector< uint32_t > indices;
+   std::multimap< GLuint, std::pair< GLuint, GLsizei > > render_buckets;
 
    const auto GenColors = [ ] ( const size_t size, std::vector< float > & colors )
    {
@@ -277,6 +375,76 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       return model_matrix;
    };
 
+   const auto ReadDiffuseTextures = [ ] ( const aiScene * const pScene,
+                                          const std::string & base_model_path,
+                                          std::vector< GLuint > & textures )
+   {
+      // make sure we do not load the same texture twice
+      std::map< std::string, GLuint > texture_filenames;
+
+      // iterate over all the materials collecting the diffuse texture
+      const aiMaterial * const * pBeg = pScene->mMaterials;
+      const aiMaterial * const * const pEnd = pScene->mMaterials + pScene->mNumMaterials;
+
+      for (; pBeg != pEnd; ++pBeg)
+      {
+         // begin by inserting a null handle into the texture array
+         textures.push_back(0);
+
+         // if there is a diffuse texture, then set it up
+         if ((*pBeg)->GetTextureCount(aiTextureType_DIFFUSE))
+         {
+            // get the texture associated with this material
+            const std::string filename = [ &pBeg, &base_model_path ] ( ) -> std::string
+            {
+               aiString filename; (*pBeg)->GetTexture(aiTextureType_DIFFUSE, 0, &filename); return base_model_path + filename.C_Str();
+            }();
+
+            // make sure the length is valid
+            if (!filename.empty())
+            {
+               // if the value has already been seen, then use that handle; otherwise create it
+               const auto tex_filename = texture_filenames.find(filename);
+
+               if (texture_filenames.find(filename) != texture_filenames.end())
+               {
+                  // already seen, so just reuse the handle id
+                  textures.back() = tex_filename->second;
+               }
+               else
+               {
+                  // read the texture
+                  uint32_t tex_width = 0;
+                  uint32_t tex_height = 0;
+                  std::shared_ptr< uint8_t > pTexBuffer = nullptr;
+
+                  if (ReadTexture(filename.c_str(), GL_BGRA, tex_width, tex_height, pTexBuffer))
+                  {
+                     // generate a new texture
+                     const GLuint tex_id = [ ] ( ) -> GLuint { GLuint tex_id = 0; glGenTextures(1, &tex_id); return tex_id; }();
+
+                     // load the texture into memory
+                     glBindTexture(GL_TEXTURE_2D, tex_id);
+                     glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex_width, tex_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexBuffer.get()); 
+                     glGenerateMipmap(GL_TEXTURE_2D);
+                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                     glBindTexture(GL_TEXTURE_2D, 0);
+
+                     // obtain the handle for this texture
+                     // this is currently not supported on my HD 5850 with driver version 14.4 (14.100)
+                     //const GLuint64 tex_handle = glGetTextureHandleARB(tex_id);
+
+                     // save for later use
+                     textures.back() = tex_id;
+                     texture_filenames[filename] = tex_id;
+                  }
+               }
+            }
+         }
+      }
+   };
+
    const auto ReadModel = [ & ] ( const char * const pFilename )
    {
       Assimp::Importer model_import;
@@ -286,47 +454,73 @@ void ShadowMapWindow::GenerateEnterpriseE( )
 
       if (pScene)
       {
-         auto beg = pScene->mMaterials;
-         auto end = pScene->mMaterials + pScene->mNumMaterials;
-
-         while (beg != end)
+         // gets the base path for the model
+         const auto GetBasePath = [ ] ( const char * const pFilename ) -> std::string
          {
-            if ((*beg)->GetTextureCount(aiTextureType_DIFFUSE))
-            {
-               aiString path;
-               (*beg)->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-               ++beg;
-               continue;
-            }
-            ++beg;
-         }
+            const char * const pLoc = std::strrchr(pFilename, '\\');
+
+            return std::string(pFilename, pLoc ? pLoc + 1 : pFilename + std::strlen(pFilename));
+         };
+
+         // start off by reading the diffuse textures
+         ReadDiffuseTextures(pScene, GetBasePath(pFilename), mpEnterpriseE->mTexIDs);
 
          for (size_t cur_mesh = 0; cur_mesh < pScene->mNumMeshes; ++cur_mesh)
          {
+            // establish what the base index for this mesh is
+            const uint32_t base_index = static_cast< uint32_t >(indices.size());
+
             // obatin all the required data for this mesh...
             const aiMesh * const pCurMesh = pScene->mMeshes[cur_mesh];
             const aiVector3D * const pVertices = pCurMesh->mVertices;
             const aiVector3D * const pNormals = pCurMesh->mNormals;
+            const aiVector3D * const pTexCoords = pCurMesh->mTextureCoords[0];
             const size_t num_verts = pCurMesh->mNumVertices;
 
-            // temp - find better way
-            Matrixf mesh_matrix = ConstructChildNodeMatrix(pCurMesh->mName.C_Str(), pScene);
+            // construct the child node matrix to translate all the vertices by
+            const Matrixf mesh_matrix = ConstructChildNodeMatrix(pCurMesh->mName.C_Str(), pScene);
+
+            // construct the normal matrix to translate all the normals by
+            const Matrixf normal_matrix = mesh_matrix.Inverse().Transpose();
 
             // there should always be triangles in this model...
             WGL_ASSERT(pCurMesh->mPrimitiveTypes == aiPrimitiveType_TRIANGLE);
 
+            // temp for now...
             GenColors(num_verts, colors);
             normals.insert(normals.end(), &pNormals->x, &pNormals->x + num_verts * 3);
-            //vertices.insert(vertices.end(), &pVertices->x, &pVertices->x + num_verts * 3);
-            // temp - find better way
-            for (int i = 0; num_verts > i; ++i)
+
+            if (pTexCoords)
             {
-               Vec3f verts = mesh_matrix * Vec3f(&((pVertices + i)->x));
-               vertices.insert(vertices.end(), verts.mT, verts.mT + 3);
+               // we have texture coordinates, so use them...
+               tex_coords.insert(tex_coords.end(), &pTexCoords->x, &pTexCoords->x + num_verts * 3);
+            }
+            else
+            {
+               // we do not have texture coordinates, so fill in the gaps with a zero to keep them in sync...
+               tex_coords.insert(tex_coords.end(), num_verts * 3, 0.0f);
+
+               // determine what the diffuse color is for this mesh
+               const aiMaterial * const pMat = pScene->mMaterials[pCurMesh->mMaterialIndex];
+               const aiColor3D diffuse_color = [ &pMat ] ( ) -> aiColor3D
+               { aiColor3D clr; pMat->Get(AI_MATKEY_COLOR_DIFFUSE, clr); return clr; }();
+
+               // overwrite the colors with this diffuse color
+               std::for_each(reinterpret_cast< Vec3f * >(colors.data()) + base_index,
+                             reinterpret_cast< Vec3f * >(colors.data()) + base_index + num_verts,
+               [ &diffuse_color ] ( Vec3f & diffuse) { diffuse = Vec3f(&diffuse_color.r); });
             }
 
-            // establish what the base index for this model is
-            const uint32_t base_index = static_cast< uint32_t >(indices.size());
+            for (int i = 0; num_verts > i; ++i)
+            {
+               // need to translate the vertices as they may be in the wrong place...
+               const Vec3f vert = mesh_matrix * Vec3f(&((pVertices + i)->x));
+               vertices.insert(vertices.end(), vert.mT, vert.mT + 3);
+
+               // need to translate the normals to the correct location as they too may be in the wrong place...
+               //const Vec3f norm = Vec3f(normal_matrix * Vec4f(pNormals->x, pNormals->y, pNormals->z, 0.0f)).MakeUnitVector();
+               //normals.insert(normals.end(), norm.mT, norm.mT + 3);
+            }
 
             // read in all the faces for the mesh
             std::for_each(pCurMesh->mFaces, pCurMesh->mFaces + pCurMesh->mNumFaces,
@@ -339,11 +533,19 @@ void ShadowMapWindow::GenerateEnterpriseE( )
                indices.push_back(base_index + cur_face.mIndices[1]);
                indices.push_back(base_index + cur_face.mIndices[2]);
             });
+
+            // insert into the render buckets based on the texture index
+            // this could be more efficient by pairing up the last bucket and the new bucket
+            // to see if the indices could be combined, but we can leave that for another time...
+            typedef std::remove_reference< decltype(render_buckets) >::type render_bucket_type;
+            const render_bucket_type::mapped_type mesh_indices(base_index, static_cast< GLsizei >(indices.size() - base_index));
+            render_buckets.insert(render_bucket_type::value_type(pCurMesh->mMaterialIndex, mesh_indices));
          }
       }
       else
       {
-         std::cout << "Error : Unable to read " << pFilename << std::endl;
+         PostDebugMessage(GL_DEBUG_TYPE_ERROR, 3, GL_DEBUG_SEVERITY_HIGH,
+                          static_cast< std::stringstream & >(std::stringstream() << "Unable to read " << pFilename).str().c_str());
       }
    };
 
@@ -377,49 +579,59 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    //indices.push_back(3); indices.push_back(4); indices.push_back(5);
 
    // create the vao
-   mEnterpriseE.mVAO.GenArray();
-   mEnterpriseE.mVAO.Bind();
+   mpEnterpriseE->mVAO.GenArray();
+   mpEnterpriseE->mVAO.Bind();
 
    // there should always be a vao here
-   WGL_ASSERT(mEnterpriseE.mVAO);
+   WGL_ASSERT(mpEnterpriseE->mVAO);
 
-   if (!mEnterpriseE.mVAO)
+   if (!mpEnterpriseE->mVAO)
    {
-      std::cout << "Error : Unable to generate VAO" << std::endl;
+      PostDebugMessage(GL_DEBUG_TYPE_ERROR, 2, GL_DEBUG_SEVERITY_HIGH, "Unable to generate VAO!!!");
    }
 
    // create the vbos
-   mEnterpriseE.mVertBuf.GenBuffer(GL_ARRAY_BUFFER);
-   mEnterpriseE.mVertBuf.Bind();
-   mEnterpriseE.mVertBuf.BufferData(vertices.size() * sizeof(decltype(vertices.front())), &vertices.front(), GL_STATIC_DRAW);
-   mEnterpriseE.mVertBuf.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(vertices.front())) * 3, 0);
+   mpEnterpriseE->mVertBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mpEnterpriseE->mVertBuf.Bind();
+   mpEnterpriseE->mVertBuf.BufferData(vertices.size() * sizeof(decltype(vertices.front())), &vertices.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mVertBuf.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(vertices.front())) * 3, 0);
    glEnableVertexAttribArray(0);
-   mEnterpriseE.mVertBuf.Unbind();
+   mpEnterpriseE->mVertBuf.Unbind();
 
-   mEnterpriseE.mClrBuf.GenBuffer(GL_ARRAY_BUFFER);
-   mEnterpriseE.mClrBuf.Bind();
-   mEnterpriseE.mClrBuf.BufferData(colors.size() * sizeof(decltype(colors.front())), &colors.front(), GL_STATIC_DRAW);
-   mEnterpriseE.mClrBuf.VertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(colors.front())) * 3, 0);
+   mpEnterpriseE->mClrBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mpEnterpriseE->mClrBuf.Bind();
+   mpEnterpriseE->mClrBuf.BufferData(colors.size() * sizeof(decltype(colors.front())), &colors.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mClrBuf.VertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(colors.front())) * 3, 0);
    glEnableVertexAttribArray(1);
-   mEnterpriseE.mClrBuf.Unbind();
+   mpEnterpriseE->mClrBuf.Unbind();
 
-   mEnterpriseE.mNormBuf.GenBuffer(GL_ARRAY_BUFFER);
-   mEnterpriseE.mNormBuf.Bind();
-   mEnterpriseE.mNormBuf.BufferData(normals.size() * sizeof(decltype(normals.front())), &normals.front(), GL_STATIC_DRAW);
-   mEnterpriseE.mNormBuf.VertexAttribPointer(2, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(normals.front())) * 3, 0);
+   mpEnterpriseE->mNormBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mpEnterpriseE->mNormBuf.Bind();
+   mpEnterpriseE->mNormBuf.BufferData(normals.size() * sizeof(decltype(normals.front())), &normals.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mNormBuf.VertexAttribPointer(2, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(normals.front())) * 3, 0);
    glEnableVertexAttribArray(2);
-   mEnterpriseE.mNormBuf.Unbind();
+   mpEnterpriseE->mNormBuf.Unbind();
+
+   mpEnterpriseE->mTexBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mpEnterpriseE->mTexBuf.Bind();
+   mpEnterpriseE->mTexBuf.BufferData(tex_coords.size() * sizeof(decltype(tex_coords.front())), &tex_coords.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mTexBuf.VertexAttribPointer(3, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(tex_coords.front())) * 3, 0);
+   glEnableVertexAttribArray(3);
+   mpEnterpriseE->mTexBuf.Unbind();
 
    // create the index buffer
-   mEnterpriseE.mIdxBuf.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
-   mEnterpriseE.mIdxBuf.Bind();
-   mEnterpriseE.mIdxBuf.BufferData(indices.size() * sizeof(decltype(indices.front())), &indices.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mIdxBuf.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+   mpEnterpriseE->mIdxBuf.Bind();
+   mpEnterpriseE->mIdxBuf.BufferData(indices.size() * sizeof(decltype(indices.front())), &indices.front(), GL_STATIC_DRAW);
+
+   // make sure we save the render buckets to the model
+   mpEnterpriseE->mRenderBuckets = render_buckets;
 
    // disable the vao
-   mEnterpriseE.mVAO.Unbind();
+   mpEnterpriseE->mVAO.Unbind();
 
    // must unbind the index buffer after unbinding the vao
-   mEnterpriseE.mIdxBuf.Unbind();
+   mpEnterpriseE->mIdxBuf.Unbind();
 }
 
 //void ShadowMapWindow::GenerateFloor( )
