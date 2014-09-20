@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0.0)
 set(WIN_GL_SRC
 ./AllocConsole.cpp
 ./AllocConsole.h
+./MathHelper.h
 ./Matrix.h
 ./MatrixHelper.h
 ./OpenGLExtensions.cpp
@@ -32,6 +33,8 @@ set(WIN_GL_SRC
 )
 
 add_library(WinGL STATIC ${WIN_GL_SRC})
+
+target_compile_definitions(WinGL PUBLIC _USE_MATH_DEFINES)
 
 target_include_directories(WinGL INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
