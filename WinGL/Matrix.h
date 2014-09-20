@@ -5,7 +5,6 @@
 #include <complex>
 
 // crt includes
-#define _USE_MATH_DEFINES
 #include <math.h>
 #include <memory.h>
 
@@ -65,6 +64,13 @@ public:
    template< typename U >
    Vector4< T > operator * ( const Vector4< U > & vec ) const;
    Vector4< T > operator * ( const Vector4< T > & vec ) const;
+
+   template < typename U >
+   Matrix< T > operator * ( const U & scaler ) const;
+   Matrix< T > operator * ( const T & scaler ) const;
+   template < typename U >
+   Matrix< T > & operator *= ( const U & scaler );
+   Matrix< T > & operator *= ( const T & scaler );
 
    // operator ==
    template < typename U >
@@ -234,11 +240,15 @@ public:
 
    // returns the determinant
    T  Determinant( ) const;
-   T  Determinant( T a[6], T b[6] ) const;
 
    // matrix class should be simple and allow
    // for easy acess to the member variables
    T     mT[16];
+
+private:
+   // internal function that computes the determinant
+   T  Determinant( Matrix< T > & inverse = Matrix< T >() );
+
 
 };
 
@@ -481,6 +491,44 @@ inline Vector4< T > Matrix< T >::operator * ( const Vector4< T > & vec ) const
          *(mT + 15) * *(pT + 3);
 
    return Vector4< T >(x, y, z, w);
+}
+
+template < typename T >
+template < typename U >
+inline Matrix< T > Matrix< T >::operator * ( const U & scaler ) const
+{
+   Matrix< T > mat(*this);
+
+   mat *= scaler;
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::operator * ( const T & scaler ) const
+{
+   Matrix< T > mat(*this);
+
+   mat *= scaler;
+
+   return mat;
+}
+
+template < typename T >
+template < typename U >
+inline Matrix< T > & Matrix< T >::operator *= ( const U & scaler )
+{
+   this *= static_cast< T >(scaler);
+
+   return *this;
+}
+
+template < typename T >
+inline Matrix< T > & Matrix< T >::operator *= ( const T & scaler )
+{
+   for (int i = 0; i < 16; ++i) mT[i] *= scaler;
+
+   return *this;
 }
 
 template < typename T >
@@ -1117,35 +1165,14 @@ inline Matrix< T > Matrix< T >::InverseFromOrthogonal( ) const
 template < typename T >
 inline void Matrix< T >::MakeInverse( )
 {
-   // obtain the determinant
-   T a[6] = { }, b[6] = { };
-   const T inverseDet = 1 / Determinant(a, b);
+   Matrix< T > inverse(*this);
+
+   const T det = Determinant(inverse);
 
    // make sure there is an inverse
-   WGL_ASSERT(-0.0000000001 > (1.0 / inverseDet) ||
-               0.0000000001 < (1.0 / inverseDet));
+   WGL_ASSERT(-0.0000000001 > det || 0.0000000001 < det);
 
-   // create the inverse matrix
-   Matrix< T > matInv;
-   matInv.mT[0]  = + mT[5]  * b[5] - mT[6]  * b[4] + mT[7]  * b[3];
-   matInv.mT[4]  = - mT[4]  * b[5] + mT[6]  * b[2] - mT[7]  * b[1];
-   matInv.mT[8]  = + mT[4]  * b[4] - mT[5]  * b[2] + mT[7]  * b[0];
-   matInv.mT[12] = - mT[4]  * b[3] + mT[5]  * b[1] - mT[6]  * b[0];
-   matInv.mT[1]  = - mT[1]  * b[5] + mT[2]  * b[4] - mT[3]  * b[3];
-   matInv.mT[5]  = + mT[0]  * b[5] - mT[2]  * b[2] + mT[3]  * b[1];
-   matInv.mT[9]  = - mT[0]  * b[4] + mT[1]  * b[2] - mT[3]  * b[0];
-   matInv.mT[13] = + mT[0]  * b[3] - mT[1]  * b[1] + mT[2]  * b[0];
-   matInv.mT[2]  = + mT[13] * a[5] - mT[14] * a[4] + mT[15] * a[3];
-   matInv.mT[6]  = - mT[12] * a[5] + mT[14] * a[2] - mT[15] * a[1];
-   matInv.mT[10] = + mT[12] * a[4] - mT[13] * a[2] + mT[15] * a[0];
-   matInv.mT[14] = - mT[12] * a[3] + mT[13] * a[1] - mT[14] * a[0];
-   matInv.mT[3]  = - mT[9]  * a[5] + mT[10] * a[4] - mT[11] * a[3];
-   matInv.mT[7]  = + mT[8]  * a[5] - mT[10] * a[2] + mT[11] * a[1];
-   matInv.mT[11] = - mT[8]  * a[4] + mT[9]  * a[2] - mT[11] * a[0];
-   matInv.mT[15] = + mT[8]  * a[3] - mT[9]  * a[1] + mT[10] * a[0];
-
-   // copy the inverse properties
-   *this = matInv;
+   *this = inverse;
 }
 
 template < typename T >
@@ -1161,51 +1188,70 @@ inline Matrix< T > Matrix< T >::Inverse( ) const
 template < typename T >
 inline T Matrix< T >::Determinant( ) const
 {
-   T a[6] = { };
-   T b[6] = { };
-
-   return Determinant(a, b);
+   return Determinant();
 }
 
 template < typename T >
-inline T Matrix< T >::Determinant( T a[6], T b[6] ) const
+inline T Matrix< T >::Determinant( Matrix< T > & inverse )
 {
-   /*
-    the following determinant is calculated below... terms
-    can be combined to reduce the number of similar
-    multiplication requests for the cpu...
-   (mT[0] * mT[5]  * (mT[10] * mT[15] - mT[11] * mT[14]) -
-    mT[0] * mT[9]  * (mT[6]  * mT[15] - mT[7]  * mT[14]) +
-    mT[0] * mT[13] * (mT[6]  * mT[11] - mT[7]  * mT[10])) -
+   WGL_ASSERT(&inverse != this);
 
-   (mT[4] * mT[1]  * (mT[10] * mT[15] - mT[11] * mT[14]) -
-    mT[4] * mT[9]  * (mT[2]  * mT[15] - mT[3]  * mT[14]) +
-    mT[4] * mT[13] * (mT[2]  * mT[11] - mT[3]  * mT[10])) +
+   const T coef00 = mT[10] * mT[15] - mT[14] * mT[11];
+   const T coef02 = mT[6]  * mT[15] - mT[14] * mT[7];
+   const T coef03 = mT[6]  * mT[11] - mT[10] * mT[7];
 
-   (mT[8] * mT[1]  * (mT[6]  * mT[15] - mT[7]  * mT[14]) -
-    mT[8] * mT[5]  * (mT[2]  * mT[15] - mT[3]  * mT[14]) +
-    mT[8] * mT[13] * (mT[2]  * mT[7]  - mT[3]  * mT[6])) -
+   const T coef04 = mT[9] * mT[15] - mT[13] * mT[11];
+   const T coef06 = mT[5] * mT[15] - mT[13] * mT[7];
+   const T coef07 = mT[5] * mT[11] - mT[9]  * mT[7];
 
-   (mT[12] * mT[1] * (mT[6]  * mT[11] - mT[7]  * mT[10]) -
-    mT[12] * mT[5] * (mT[2]  * mT[11] - mT[3]  * mT[10]) +
-    mT[12] * mT[9] * (mT[2]  * mT[7]  - mT[3]  * mT[6]))
-    */
+   const T coef08 = mT[9] * mT[14] - mT[13] * mT[10];
+   const T coef10 = mT[5] * mT[14] - mT[13] * mT[6];
+   const T coef11 = mT[5] * mT[10] - mT[9]  * mT[6];
 
-   a[0] = mT[0]  * mT[5]  - mT[1]  * mT[4];
-   a[1] = mT[0]  * mT[6]  - mT[2]  * mT[4];
-   a[2] = mT[0]  * mT[7]  - mT[3]  * mT[4];
-   a[3] = mT[1]  * mT[6]  - mT[2]  * mT[5];
-   a[4] = mT[1]  * mT[7]  - mT[3]  * mT[5];
-   a[5] = mT[2]  * mT[7]  - mT[3]  * mT[6];
-   b[0] = mT[8]  * mT[13] - mT[9]  * mT[12];
-   b[1] = mT[8]  * mT[14] - mT[10] * mT[12];
-   b[2] = mT[8]  * mT[15] - mT[11] * mT[12];
-   b[3] = mT[9]  * mT[14] - mT[10] * mT[13];
-   b[4] = mT[9]  * mT[15] - mT[11] * mT[13];
-   b[5] = mT[10] * mT[15] - mT[11] * mT[14];
+   const T coef12 = mT[8] * mT[15] - mT[12] * mT[11];
+   const T coef14 = mT[4] * mT[15] - mT[12] * mT[7];
+   const T coef15 = mT[4] * mT[11] - mT[8]  * mT[7];
 
-   return a[0] * b[5] - a[1] * b[4] + a[2] * b[3] + 
-          a[3] * b[2] - a[4] * b[1] + a[5] * b[0];
+   const T coef16 = mT[8] * mT[14] - mT[12] * mT[10];
+   const T coef18 = mT[4] * mT[14] - mT[12] * mT[6];
+   const T coef19 = mT[4] * mT[10] - mT[8]  * mT[6];
+
+   const T coef20 = mT[8] * mT[13] - mT[12] * mT[9];
+   const T coef22 = mT[4] * mT[13] - mT[12] * mT[5];
+   const T coef23 = mT[4] * mT[9]  - mT[8]  * mT[5];
+
+   const Vector4< T > fac0(coef00, coef00, coef02, coef03);
+   const Vector4< T > fac1(coef04, coef04, coef06, coef07);
+   const Vector4< T > fac2(coef08, coef08, coef10, coef11);
+   const Vector4< T > fac3(coef12, coef12, coef14, coef15);
+   const Vector4< T > fac4(coef16, coef16, coef18, coef19);
+   const Vector4< T > fac5(coef20, coef20, coef22, coef23);
+   
+   const Vector4< T > vec0(mT[4], mT[0], mT[0], mT[0]);
+   const Vector4< T > vec1(mT[5], mT[1], mT[1], mT[1]);
+   const Vector4< T > vec2(mT[6], mT[2], mT[2], mT[2]);
+   const Vector4< T > vec3(mT[7], mT[3], mT[3], mT[3]);
+
+   const Vector4< T > inv0(vec1 % fac0 - vec2 % fac1 + vec3 % fac2);
+   const Vector4< T > inv1(vec0 % fac0 - vec2 % fac3 + vec3 % fac4);
+   const Vector4< T > inv2(vec0 % fac1 - vec1 % fac3 + vec3 % fac5);
+   const Vector4< T > inv3(vec0 % fac2 - vec1 % fac4 + vec2 % fac5);
+
+   const Vector4< T > signa(+1, -1, +1, -1);
+   const Vector4< T > signb(-1, +1, -1, +1);
+
+   inverse = Matrix< T >(inv0 % signa, inv1 % signb, inv2 % signa, inv3 % signb);
+
+   const Vector4< T > row0(inverse[0], inverse[4], inverse[8], inverse[12]);
+   const Vector4< T > dot0(Vector4< T >(mT) % row0);
+
+   const T determinant = dot0.X() + dot0.Y() + dot0.Z() + dot0.W();
+   
+   const T one_over_determinant = static_cast< T >(1) / determinant;
+
+   inverse *= one_over_determinant;
+
+   return determinant;
 }
 
 // global typedefs

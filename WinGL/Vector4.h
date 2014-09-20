@@ -20,6 +20,7 @@ public:
 
     // constructor / destructor
     Vector4( );
+    Vector4( const T & s );
     template < typename U >
     Vector4( const U & x, const U & y, const U & z, const U & w = 1 );
     Vector4( const T & x, const T & y, const T & z, const T & w = 1 );
@@ -53,7 +54,7 @@ public:
    Vector4< T > & operator *= ( const U & u );
    Vector4< T > & operator *= ( const T & t );
 
-   // operator *
+   // operator * (dot product)
    template < typename U >
    T operator * ( const Vector4< U > & vec ) const;
    T operator * ( const Vector4< T > & vec ) const;
@@ -68,6 +69,14 @@ public:
    template < typename U >
    Vector4< T > & operator ^= ( const Vector4< U > & vec );
    Vector4< T > & operator ^= ( const Vector4< T > & vec );
+
+   // operator % (component multiplication)
+   template < typename U >
+   Vector4< T > operator % ( const Vector4< U > & vec ) const;
+   Vector4< T > operator % ( const Vector4< T > & vec ) const;
+   template < typename U >
+   Vector4< T > & operator %= ( const Vector4< U > & vec );
+   Vector4< T > & operator %= ( const Vector4< T > & vec );
 
    // operator -
    template < typename U >
@@ -149,6 +158,12 @@ template < typename T >
 inline Vector4< T >::Vector4( )
 {
    MakeZeroVector();
+}
+
+template < typename T >
+inline Vector4< T >::Vector4( const T & s )
+{
+   Set(s, s, s, s);
 }
 
 template < typename T >
@@ -382,6 +397,43 @@ inline Vector4< T > & Vector4< T >::operator ^= ( const Vector4< T > & vec )
 
 template < typename T >
 template < typename U >
+inline Vector4< T > Vector4< T >::operator % ( const Vector4< U > & vec ) const
+{
+   return *this % Vector4< T >(vec);
+}
+
+template < typename T >
+inline Vector4< T > Vector4< T >::operator % ( const Vector4< T > & vec ) const
+{
+   Vector4< T > local(*this);
+
+   local %= vec;
+
+   return local;
+}
+
+template < typename T >
+template < typename U >
+inline Vector4< T > & Vector4< T >::operator %= ( const Vector4< U > & vec )
+{
+   *this %= Vector4< T >(vec);
+
+   return *this;
+}
+
+template < typename T >
+inline Vector4< T > & Vector4< T >::operator %= ( const Vector4< T > & vec )
+{
+   mT[0] *= vec.mT[0];
+   mT[1] *= vec.mT[1];
+   mT[2] *= vec.mT[2];
+   mT[3] *= vec.mT[3];
+
+   return *this;
+}
+
+template < typename T >
+template < typename U >
 inline Vector4< T > Vector4< T >::operator - ( const Vector4< U > & vec ) const
 {
    Vector4< T > v(vec);
@@ -429,7 +481,7 @@ inline Vector4< T > Vector4< T >::operator + ( const Vector4< U > & vec ) const
 template < typename T >
 inline Vector4< T > Vector4< T >::operator + ( const Vector4< T > & vec ) const
 {
-    Vector4< T > v(*this);
+   Vector4< T > v(*this);
 
    return v += vec;
 }

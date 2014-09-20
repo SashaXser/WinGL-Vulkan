@@ -19,6 +19,7 @@ public:
 
     // constructor / destructor
     Vector3( );
+    Vector3( const T & s );
     template < typename U >
     Vector3( const U & x, const U & y, const U & z );
     Vector3( const T & x, const T & y, const T & z );
@@ -46,7 +47,7 @@ public:
    Vector3< T > & operator *= ( const U & u );
    Vector3< T > & operator *= ( const T & t );
 
-   // operator *
+   // operator * (dot product)
    template < typename U >
    T operator * ( const Vector3< U > & vec ) const;
    T operator * ( const Vector3< T > & vec ) const;
@@ -61,6 +62,14 @@ public:
    template < typename U >
    Vector3< T > & operator ^= ( const Vector3< U > & vec );
    Vector3< T > & operator ^= ( const Vector3< T > & vec );
+
+   // operator % (component multiplication)
+   template < typename U >
+   Vector3< T > operator % ( const Vector3< U > & vec ) const;
+   Vector3< T > operator % ( const Vector3< T > & vec ) const;
+   template < typename U >
+   Vector3< T > & operator %= ( const Vector3< U > & vec );
+   Vector3< T > & operator %= ( const Vector3< T > & vec );
 
    // operator -
    template < typename U >
@@ -140,6 +149,12 @@ template < typename T >
 inline Vector3< T >::Vector3( )
 {
    MakeZeroVector();
+}
+
+template < typename T >
+inline Vector3< T >::Vector3( const T & s )
+{
+   Set(s, s, s);
 }
 
 template < typename T >
@@ -333,6 +348,42 @@ inline Vector3< T > & Vector3< T >::operator ^= ( const Vector3< T > & vec )
    mT[2] = k;
 
    return (*this);
+}
+
+template < typename T >
+template < typename U >
+inline Vector3< T > Vector3< T >::operator % ( const Vector3< U > & vec ) const
+{
+   return *this % Vector3< T >(vec);
+}
+
+template < typename T >
+inline Vector3< T > Vector3< T >::operator % ( const Vector3< T > & vec ) const
+{
+   Vector3< T > local(*this);
+
+   local %= vec;
+
+   return local;
+}
+
+template < typename T >
+template < typename U >
+inline Vector3< T > & Vector3< T >::operator %= ( const Vector3< U > & vec )
+{
+   *this %= Vector3< T >(vec);
+
+   return *this;
+}
+
+template < typename T >
+inline Vector3< T > & Vector3< T >::operator %= ( const Vector3< T > & vec )
+{
+   mT[0] *= vec.mT[0];
+   mT[1] *= vec.mT[1];
+   mT[2] *= vec.mT[2];
+
+   return *this;
 }
 
 template < typename T >
