@@ -2,7 +2,7 @@
 #define _MATRIX_HELPER_H_
 
 // crt includes
-#include <math.h>
+#include <cmath>
 
 // local includes
 #include "Matrix.h"
@@ -15,11 +15,14 @@ template < typename T >
 void DecomposeYawPitchRoll( const Matrix< T > & mat,
                             T * y, T * p, T * r )
 {
+   // this function needs to change as it assumes
+   // a view matrix that pulls world space into eye space
+
    // only decomposes matrices that are
    // orthongonal and have been applied
    // in the yaw, pitch, and roll order
-   if (y) *y = atan2(-mat.mT[2], mat.mT[10]);
-   if (p) *p = asin(mat.mT[6]);
+   if (y) *y = atan2(mat.mT[2], mat.mT[10]);
+   if (p) *p = asin(-mat.mT[6]);
    if (r) *r = atan2(-mat.mT[4], mat.mT[5]);
 }
 
@@ -32,9 +35,10 @@ void DecomposeYawPitchRollDeg( const Matrix< T > & mat,
    // in the yaw, pitch, and roll order
    DecomposeYawPitchRoll(mat, y, p, r);
 
-   if (y) *y *= (static_cast< T >(180.0) / static_cast< T >(M_PI));
-   if (p) *p *= (static_cast< T >(180.0) / static_cast< T >(M_PI));
-   if (r) *r *= (static_cast< T >(180.0) / static_cast< T >(M_PI));
+   const double ratio = 180.0 / M_PI;
+   if (y) *y = static_cast< T >(*y * ratio);
+   if (p) *p = static_cast< T >(*p * ratio);
+   if (r) *r = static_cast< T >(*r * ratio);
 }
 
 template < typename T >
