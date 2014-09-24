@@ -185,6 +185,10 @@ ENDIF ( ASSIMP_BUILD_COMPILER STREQUAL "")
 MARK_AS_ADVANCED ( ASSIMP_BUILD_ARCHITECTURE ASSIMP_BUILD_COMPILER )
 
 ADD_SUBDIRECTORY( code/ )
+
+# add the include directory to the target include interface
+target_include_directories(assimp INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 SET ( ASSIMP_BUILD_ASSIMP_TOOLS ON CACHE BOOL
 	"If the supplementary tools for Assimp are built in addition to the library."
 )
