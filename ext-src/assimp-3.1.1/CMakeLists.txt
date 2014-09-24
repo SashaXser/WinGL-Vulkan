@@ -32,7 +32,7 @@ if(NOT GIT_COMMIT_HASH)
 endif(NOT GIT_COMMIT_HASH)
 
 configure_file(
-  ${CMAKE_SOURCE_DIR}/revision.h.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in
   ${CMAKE_BINARY_DIR}/revision.h
 )
 
@@ -82,7 +82,6 @@ SET ( ASSIMP_BUILD_STATIC_LIB OFF CACHE BOOL
 SET(ASSIMP_DEBUG_POSTFIX "d" CACHE STRING "Debug Postfitx for lib, samples and tools")
 
 # Allow the user to build a static library
-option ( BUILD_SHARED_LIBS "Build a shared version of the library" ON )
 IF ( ASSIMP_BUILD_STATIC_LIB )
     option ( BUILD_SHARED_LIBS "Build a shared version of the library" OFF )
 ELSE ( ASSIMP_BUILD_STATIC_LIB )
