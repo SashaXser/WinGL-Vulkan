@@ -165,8 +165,8 @@ LRESULT SmokeParticleSystemWindow::MessageHandler( UINT uMsg,
       if (wParam & MK_LBUTTON)
       {
          // determine x and y deltas
-         const short deltaX = curX - mouseLocX;
-         const short deltaY = curY - mouseLocY;
+         const short deltaX = mouseLocX - curX;
+         const short deltaY = mouseLocY - curY;
          // obtain the modelview matrix
          Matrixd modelViewMat;
          glGetDoublev(GL_MODELVIEW_MATRIX, modelViewMat);
@@ -179,17 +179,16 @@ LRESULT SmokeParticleSystemWindow::MessageHandler( UINT uMsg,
          yaw += deltaX;
          pitch += deltaY;
          // cap pitch
-         pitch = std::min(90.0, pitch);
-         pitch = std::max(-90.0, pitch);
+         pitch = std::min(89.9, pitch);
+         pitch = std::max(-89.9, pitch);
          // get the current camera world position
          modelViewMat.MakeInverseFromOrthogonal();
-         Vec3d camEye = modelViewMat * Vec3d(0.0, 0.0, 0.0);
-         camEye *= -1.0;
+         Vec3d camEye = modelViewMat * Vec3d(0.0, 0.0, 0.0) * -1.0;
          // clear the modelview matrix
          glLoadIdentity();
          // setup the new matrix
-         glRotated(pitch, 1.0, 0.0, 0.0);
-         glRotated(yaw, 0.0, 1.0, 0.0);
+         glRotated(pitch, -1.0, 0.0, 0.0);
+         glRotated(yaw, 0.0, -1.0, 0.0);
          glTranslated(camEye.mT[0], camEye.mT[1], camEye.mT[2]); 
       }
 
@@ -244,8 +243,8 @@ LRESULT SmokeParticleSystemWindow::MessageHandler( UINT uMsg,
       // setup a new matrix
       glLoadIdentity();
       // setup the new matrix
-      glRotated(pitch, 1.0, 0.0, 0.0);
-      glRotated(yaw, 0.0, 1.0, 0.0);
+      glRotated(pitch, -1.0, 0.0, 0.0);
+      glRotated(yaw, 0.0, -1.0, 0.0);
       glTranslated(camEye.mT[0], camEye.mT[1], camEye.mT[2]);
       }
 
