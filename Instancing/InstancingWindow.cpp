@@ -5,6 +5,7 @@
 #include "Shaders.h"
 #include "Vector4.h"
 #include "ReadTexture.h"
+#include "MathHelper.h"
 #include "MatrixHelper.h"
 
 // gl includes
@@ -230,21 +231,25 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
       if (wParam & MK_LBUTTON)
       {
          // delta values
-         const short deltaX = curMouseX - mPrevMouseX;
-         const short deltaY = curMouseY - mPrevMouseY;
+         const short deltaX = mPrevMouseX - curMouseX;
+         const short deltaY = mPrevMouseY - curMouseY;
 
          // decompose the camera into yaw and pitch
          float yaw = 0.0f, pitch = 0.0f;
          MatrixHelper::DecomposeYawPitchRollDeg< float >(mCamera, &yaw, &pitch, nullptr);
 
+         // update and clamp the values
+         yaw += deltaX * 0.5f;
+         pitch = MathHelper::Clamp(pitch + deltaY * 0.5f, -89.9f, 89.9f);
+
          // go from eye space to world space
          // make sure to multiply by -1 as the final matrix translates world to eye
-         Vec3f eye = mCamera.InverseFromOrthogonal() * Vec3f(0.0f, 0.0f, 0.0f) * -1.0f;
+         const Vec3f eye = mCamera.InverseFromOrthogonal() * Vec3f(0.0f, 0.0f, 0.0f);
 
          // construct the camera matrix
-         mCamera = Matrixf::Rotate(pitch + deltaY, 1.0f, 0.0f, 0.0f) *
-                   Matrixf::Rotate(yaw + deltaX, 0.0f, 1.0f, 0.0f) *
-                   Matrixf::Translate(eye);
+         mCamera = (Matrixf::Translate(eye) *
+                    Matrixf::Rotate(yaw, 0.0f, 1.0f, 0.0f) *
+                    Matrixf::Rotate(pitch, 1.0f, 0.0f, 0.0f)).Inverse();
       }
 
       mPrevMouseX = curMouseX;
