@@ -581,8 +581,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
       if (wParam & MK_LBUTTON)
       {
          // obtain the mouse deltas
-         const int nXDelta = nCurX - mMouseXCoord;
-         const int nYDelta = nCurY - mMouseYCoord;
+         const int nXDelta = mMouseXCoord - nCurX;
+         const int nYDelta = mMouseYCoord - nCurY;
          // decompose the current values from the modelview matrix
          double dYaw = 0.0, dPitch = 0.0;
          MatrixHelper::DecomposeYawPitchRollDeg(*mpActiveMViewMat,
@@ -591,8 +591,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          dYaw += nXDelta;
          dPitch += nYDelta;
          // make sure to cap pitch to plus or minus 90
-         dPitch = std::min(dPitch, 90.0);
-         dPitch = std::max(dPitch, -90.0);
+         dPitch = std::min(dPitch, 89.9);
+         dPitch = std::max(dPitch, -89.9);
          // create a rotation matrix centered
          // around the up and view direction vectors...
          Matrixd matYaw, matPitch;
@@ -601,13 +601,12 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          // obtain the camera world position...
          // take the inverse of the camera world position since
          // the camera must move things into the eye space...
-         const Vec3d camEye = mpActiveMViewMat->InverseFromOrthogonal() *
-                              Vec3d(0.0, 0.0, 0.0) * -1;
+         const Vec3d camEye = mpActiveMViewMat->InverseFromOrthogonal() * Vec3d(0.0, 0.0, 0.0);
          // create a translation matrix for the camera
          Matrixd matTrans;
          matTrans.MakeTranslation(camEye.mT[0], camEye.mT[1], camEye.mT[2]);
          // modify the camera matrix
-         *mpActiveMViewMat = matPitch * matYaw * matTrans;
+         *mpActiveMViewMat = (matTrans * matYaw * matPitch).Inverse();
          
          // load the new modelview matrix on if it is the
          // camera matrix that is being manipulated...
@@ -680,8 +679,7 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          const Vec3d vecView = MatrixHelper::GetViewVector(*mpActiveMViewMat);
          const Vec3d vecStrafe = MatrixHelper::GetStrafeVector(*mpActiveMViewMat);
          // obtain the camera world position...
-         Vec3d camEye = mpActiveMViewMat->InverseFromOrthogonal() *
-                        Vec3d(0.0, 0.0, 0.0);
+         Vec3d camEye = mpActiveMViewMat->InverseFromOrthogonal() * Vec3d(0.0, 0.0, 0.0);
          // obtain the repeat count of the key press
          const unsigned short nRptCnt =
             static_cast< unsigned short >(lParam & 0x0000FFFF);
@@ -711,9 +709,9 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          Matrixd matYaw, matPitch, matTrans;
          matYaw.MakeRotation(dYaw, 0.0, 1.0, 0.0);
          matPitch.MakeRotation(dPitch, 1.0, 0.0, 0.0);
-         matTrans.MakeTranslation(-camEye.mT[0], -camEye.mT[1], -camEye.mT[2]);
+         matTrans.MakeTranslation(camEye.mT[0], camEye.mT[1], camEye.mT[2]);
          // multiply the matrix out
-         *mpActiveMViewMat = matPitch * matYaw * matTrans;
+         *mpActiveMViewMat = (matTrans * matYaw * matPitch).Inverse();
          
          // load the new modelview matrix on if it is the
          // camera matrix that is being manipulated...
