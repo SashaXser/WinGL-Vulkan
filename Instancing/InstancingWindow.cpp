@@ -17,6 +17,7 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 // determines if the application should run wild
 #define LET_APP_RUN_WILD 1
