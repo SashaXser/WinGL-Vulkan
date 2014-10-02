@@ -1,9 +1,19 @@
 #ifndef _C_F0NT_H_   
 #define _C_FONT_H_
 
-#include "ImageLibrary.h"
+// wingl includes
+#include "Vector3.h"
+#include "ReadTexture.h"
 
-#include "Vector.h"
+// std includes
+#include <string>
+#include <vector>
+#include <cstdint>
+
+// gl includes
+#include <Windows.h>
+#include <GL/glew.h>
+#include <GL/GL.h>
 
 class CFont
 {
@@ -18,37 +28,39 @@ public:
    } Alignment;
 
    // constructor / deconstructor
-                        CFont( unsigned int unLayer,
-                               const Vector &rPos,
-                               const std::string &rFile,
-                               unsigned int unCharWidth,
-                               unsigned int unCharHeight,
-                               const std::string &rText = "",
-                               float fSize = 1,
-                               Alignment nAlign = ALIGN_LEFT );
-                        CFont( const CFont * pFont );
-   virtual             ~CFont( );
+   CFont( unsigned int unLayer,
+          const Vec3f &rPos,
+          const std::string &rFile,
+          unsigned int unCharWidth,
+          unsigned int unCharHeight,
+          const std::string &rText = "",
+          float fSize = 1,
+          Alignment nAlign = ALIGN_LEFT );
+   CFont( const CFont & font );
+   virtual ~CFont( );
 
    // basic string operations
-   void                 operator += ( const std::string &rText );
-   void                 operator += ( const char *pText );
-   void                 operator += ( char c );
-   void                 operator = ( const std::string &rText );
-   void                 operator = ( const char *pText );
-   void                 operator = ( char c );
+   void operator += ( const std::string &rText );
+   void operator += ( const char *pText );
+   void operator += ( char c );
+   void operator = ( const std::string &rText );
+   void operator = ( const char *pText );
+   void operator = ( char c );
 
    // drawing functions
-   void                 Draw( const double &rElapsedTime );
-   void                 Update( const double &rElapsedTime );
+   void Draw( const double &rElapsedTime );
+   void Update( const double &rElapsedTime );
 
    // accessors / modifiers
-   void                 SetText( const std::string &rText );
-   void                 SetSize( float fSize );
+   void SetText( const std::string &rText );
+   void SetSize( float fSize );
+   void SetPosition( const Vec3f & pos );
 
-   const std::string &  GetText( ) const;
-   float                GetSize( ) const;
-   unsigned int         GetPixelWidth( ) const;
-   unsigned int         GetPixelHeight( ) const;
+   const std::string & GetText( ) const;
+   float GetSize( ) const;
+   const Vec3f & GetPosition( ) const;
+   unsigned int GetPixelWidth( ) const;
+   unsigned int GetPixelHeight( ) const;
 
 private:
    // private data types
@@ -56,29 +68,31 @@ private:
    {
       unsigned int      m_unNumOfVerts;
       unsigned int      m_unNumOfTexCoords;
-      double *          m_pTexCoords;
-      double *          m_pVertices;
+      float *          m_pTexCoords;
+      float *          m_pVertices;
    } TextVertices;
 
    typedef std::vector< TextVertices > TexVertVector;
    typedef std::vector< std::string > Lines;
 
    // private member functions
-   void                 ConstructText( );
-   void                 ConstructHorizontal( );
+   void ConstructText( );
+   void ConstructHorizontal( );
 
-   void                 FormLines( Lines & rLines );
+   void FormLines( Lines & rLines );
 
    // private member data
    float                m_fSize;
-   Vector               m_oPosition;
+   Vec3f                m_oPosition;
    Alignment            m_nAlignment;
    std::string          m_oText;
    unsigned int         m_unCharWidth;
    unsigned int         m_unCharHeight;
    unsigned int         m_nNumOfLines;
    TexVertVector        m_vText;
-   ImageLibrary::Image  m_oImage;
+
+   GLuint                     m_oImage;
+   const Texture< uint8_t >   m_oImageAttrib;
 
 };
 
@@ -107,6 +121,16 @@ inline void CFont::SetSize( float fSize )
 inline float CFont::GetSize( ) const
 {
    return m_fSize;
+}
+
+inline void CFont::SetPosition( const Vec3f & pos )
+{
+   m_oPosition = pos;
+}
+
+inline const Vec3f & CFont::GetPosition( ) const
+{
+   return m_oPosition;
 }
 
 inline unsigned int CFont::GetPixelHeight( ) const

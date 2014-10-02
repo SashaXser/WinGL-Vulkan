@@ -1,32 +1,33 @@
+// local includes
 #include "CFont.h"
 #include "Matrix.h"
 
-#include <Windows.h>
-#include <GL\GL.h>
-
 CFont::CFont( unsigned int unLayer,
-              const Vector &rPos,
+              const Vec3f &rPos,
               const std::string &rFile,
               unsigned int unCharWidth,
               unsigned int unCharHeight,
               const std::string &rText,
               float fSize,
               Alignment nAlign ) :
+m_fSize           ( fSize ),
+m_oPosition       ( rPos ),
+m_nAlignment      ( nAlign ),
 m_oText           ( rText ),
 m_unCharWidth     ( unCharWidth ),
 m_unCharHeight    ( unCharHeight ),
-m_nAlignment      ( nAlign ),
-m_fSize           ( fSize ),
-m_oPosition       ( rPos )
+m_nNumOfLines     ( 0 ),
+m_oImage          ( 0 ),
+m_oImageAttrib    ( ReadTexture< uint8_t >(rFile.c_str(), GL_RGBA) )
 {
-   // nullify the image info
-   memset(&m_oImage, 0x00, sizeof(ImageLibrary::Image));
-
    // obtain the deception image
-   if (const ImageLibrary::Image *pImage = ImageLibrary::Instance()->Load(rFile, true, false))
+   if (m_oImageAttrib.pTexture)
    {
-      // copy the image info
-      m_oImage = *pImage;
+      // load the image to the card
+      glGenTextures(1, &m_oImage);
+      glBindTexture(GL_TEXTURE_2D, m_oImage);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_oImageAttrib.width, m_oImageAttrib.height, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, m_oImageAttrib.pTexture.get());
 
       // set up the texture parameters
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -34,37 +35,53 @@ m_oPosition       ( rPos )
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
+      // no longer need the texture bound
+      glBindTexture(GL_TEXTURE_2D, 0);
+
       // create new text and vert data
       ConstructText();
    }
 }
 
-CFont::CFont( const CFont * pFont ) :
-m_oText           ( pFont->m_oText ),
-m_unCharWidth     ( pFont->m_unCharWidth ),
-m_unCharHeight    ( pFont->m_unCharHeight ),
-m_nAlignment      ( pFont->m_nAlignment ),
-m_fSize           ( pFont->m_fSize ),
-m_oPosition       ( pFont->m_oPosition )
+CFont::CFont( const CFont & font ) :
+m_fSize           ( font.m_fSize ),
+m_oPosition       ( font.m_oPosition ),
+m_nAlignment      ( font.m_nAlignment ),
+m_oText           ( font.m_oText ),
+m_unCharWidth     ( font.m_unCharWidth ),
+m_unCharHeight    ( font.m_unCharHeight ),
+m_nNumOfLines     ( font.m_nNumOfLines ),
+m_vText           ( font.m_vText ),
+m_oImage          ( 0 ),
+m_oImageAttrib    ( font.m_oImageAttrib )
 {
-   // nullify the image info
-   memset(&m_oImage, 0x00, sizeof(ImageLibrary::Image));
-
    // obtain the deception image
-   if (const ImageLibrary::Image *pImage = ImageLibrary::Instance()->LoadTGA(pFont->m_oImage.m_pImage->GetFileName()))
+   if (m_oImageAttrib.pTexture)
    {
-      // copy the image info
-      m_oImage = *pImage;
+      // load the image to the card
+      glGenTextures(1, &m_oImage);
+      glBindTexture(GL_TEXTURE_2D, m_oImage);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_oImageAttrib.width, m_oImageAttrib.height, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, m_oImageAttrib.pTexture.get());
 
-      // create new tex and vert data
+      // set up the texture parameters
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+      // no longer need the texture bound
+      glBindTexture(GL_TEXTURE_2D, 0);
+
+      // create new text and vert data
       ConstructText();
    }
 }
 
 CFont::~CFont( )
 {
-   // remove the texture from memory
-   ImageLibrary::Instance()->UnloadImage(m_oImage.m_unImageID);
+   // delete the texture
+   glDeleteTextures(1, &m_oImage);
 
    for (TexVertVector::iterator itText = m_vText.begin();
         itText != m_vText.end();
@@ -91,19 +108,11 @@ void CFont::Draw( const double &rElapsedTime )
       // push a new matrix on the stack
       glPushMatrix();
 
-      // create a translated matrix to the position of the text
-      Matrix mTrans;
-
-      MATRIX_TRANSLATE(mTrans,
-                       m_oPosition.m_fU,
-                       m_oPosition.m_fV,
-                       m_oPosition.m_fN);
-
       // multiply the current matrix by the translated matrix
-      glMultMatrixf(mTrans);
+      glMultMatrixf(Matrixf::Translate(m_oPosition));
 
       // bind the correct texture
-      glBindTexture(GL_TEXTURE_2D, m_oImage.m_unImageID);
+      glBindTexture(GL_TEXTURE_2D, m_oImage);
 
       // get the begin iterator to the text
       TexVertVector::iterator itText = m_vText.begin();
@@ -112,8 +121,8 @@ void CFont::Draw( const double &rElapsedTime )
       for (unsigned int i = 0; i < m_nNumOfLines; i++)
       {
          // enable vertex and texture coordinate pointers
-         glTexCoordPointer(2, GL_DOUBLE, 0, itText->m_pTexCoords + 1);
-         glVertexPointer(3, GL_DOUBLE, 0, itText->m_pVertices + 1);
+         glTexCoordPointer(2, GL_FLOAT, 0, itText->m_pTexCoords + 1);
+         glVertexPointer(3, GL_FLOAT, 0, itText->m_pVertices + 1);
 
          // draw the quads
          glDrawArrays(GL_QUADS, 0, itText->m_unNumOfVerts);
@@ -167,17 +176,17 @@ void CFont::ConstructHorizontal( )
    float fCharHeight = (float)m_unCharHeight * m_fSize;
 
    // determine the delta s, t coords
-   double dDeltaS = (double)m_unCharWidth / m_oImage.m_pImage->GetSize().m_nWidth;
-   double dDeltaT = (double)m_unCharHeight / m_oImage.m_pImage->GetSize().m_nHeight;
+   float dDeltaS = (float)m_unCharWidth / m_oImageAttrib.width;
+   float dDeltaT = (float)m_unCharHeight / m_oImageAttrib.height;
 
    // form the lines
    FormLines(vLines);
 
    // set the number of lines
-   m_nNumOfLines = vLines.size();
+   m_nNumOfLines = static_cast< unsigned int >(vLines.size());
 
    // setup the text index and size
-   unsigned int nTextVecSize  = m_vText.size();
+   unsigned int nTextVecSize  = static_cast< unsigned int >(m_vText.size());
    unsigned int nTextVecIndex = 0;
 
    // create a local text vertice data
@@ -227,30 +236,30 @@ void CFont::ConstructHorizontal( )
          delete [] pData->m_pTexCoords;
 
          // create the new data
-         pData->m_pVertices = new double[pData->m_unNumOfVerts * 3 + 1];
-         pData->m_pTexCoords = new double[pData->m_unNumOfTexCoords * 2 + 1];
+         pData->m_pVertices = new float[pData->m_unNumOfVerts * 3 + 1];
+         pData->m_pTexCoords = new float[pData->m_unNumOfTexCoords * 2 + 1];
 
          // set the data sizes
-         pData->m_pVertices[0] = (double)nDataSize;
-         pData->m_pTexCoords[0] = (double)nDataSize;
+         pData->m_pVertices[0] = (float)nDataSize;
+         pData->m_pTexCoords[0] = (float)nDataSize;
       }
 
       // determine a starting position
-      Vector oPosition(0.0f, -(unLines * fCharHeight), 0.0f);
+      Vec3f oPosition(0.0f, -(unLines * fCharHeight), 0.0f);
 
       switch (m_nAlignment)
       {
       case ALIGN_RIGHT:
-         oPosition.m_fU = -(itLine->size() * fCharWidth);
+         oPosition.X() = -(itLine->size() * fCharWidth);
          break;
       case ALIGN_CENTER:
-         oPosition.m_fU = -((itLine->size() * fCharWidth) * 0.5f);
+         oPosition.X() = -((itLine->size() * fCharWidth) * 0.5f);
          break;
       }
 
       // set up data pointers
-      double *pVerts = pData->m_pVertices + 1;
-      double *pTexCoords = pData->m_pTexCoords + 1;
+      float *pVerts = pData->m_pVertices + 1;
+      float *pTexCoords = pData->m_pTexCoords + 1;
 
       // copy the data into the vectors
       for (unsigned int unPos = 0;
@@ -258,24 +267,24 @@ void CFont::ConstructHorizontal( )
            unPos++)
       {
          // set point 1
-         *pVerts        = oPosition.m_fU;
-         *(pVerts + 1)  = oPosition.m_fV;
-         *(pVerts + 2)  = oPosition.m_fN;
+         *pVerts        = oPosition.X();
+         *(pVerts + 1)  = oPosition.Y();
+         *(pVerts + 2)  = oPosition.Z();
          // set point 2
-         *(pVerts + 3)  = oPosition.m_fU;
-         *(pVerts + 4)  = oPosition.m_fV - fCharHeight;
-         *(pVerts + 5)  = oPosition.m_fN;
+         *(pVerts + 3)  = oPosition.X();
+         *(pVerts + 4)  = oPosition.Y() - fCharHeight;
+         *(pVerts + 5)  = oPosition.Z();
          // set point 3
-         *(pVerts + 6)  = oPosition.m_fU + fCharWidth;
-         *(pVerts + 7)  = oPosition.m_fV - fCharHeight;
-         *(pVerts + 8)  = oPosition.m_fN;
+         *(pVerts + 6)  = oPosition.X() + fCharWidth;
+         *(pVerts + 7)  = oPosition.Y() - fCharHeight;
+         *(pVerts + 8)  = oPosition.Z();
          // set point 4
-         *(pVerts + 9)  = oPosition.m_fU + fCharWidth;
-         *(pVerts + 10) = oPosition.m_fV;
-         *(pVerts + 11) = oPosition.m_fN;
+         *(pVerts + 9)  = oPosition.X() + fCharWidth;
+         *(pVerts + 10) = oPosition.Y();
+         *(pVerts + 11) = oPosition.Z();
 
          // update the position vector
-         oPosition.m_fU += fCharWidth;
+         oPosition.X() += fCharWidth;
 
          // determine the character
          unsigned char unChar = itLine->at(unPos) - 32;
@@ -287,8 +296,8 @@ void CFont::ConstructHorizontal( )
          }
 
          // determine the texture coords
-         double dS = (unChar % 10) * dDeltaS;
-         double dT = 1.0 - ((unChar / 10) * dDeltaT);
+         float dS = (unChar % 10) * dDeltaS;
+         float dT = 1.0f - ((unChar / 10) * dDeltaT);
 
          // set tex coord 1
          *pTexCoords       = dS;

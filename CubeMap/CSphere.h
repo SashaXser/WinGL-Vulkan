@@ -4,10 +4,15 @@
 // includes
 #include "Types.h"
 #include "StdIncludes.h"
-#include "ImageLibrary.h"
+
+// wingl includes
+#include "Vector3.h"
+#include "ReadTexture.h"
+
+#include <string>
+#include <cstdint>
 
 // forward declarations
-class Vector;
 class CPBuffer;
 class CFrameBuffer;
 
@@ -76,7 +81,7 @@ public:
 
    // updates the sphere
    void           Update( const double & rElapsedTime,
-                          const Vector & rEyePosition );
+                          const Vec3f & rEyePosition );
    // begins /ends special dynamic operations
    void           BeginDynamicOperations( );
    void           EndDynamicOperations( );
@@ -134,7 +139,7 @@ private:
    bool                 m_bAutoGenNorms;
    Index *              m_pIndices;
    Vertex *             m_pVertices;
-   Vector               m_vEyeDir;
+   Vec3f                m_vEyeDir;
    Material             m_oMaterial;
    DrawType             m_nDrawType;
    CPBuffer *           m_pPBuffer;
@@ -148,9 +153,9 @@ private:
    ReflectionType       m_nReflection;
    FrameBufferObjs *    m_pFrameBufferObjs;
 
-   // private cubemap images
-   const ImageLibrary::Image *   m_nImages[CM_MAX_TYPES];
-   const std::string *           m_sStaticImages[CM_MAX_TYPES];
+   // private cubemap static images
+   const Texture< uint8_t >   m_oImageAttribs[CM_MAX_TYPES];
+   const std::string *        m_sStaticImages[CM_MAX_TYPES];
 
 };
 
@@ -165,7 +170,7 @@ inline void CSphere::SetDrawType( DrawType nType )
 
 inline void CSphere::IncreaseDynCubemapTexSize( )
 {
-   if (m_nReflection != REFLECT_STATIC && m_nDynCubemapSize < 0x0800)
+   if (m_nReflection != REFLECT_STATIC && m_nDynCubemapSize < 0x2000)
    {
       // increase the size
       m_nDynCubemapSize <<= 1;

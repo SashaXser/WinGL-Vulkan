@@ -1,11 +1,34 @@
 // includes
-#include "Vector.h"
+#include "Vector3.h"
 #include "CSphere.h"
 #include "CPBuffer.h"
-#include "AngleType.h"
 #include "CFrameBuffer.h"
 
+#include "MathHelper.h"
+
 #include <math.h>
+
+// simple utility to quickly generate a texture
+const auto GenTexture = [ ] ( const Texture< uint8_t > & tex ) -> GLuint
+{
+   // load the image to the card
+   GLuint image = 0;
+   glGenTextures(1, &image);
+   glBindTexture(GL_TEXTURE_2D, image);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width, tex.height, 0,
+                GL_RGBA, GL_UNSIGNED_BYTE, tex.pTexture.get());
+
+   // set up the texture parameters
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+   // no longer need the texture bound
+   glBindTexture(GL_TEXTURE_2D, 0);
+
+   return image;
+};
 
 struct CSphere::PBufferObjs
 {
@@ -71,16 +94,13 @@ m_pFrameBufferObjs ( new FrameBufferObjs )
    if (m_nSlices < 3) m_nSlices = 3;
    if (m_nStacks < 3) m_nStacks = 3;
 
-   // obtain a reference to the image library
-   ImageLibrary * pImageLib = ImageLibrary::Instance();
-
    // load all the images
-   m_nImages[CM_POS_X] = pImageLib->Load(pPosX, false, false);
-   m_nImages[CM_NEG_X] = pImageLib->Load(pNegX, false, false);
-   m_nImages[CM_POS_Y] = pImageLib->Load(pPosY, false, false);
-   m_nImages[CM_NEG_Y] = pImageLib->Load(pNegY, false, false);
-   m_nImages[CM_POS_Z] = pImageLib->Load(pPosZ, false, false);
-   m_nImages[CM_NEG_Z] = pImageLib->Load(pNegZ, false, false);
+   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_POS_X]) = ReadTexture< uint8_t >(pPosX, GL_RGBA);
+   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_NEG_X]) = ReadTexture< uint8_t >(pNegX, GL_RGBA);
+   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_POS_Y]) = ReadTexture< uint8_t >(pPosY, GL_RGBA);
+   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_NEG_Y]) = ReadTexture< uint8_t >(pNegY, GL_RGBA);
+   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_POS_Z]) = ReadTexture< uint8_t >(pPosZ, GL_RGBA);
+   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_NEG_Z]) = ReadTexture< uint8_t >(pNegZ, GL_RGBA);
 
    // save the image names
    m_sStaticImages[CM_POS_X] = new std::string(pPosX);
@@ -310,7 +330,7 @@ void CSphere::DrawQuads( const double & rElapsedTime ) const
 }
 
 void CSphere::Update( const double & rElapsedTime,
-                      const Vector & rEyePosition )
+                      const Vec3f & rEyePosition )
 {
    // are hand generated normals set
    if (!m_bAutoGenNorms)
@@ -319,32 +339,32 @@ void CSphere::Update( const double & rElapsedTime,
       Vertex * pVertex = m_pVertices;
 
       // generate vectors for verts, norms, incidents, and reflections
-      Vector vVert(0.0f, 0.0f, 0.0f);
-      Vector vNorm(0.0f, 0.0f, 0.0f);
-      Vector vReflect(0.0f, 0.0f, 0.0f);
-      Vector vIncident(0.0f, 0.0f, 0.0f);
+      Vec3f vVert(0.0f, 0.0f, 0.0f);
+      Vec3f vNorm(0.0f, 0.0f, 0.0f);
+      Vec3f vReflect(0.0f, 0.0f, 0.0f);
+      Vec3f vIncident(0.0f, 0.0f, 0.0f);
 
       for (unsigned int i = 0; i < m_nVerticesSize; i++)
       {
          // set the verts
-         vVert.m_fU = pVertex->fX;
-         vVert.m_fV = pVertex->fY;
-         vVert.m_fN = pVertex->fZ;
+         vVert.X() = pVertex->fX;
+         vVert.Y() = pVertex->fY;
+         vVert.Z() = pVertex->fZ;
 
          // set teh normals
-         vNorm.m_fU = pVertex->fU;
-         vNorm.m_fV = pVertex->fV;
-         vNorm.m_fN = pVertex->fN;
+         vNorm.X() = pVertex->fU;
+         vNorm.Y() = pVertex->fV;
+         vNorm.Z() = pVertex->fN;
 
          // determine the incident vector
          vIncident = vVert - rEyePosition;
          // determine the reflection
-         Vector vReflect = vIncident - vNorm * (2 * (vNorm * vIncident));
+         Vec3f vReflect = vIncident - vNorm * (2 * (vNorm * vIncident));
 
          // set the texture coordinates
-         pVertex->fS = vReflect.m_fU;
-         pVertex->fT = vReflect.m_fV;
-         pVertex->fR = vReflect.m_fN;
+         pVertex->fS = vReflect.X();
+         pVertex->fT = vReflect.Y();
+         pVertex->fR = vReflect.Z();
 
          // increase the vertex pointer
          pVertex++;
@@ -389,15 +409,11 @@ void CSphere::ConstructSphere( )
    Index * pIndex = m_pIndices;
 
    // determine stack and slice deltas
-   Angle aSliceDelta(AngleType::DEGREES, 360.0 / (double)m_nSlices);
-   Angle aStackDelta(AngleType::DEGREES, 180.0 / (double)m_nStacks);
-
-   // convert both to radians
-   aSliceDelta.SetUnit(AngleType::RADIANS);
-   aStackDelta.SetUnit(AngleType::RADIANS);
+   const double slice_delta_rad = MathHelper::DegToRad(360.0 / static_cast< double >(m_nSlices));
+   const double stack_delta_rad = MathHelper::DegToRad(180.0 / static_cast< double >(m_nStacks));
 
    // create the stack starting angle
-   Angle aStack = aStackDelta;
+   double stack_rad = stack_delta_rad;
 
    // create the first set of indices
    for (unsigned int i = 0; i < m_nSlices; i++)
@@ -411,13 +427,13 @@ void CSphere::ConstructSphere( )
    for (unsigned int nStack = 1; m_nStacks > nStack; nStack++)
    {
       // calculate the y coordinate
-      float fY = (float)cos(aStack.GetValue()) * m_fRadius;
+      float fY = (float)cos(stack_rad) * m_fRadius;
 
       // calculate the temp radius
-      float fRadius = (float)sin(aStack.GetValue()) * m_fRadius;
+      float fRadius = (float)sin(stack_rad) * m_fRadius;
 
       // create a slice starting angle
-      Angle aSlice(AngleType::RADIANS, 0.0);
+      double slice_rad = 0.0;
 
       // calculate the start index
       unsigned int nStartIndex = ((nStack - 1) * m_nSlices) + 1;
@@ -426,22 +442,22 @@ void CSphere::ConstructSphere( )
       for (unsigned int nSlice = 0; m_nSlices > nSlice; nSlice++)
       {
          // calculate and set the x, y, and z coordinates
-         pVertex->fX = (float)cos(aSlice.GetValue()) * fRadius;
+         pVertex->fX = (float)cos(slice_rad) * fRadius;
          pVertex->fY = fY;
-         pVertex->fZ = (float)sin(aSlice.GetValue()) * fRadius;
+         pVertex->fZ = (float)sin(slice_rad) * fRadius;
 
          // create a vector
-         Vector vNormal(pVertex->fX, pVertex->fY, pVertex->fZ);
+         Vec3f vNormal(pVertex->fX, pVertex->fY, pVertex->fZ);
          // normalize the vector
          vNormal.Normalize();
 
          // set the normals
-         pVertex->fU = vNormal.m_fU;
-         pVertex->fV = vNormal.m_fV;
-         pVertex->fN = vNormal.m_fN;
+         pVertex->fU = vNormal.X();
+         pVertex->fV = vNormal.Y();
+         pVertex->fN = vNormal.Z();
 
          // update the slice angle
-         aSlice = aSlice.GetValue() + aSliceDelta.GetValue();
+         slice_rad = slice_rad + slice_delta_rad;
 
          // update the vertex pointer
          pVertex++;
@@ -461,7 +477,7 @@ void CSphere::ConstructSphere( )
       }
 
       // update the stack angle
-      aStack = aStack.GetValue() + aStackDelta.GetValue();
+      stack_rad = stack_rad + stack_delta_rad;
    }
 
    // set the last vertex
@@ -485,18 +501,11 @@ void CSphere::ConstructSphere( )
 
 void CSphere::SetReflectionType( ReflectionType nType )
 {
-   // obtain a ref to the image library
-   ImageLibrary * pImgLib = ImageLibrary::Instance();
-
    // remove the previous reflection type
    switch (m_nReflection)
    {
    case REFLECT_STATIC:
-      // release the image from the card
-      for (int i = 0; i < CM_MAX_TYPES; i++)
-      {
-         pImgLib->UnloadImage(m_nImages[i]->m_unImageID);
-      }
+      // nothing to do here
 
       break;
 
@@ -555,12 +564,6 @@ void CSphere::SetReflectionType( ReflectionType nType )
    switch (m_nReflection)
    {
    case REFLECT_STATIC:
-      // load the images
-      for (int i = 0; i < CM_MAX_TYPES; i++)
-      {
-         m_nImages[i] = pImgLib->Load(*m_sStaticImages[i], false, false);
-      }
-
       // construct the images
       ConstructStaticImages();
       // auto generate the texture coordinates
@@ -784,8 +787,8 @@ void CSphere::ConstructStaticImages( )
    glBindTexture(GL_TEXTURE_CUBE_MAP, m_nCubeMapTexture);
 
    // determine the image size
-   unsigned int nImgWidth   = m_nImages[CM_POS_X]->m_pImage->GetSize().m_nWidth;
-   unsigned int nImgHeight  = m_nImages[CM_POS_X]->m_pImage->GetSize().m_nHeight;
+   unsigned int nImgWidth   = m_oImageAttribs[CM_POS_X].width;
+   unsigned int nImgHeight  = m_oImageAttribs[CM_POS_X].height;
    unsigned int nImgSize    = nImgWidth * nImgHeight * 4;
    unsigned int nImgCpySize = nImgWidth * 4;
 
@@ -798,7 +801,7 @@ void CSphere::ConstructStaticImages( )
       // create a temp image buffer pointer to the end
       unsigned char * pTmpImgBuf = pVrtFlipImgBuf + (nImgWidth * (nImgHeight - 1) * 4);
       // obtain the image buffer from the library
-      const unsigned char * pImage = static_cast< unsigned char * >(m_nImages[i]->m_pImage->GetImage()->pData);
+      const unsigned char * pImage = static_cast< unsigned char * >(m_oImageAttribs[i].pTexture.get());
 
       // copy the image into the temp image
       for (unsigned int j = 0; j < nImgHeight; j++)
@@ -814,8 +817,7 @@ void CSphere::ConstructStaticImages( )
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_GENERATE_MIPMAP, GL_TRUE);
 
       // send the image to the graphics card
-      GLenum format = m_nImages[i]->m_pImage->GetImage()->eFormat == ImageReader::BGRA8 ?
-                      GL_BGRA_EXT : GL_RGBA8;
+      GLenum format = m_oImageAttribs[i].format == GL_RGBA ? GL_BGRA_EXT : GL_RGBA8;
 
       glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT + i,
                    0,

@@ -1,6 +1,5 @@
 // includes
 #include "SkyBox.h"
-#include "ImageLibrary.h"
 
 #include <Windows.h>
 #include <GL\GL.h>
@@ -11,23 +10,12 @@
 SkyBox::SkyBox( )
 
 {
-   // clear the image array
-   memset(m_aImages, 0x00, sizeof(m_aImages));
 }
 
 SkyBox::~SkyBox( )
 {
-   // obtain a static instance of the image library
-   ImageLibrary * pImageLib = ImageLibrary::Instance();
-
-   // point to the beginning of the array
-   const ImageLibrary::Image * pImage = (const ImageLibrary::Image *)m_aImages;
-
    // release the resources
-   for (int i = 0; i < MAX_IMAGE_SIZE; i++)
-   {
-      pImageLib->DeleteImage(pImage->m_unImageID);
-   }
+   glDeleteTextures(MAX_IMAGE_SIZE, m_TexIDs);
 }
 
 void SkyBox::InitImages( const char * pTop,
@@ -37,22 +25,22 @@ void SkyBox::InitImages( const char * pTop,
                          const char * pLeft,
                          const char * pRight )
 {
-   // obtain a static instance of the image library
-   ImageLibrary * pImageLib = ImageLibrary::Instance();
-
    // load all six images
-   m_aImages[IMAGE_TOP_ENUM]    = pImageLib->Load(pTop);
-   m_aImages[IMAGE_BOTTOM_ENUM] = pImageLib->Load(pBottom);
-   m_aImages[IMAGE_FRONT_ENUM]  = pImageLib->Load(pFront);
-   m_aImages[IMAGE_BACK_ENUM]   = pImageLib->Load(pBack);
-   m_aImages[IMAGE_LEFT_ENUM]   = pImageLib->Load(pLeft);
-   m_aImages[IMAGE_RIGHT_ENUM]  = pImageLib->Load(pRight);
+   m_aImages[IMAGE_TOP_ENUM]    = ReadTexture< uint8_t >(pTop, GL_RGB);
+   m_aImages[IMAGE_BOTTOM_ENUM] = ReadTexture< uint8_t >(pBottom, GL_RGB);
+   m_aImages[IMAGE_FRONT_ENUM]  = ReadTexture< uint8_t >(pFront, GL_RGB);
+   m_aImages[IMAGE_BACK_ENUM]   = ReadTexture< uint8_t >(pBack, GL_RGB);
+   m_aImages[IMAGE_LEFT_ENUM]   = ReadTexture< uint8_t >(pLeft, GL_RGB);
+   m_aImages[IMAGE_RIGHT_ENUM]  = ReadTexture< uint8_t >(pRight, GL_RGB);
 
    // enable the specific attributes
    for (int i = 0; i < MAX_IMAGE_SIZE; i++)
    {
       // bind the texture
-      glBindTexture(GL_TEXTURE_2D, ((const ImageLibrary::Image *)m_aImages[i])->m_unImageID);
+      glGenTextures(1, &m_TexIDs[i]);
+      glBindTexture(GL_TEXTURE_2D, m_TexIDs[i]);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_aImages[i].width, m_aImages[i].height, 0,
+                   GL_RGB, GL_UNSIGNED_BYTE, m_aImages[i].pTexture.get());
       // set the texture attributes
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -108,7 +96,7 @@ void SkyBox::Render( const double & rElapsedTime )
    for (int i = 0; i < MAX_IMAGE_SIZE; i++)
    {
       // bind the texture
-      glBindTexture(GL_TEXTURE_2D, ((const ImageLibrary::Image *)m_aImages[i])->m_unImageID);
+      glBindTexture(GL_TEXTURE_2D, m_TexIDs[i]);
       // associate the vertices and tex coords
       glVertexPointer(3, GL_FLOAT, 0, fVertices[i]);
       glTexCoordPointer(2, GL_FLOAT, 0, fTexCoords[0]);

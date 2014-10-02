@@ -1,6 +1,12 @@
 #ifndef _SKY_BOX_H_
 #define _SKY_BOX_H_
 
+// wingl includes
+#include "ReadTexture.h"
+
+// std includes
+#include <cstdint>
+
 class SkyBox
 {
 public:
@@ -36,7 +42,8 @@ private:
    };
 
    // private member variables
-   const void *   m_aImages[MAX_IMAGE_SIZE];
+   GLuint               m_TexIDs[MAX_IMAGE_SIZE];
+   Texture< uint8_t >   m_aImages[MAX_IMAGE_SIZE];
 
 };
 

@@ -1,10 +1,14 @@
-// includes
+// local includes
 #include "CModel3DS.h"
-#include "ImageLibrary.h"
-
 #include "StdIncludes.h"
 
+// wingl includes
+#include "ReadTexture.h"
+
 #include <direct.h>
+
+// std includes
+#include <cstdint>
 
 // definitions
 #define CHUNK_MAIN_3DS           0x4D4D
@@ -76,8 +80,6 @@ struct CModel3DS::MaterialBlock
 
 CModel3DS::~CModel3DS( )
 {
-   ImageLibrary * pImgLib = ImageLibrary::Instance();
-
    ObjectBlock * pObjBlk;
 
    for (ObjBlkVec::iterator itBegin = m_vObjBlkVec.begin(),
@@ -107,7 +109,7 @@ CModel3DS::~CModel3DS( )
       // obtain the mat blk
       pMatBlk = itBegin->second;
       // release texture resources
-      if (pMatBlk->pMatTexmap) pImgLib->DeleteImage(pMatBlk->pMatTexmap->nImage);
+      if (pMatBlk->pMatTexmap) glDeleteTextures(1, &pMatBlk->pMatTexmap->nImage);
       // delete the resources
       delete pMatBlk->pMatTexmap;
       delete pMatBlk;
@@ -643,14 +645,32 @@ void CModel3DS::ProcessMaterialTexmap( std::istream & iStream,
       {
       case CHUNK_MAT_TEXMAP_NAME:
          {
+            // start off by setting the image to 0
+            pTexMap->nImage = 0;
             // copy the texture name
             iStream.read(pTexMap->strTexName, nCurChunkLength - 6);
             // create the path to the file
             std::string sTexFile = m_strBaseDir + pTexMap->strTexName;
             // load the texture to the card
-            const ImageLibrary::Image * pImage = ImageLibrary::Instance()->Load(sTexFile, true, true);
-            // set the texmap image id
-            pTexMap->nImage = pImage ? pImage->m_unImageID : 0;
+            const auto texture = ReadTexture< uint8_t >(sTexFile.c_str(), GL_RGBA);
+
+            if (texture.pTexture)
+            {
+               // generate the texture
+               glGenTextures(1, &pTexMap->nImage);
+               glBindTexture(GL_TEXTURE_2D, pTexMap->nImage);
+               glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0,
+                            GL_RGBA, GL_UNSIGNED_BYTE, texture.pTexture.get());
+
+               // set up the texture parameters
+               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+               // no longer need the texture bound
+               glBindTexture(GL_TEXTURE_2D, 0);
+            }
          }
 
          break;
