@@ -34,4 +34,29 @@ bool ReadTexture( const char * const pFilename,
                   uint32_t & height,
                   std::shared_ptr< T > & pTexBuffer );
 
+template < typename T >
+struct Texture
+{
+   uint32_t width;
+   uint32_t height;
+   GLenum format;
+   GLenum type;
+   std::shared_ptr< T > pTexture;
+};
+
+template < typename T > struct TextureType;
+template < > struct TextureType< uint8_t > { static const GLenum type = GL_UNSIGNED_BYTE; };
+
+// reads a texture file
+template < typename T >
+inline Texture< T > ReadTexture( const char * const pFilename,
+                                 const GLenum format )
+{
+   Texture< T > texture = { 0, 0, format, TextureType< T >::type, nullptr };
+
+   ReadTexture(pFilename, format, texture.width, texture.height, texture.pTexture);
+
+   return texture;
+}
+
 #endif // _READ_TEXTURE_H_

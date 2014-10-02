@@ -42,6 +42,26 @@ void DecomposeYawPitchRollDeg( const Matrix< T > & mat,
 }
 
 template < typename T >
+Vector3< T > DecomposeYawPitchRoll( const Matrix< T > & mat )
+{
+   Vector3< T > ypr;
+
+   DecomposeYawPitchRoll(mat, &ypr[0], &ypr[1], &ypr[2]);
+
+   return ypr;
+}
+
+template < typename T >
+Vector3< T > DecomposeYawPitchRollDeg( const Matrix< T > & mat )
+{
+   Vector3< T > ypr;
+
+   DecomposeYawPitchRollDeg(mat, &ypr[0], &ypr[1], &ypr[2]);
+
+   return ypr;
+}
+
+template < typename T >
 Vector3< T > GetStrafeVector( const Matrix< T > & mat )
 {
    Vector3< T > v;
@@ -63,6 +83,18 @@ Vector3< T > GetViewVector( const Matrix< T > & mat )
    v.mT[2] = mat.mT[10];
 
    v *= -1;
+
+   return v;
+}
+
+template < typename T >
+Vector3< T > GetUpVector( const Matrix< T > & mat )
+{
+   Vector3< T > v;
+
+   v.mT[0] = mat.mT[1];
+   v.mT[1] = mat.mT[5];
+   v.mT[2] = mat.mT[9];
 
    return v;
 }

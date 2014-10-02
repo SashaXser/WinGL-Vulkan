@@ -2,6 +2,7 @@
 #define _MATRIX_H_
 
 // std includes
+#include <limits>
 #include <complex>
 
 // crt includes
@@ -600,7 +601,8 @@ template < typename T >
 inline void Matrix< T >::MakeRotation( const T & degrees, const Vector3< T > & vec )
 {
    // validate a unit vector...
-   WGL_ASSERT(0.9999999999 <= vec.Length() && vec.Length() <= 1.0000000001);
+   WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= vec.Length() &&
+              vec.Length() <= 1 + std::numeric_limits< T >::epsilon());
 
    const T radians = degrees * static_cast< T >(M_PI / 180.0);
 
