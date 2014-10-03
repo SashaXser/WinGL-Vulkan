@@ -817,7 +817,7 @@ void CSphere::ConstructStaticImages( )
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_GENERATE_MIPMAP, GL_TRUE);
 
       // send the image to the graphics card
-      GLenum format = m_oImageAttribs[i].format == GL_RGBA ? GL_BGRA_EXT : GL_RGBA8;
+      GLenum format = m_oImageAttribs[i].format == GL_RGBA ? GL_RGBA : GL_BGRA_EXT;
 
       glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT + i,
                    0,
