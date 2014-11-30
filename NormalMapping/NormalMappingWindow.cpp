@@ -2,6 +2,7 @@
 #include "NormalMappingWindow.h"
 
 // wgl includes
+#include "Vector3.h"
 #include "Texture.h"
 #include "MathHelper.h"
 #include "MatrixHelper.h"
@@ -64,9 +65,9 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
       mpHeightTex.reset(new Texture);
       mpNormalTex.reset(new Texture);
 
-      if (!mpDiffuseTex->Load2D("EC_Stone_Wall_Diffuse.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
-          !mpHeightTex->Load2D("EC_Stone_Wall_Height.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
-          !mpNormalTex->Load2D("EC_Stone_Wall_Normal.jpg", GL_RGB, GL_COMPRESSED_RGB, true))
+      if (!mpDiffuseTex->Load2D("normal_mapping_diffuse.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
+          !mpHeightTex->Load2D("normal_mapping_height.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
+          !mpNormalTex->Load2D("normal_mapping_normal.jpg", GL_RGB, GL_COMPRESSED_RGB, true))
       {
          // a texture was not loaded, so just quit
          return false;

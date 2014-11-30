@@ -20,8 +20,8 @@ public:
    static GLuint GetCurrentTexture( const GLenum target, const GLenum texture_unit = GL_TEXTURE0 );
 
    // constructor / destructor
-   Texture( );
-   virtual ~Texture( );
+    Texture( );
+   ~Texture( );
 
    // move operations
    Texture( Texture && texture );
