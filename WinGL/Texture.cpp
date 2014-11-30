@@ -212,7 +212,7 @@ bool Texture::Load2D( const char * const pFilename,
    { static const decltype( &func ) glTexParameter; }; \
    const decltype( &func ) texture_parameter_function_selector< type >::glTexParameter = &func;
 
-template < typename U > struct texture_parameter_function_selector;
+template < typename T > struct texture_parameter_function_selector;
 
 DEFINE_TEX_PARAM_FUNC_SELECTOR(GLint, glTexParameteri);
 DEFINE_TEX_PARAM_FUNC_SELECTOR(GLint *, glTexParameteriv);

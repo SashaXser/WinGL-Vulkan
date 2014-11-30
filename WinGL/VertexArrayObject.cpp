@@ -54,6 +54,9 @@ void VertexArrayObject::DeleteArray( )
 {
    if (mVAO)
    {
+      // must happen within a valid gl context
+      WGL_ASSERT(wglGetCurrentContext());
+
       WGL_ASSERT((mBound && VertexArrayObject::GetCurrentVAO() == mVAO) ||
                  (!mBound && VertexArrayObject::GetCurrentVAO() != mVAO));
 

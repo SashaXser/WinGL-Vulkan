@@ -66,6 +66,9 @@ void VertexBufferObject::DeleteBuffer( )
 {
    if (mVBO)
    {
+      // must happen within a valid gl context
+      WGL_ASSERT(wglGetCurrentContext());
+
       WGL_ASSERT((mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO) ||
                  (!mBound && VertexBufferObject::GetCurrentVBO(mType) != mVBO));
 

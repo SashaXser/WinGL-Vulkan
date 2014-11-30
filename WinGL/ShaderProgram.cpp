@@ -31,6 +31,9 @@ ShaderProgram::~ShaderProgram( )
 {
    if (mShaderProg)
    {
+      // must happen within a valid gl context
+      WGL_ASSERT(wglGetCurrentContext());
+
       glDeleteProgram(mShaderProg);
    }
 }
