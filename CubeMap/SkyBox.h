@@ -42,8 +42,8 @@ private:
    };
 
    // private member variables
-   GLuint               m_TexIDs[MAX_IMAGE_SIZE];
-   Texture< uint8_t >   m_aImages[MAX_IMAGE_SIZE];
+   GLuint                  m_TexIDs[MAX_IMAGE_SIZE];
+   TextureData< uint8_t >  m_aImages[MAX_IMAGE_SIZE];
 
 };
 

@@ -91,8 +91,8 @@ private:
    unsigned int         m_nNumOfLines;
    TexVertVector        m_vText;
 
-   GLuint                     m_oImage;
-   const Texture< uint8_t >   m_oImageAttrib;
+   GLuint                        m_oImage;
+   const TextureData< uint8_t >  m_oImageAttrib;
 
 };
 

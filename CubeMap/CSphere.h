@@ -154,8 +154,8 @@ private:
    FrameBufferObjs *    m_pFrameBufferObjs;
 
    // private cubemap static images
-   const Texture< uint8_t >   m_oImageAttribs[CM_MAX_TYPES];
-   const std::string *        m_sStaticImages[CM_MAX_TYPES];
+   const TextureData< uint8_t >  m_oImageAttribs[CM_MAX_TYPES];
+   const std::string *           m_sStaticImages[CM_MAX_TYPES];
 
 };
 

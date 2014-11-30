@@ -9,7 +9,7 @@
 #include <math.h>
 
 // simple utility to quickly generate a texture
-const auto GenTexture = [ ] ( const Texture< uint8_t > & tex ) -> GLuint
+const auto GenTexture = [ ] ( const TextureData< uint8_t > & tex ) -> GLuint
 {
    // load the image to the card
    GLuint image = 0;
@@ -95,12 +95,12 @@ m_pFrameBufferObjs ( new FrameBufferObjs )
    if (m_nStacks < 3) m_nStacks = 3;
 
    // load all the images
-   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_POS_X]) = ReadTexture< uint8_t >(pPosX, GL_RGBA);
-   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_NEG_X]) = ReadTexture< uint8_t >(pNegX, GL_RGBA);
-   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_POS_Y]) = ReadTexture< uint8_t >(pPosY, GL_RGBA);
-   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_NEG_Y]) = ReadTexture< uint8_t >(pNegY, GL_RGBA);
-   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_POS_Z]) = ReadTexture< uint8_t >(pPosZ, GL_RGBA);
-   const_cast< Texture< uint8_t > & >(m_oImageAttribs[CM_NEG_Z]) = ReadTexture< uint8_t >(pNegZ, GL_RGBA);
+   const_cast< TextureData< uint8_t > & >(m_oImageAttribs[CM_POS_X]) = ReadTexture< uint8_t >(pPosX, GL_RGBA);
+   const_cast< TextureData< uint8_t > & >(m_oImageAttribs[CM_NEG_X]) = ReadTexture< uint8_t >(pNegX, GL_RGBA);
+   const_cast< TextureData< uint8_t > & >(m_oImageAttribs[CM_POS_Y]) = ReadTexture< uint8_t >(pPosY, GL_RGBA);
+   const_cast< TextureData< uint8_t > & >(m_oImageAttribs[CM_NEG_Y]) = ReadTexture< uint8_t >(pNegY, GL_RGBA);
+   const_cast< TextureData< uint8_t > & >(m_oImageAttribs[CM_POS_Z]) = ReadTexture< uint8_t >(pPosZ, GL_RGBA);
+   const_cast< TextureData< uint8_t > & >(m_oImageAttribs[CM_NEG_Z]) = ReadTexture< uint8_t >(pNegZ, GL_RGBA);
 
    // save the image names
    m_sStaticImages[CM_POS_X] = new std::string(pPosX);

@@ -18,6 +18,8 @@ set(WIN_GL_SRC
 ./Shaders.cpp
 ./Shaders.h
 ./Singleton.h
+./Texture.cpp
+./Texture.h
 ./Timer.h
 ./Vector3.h
 ./Vector4.h

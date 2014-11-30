@@ -35,7 +35,7 @@ bool ReadTexture( const char * const pFilename,
                   std::shared_ptr< T > & pTexBuffer );
 
 template < typename T >
-struct Texture
+struct TextureData
 {
    uint32_t width;
    uint32_t height;
@@ -49,10 +49,10 @@ template < > struct TextureType< uint8_t > { static const GLenum type = GL_UNSIG
 
 // reads a texture file
 template < typename T >
-inline Texture< T > ReadTexture( const char * const pFilename,
-                                 const GLenum format )
+inline TextureData< T > ReadTexture( const char * const pFilename,
+                                     const GLenum format )
 {
-   Texture< T > texture = { 0, 0, format, TextureType< T >::type, nullptr };
+   TextureData< T > texture = { 0, 0, format, TextureType< T >::type, nullptr };
 
    ReadTexture(pFilename, format, texture.width, texture.height, texture.pTexture);
 
