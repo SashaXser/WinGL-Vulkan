@@ -73,47 +73,21 @@ bool ShaderProgram::Attach( const GLenum shader, const GLuint shader_obj )
 
 bool ShaderProgram::Attach( const GLenum shader, const std::string & src )
 {
+   return Attach(shader, std::vector< const std::string > { src });
+}
+
+bool ShaderProgram::Attach( const GLenum shader, const std::vector< const std::string > & src )
+{
    bool attached = false;
 
    if (mShaderProg || (mShaderProg = glCreateProgram()))
    {
       if (const GLuint shader_obj = shader::LoadShaderSrc(shader, src))
       {
-         // determine if the shader is already attached
-         const auto attached_shaders = GetAttachedShaders(shader);
-
-         if (attached_shaders.empty())
-         {
-            // attach the shader to the program...
-            glAttachShader(mShaderProg, shader_obj);
-            // release the reference from the shader...
-            glDeleteShader(shader_obj);
-         }
-         else
-         {
-            // get the shader source for the currently attached shader
-            const std::string attached_shader_source = GetShaderSource(attached_shaders[0]);
-
-            // get the new shader source
-            const std::string new_shader_source = GetShaderSource(shader_obj);
-
-            // get the locations that should not be substringed
-            // #version must be specified; otherwise it will not compile correctly (core profile)
-            const size_t version_location_beg = new_shader_source.find("#version");
-            const size_t version_location_end = new_shader_source.find("\n", version_location_beg);
-
-            // substring out the #version
-            const std::string new_shader_source_minus_version =
-               new_shader_source.substr(0, version_location_beg) + new_shader_source.substr(version_location_end + 1);
-
-            // remove the currently attached shader
-            glDetachShader(mShaderProg, attached_shaders[0]);
-            // release the created shader object
-            glDeleteShader(shader_obj);
-
-            // attach the new source
-            Attach(shader, attached_shader_source + "\n\n" + new_shader_source_minus_version);
-         }
+         // attach the shader to the program...
+         glAttachShader(mShaderProg, shader_obj);
+         // release the reference from the shader...
+         glDeleteShader(shader_obj);
 
          attached = true;
       }
@@ -124,47 +98,21 @@ bool ShaderProgram::Attach( const GLenum shader, const std::string & src )
 
 bool ShaderProgram::AttachFile( const GLenum shader, const std::string & file )
 {
+   return AttachFile(shader, std::vector< const std::string > { file });
+}
+
+bool ShaderProgram::AttachFile( const GLenum shader, const std::vector< const std::string > & file )
+{
    bool attached = false;
 
    if (mShaderProg || (mShaderProg = glCreateProgram()))
    {
       if (const GLuint shader_obj = shader::LoadShaderFile(shader, file))
       {
-         // determine if the shader is already attached
-         const auto attached_shaders = GetAttachedShaders(shader);
-
-         if (attached_shaders.empty())
-         {
-            // attach the shader to the program...
-            glAttachShader(mShaderProg, shader_obj);
-            // release the reference from the shader...
-            glDeleteShader(shader_obj);
-         }
-         else
-         {
-            // get the shader source for the currently attached shader
-            const std::string attached_shader_source = GetShaderSource(attached_shaders[0]);
-
-            // get the new shader source
-            const std::string new_shader_source = GetShaderSource(shader_obj);
-
-            // get the locations that should not be substringed
-            // #version must be specified; otherwise it will not compile correctly (core profile)
-            const size_t version_location_beg = new_shader_source.find("#version");
-            const size_t version_location_end = new_shader_source.find("\n", version_location_beg);
-
-            // substring out the #version
-            const std::string new_shader_source_minus_version =
-               new_shader_source.substr(0, version_location_beg) + new_shader_source.substr(version_location_end + 1);
-
-            // remove the currently attached shader
-            glDetachShader(mShaderProg, attached_shaders[0]);
-            // release the created shader object
-            glDeleteShader(shader_obj);
-
-            // attach the new source
-            Attach(shader, attached_shader_source + "\n\n" + new_shader_source_minus_version);
-         }
+         // attach the shader to the program...
+         glAttachShader(mShaderProg, shader_obj);
+         // release the reference from the shader...
+         glDeleteShader(shader_obj);
 
          attached = true;
       }

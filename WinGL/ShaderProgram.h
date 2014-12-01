@@ -61,7 +61,9 @@ public:
    // attaches a program to the shader
    bool Attach( const GLenum shader, const GLuint shader_obj );
    bool Attach( const GLenum shader, const std::string & src );
+   bool Attach( const GLenum shader, const std::vector< const std::string > & src );
    bool AttachFile( const GLenum shader, const std::string & file );
+   bool AttachFile( const GLenum shader, const std::vector< const std::string > & file );
 
    // get shader from the program
    std::vector< GLuint > GetAttachedShaders( const GLenum shader ) const;

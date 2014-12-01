@@ -10,13 +10,16 @@
 
 // stl includes
 #include <string>
+#include <vector>
 
 namespace shader
 {
 
 GLuint LoadShaderSrc( const GLenum type, const std::string & src );
+GLuint LoadShaderSrc( const GLenum type, const std::vector< const std::string > & src );
 
 GLuint LoadShaderFile( const GLenum type, const std::string & file );
+GLuint LoadShaderFile( const GLenum type, const std::vector< const std::string > & file );
 
 bool LinkShaders( const GLuint prog,
                   const GLuint vert, const GLuint geom, const GLuint frag,

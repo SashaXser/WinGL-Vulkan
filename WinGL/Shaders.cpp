@@ -2,10 +2,12 @@
 #include "Shaders.h"
 
 // std includes
+#include <memory>
 #include <fstream>
 #include <sstream>
 #include <cstdint>
 #include <iostream>
+#include <algorithm>
 
 // platform includes
 #include <windows.h>
@@ -15,41 +17,64 @@ namespace shader
 
 GLuint LoadShaderSrc( const GLenum type, const std::string & src )
 {
-   // create the shader object
-   const GLuint sobj = glCreateShader(type);
+   return LoadShaderSrc(type, std::vector< const std::string > { src });
+}
 
-   // set the compiled shader source
-   const char * pSrc = src.c_str();
-   glShaderSource(sobj, 1, &pSrc, nullptr);
+GLuint LoadShaderSrc( const GLenum type, const std::vector< const std::string > & sources )
+{
+   // defines the shader object
+   GLuint sobj = 0;
 
-   // compile the shader source
-   glCompileShader(sobj);
-
-   // make sure there are no errors
-   GLint compiled = GL_FALSE;
-   glGetShaderiv(sobj, GL_COMPILE_STATUS, &compiled);
-
-   if (compiled == GL_FALSE)
+   // make sure there is something to work with
+   if (!sources.empty())
    {
-      // get the error message...
-      std::stringstream err;
-      err << "Error compiling:" << std::endl
-          << src << std::endl << std::endl
-          << "Error:" << std::endl;
+      // create the shader object
+      sobj = glCreateShader(type);
 
-      char errmsg[1024] = { 0 };
-      glGetShaderInfoLog(sobj, sizeof(errmsg), nullptr, errmsg);
+      // combine all the source into an array of pointers
+      const std::unique_ptr< const char *[] > source_pointers(new const char * [sources.size()]);
+      for (auto source_beg = sources.cbegin(); source_beg != sources.cend(); ++source_beg)
+      {
+         source_pointers.get()[std::distance(sources.cbegin(), source_beg)] = source_beg->c_str();
+      }
 
-      err << errmsg;
+      // set the compiled shader source
+      glShaderSource(sobj, static_cast< GLsizei >(sources.size()), source_pointers.get(), nullptr);
 
-      // print the message out
-      std::cout << err.str();
+      // compile the shader source
+      glCompileShader(sobj);
 
-      // release the shader object
-      glDeleteShader(sobj);
+      // make sure there are no errors
+      GLint compiled = GL_FALSE;
+      glGetShaderiv(sobj, GL_COMPILE_STATUS, &compiled);
 
-      // return the null shader
-      return 0;
+      if (compiled == GL_FALSE)
+      {
+         // get the error message...
+         std::stringstream err;
+         err << "Error compiling:" << std::endl;
+
+         for (auto source_beg = sources.cbegin(); source_beg != sources.cend(); ++source_beg)
+         {
+            err << *source_beg << std::endl << std::endl;
+         }
+         
+         err << "Error:" << std::endl;
+
+         char errmsg[1024] = { 0 };
+         glGetShaderInfoLog(sobj, sizeof(errmsg), nullptr, errmsg);
+
+         err << errmsg;
+
+         // print the message out
+         std::cout << err.str();
+
+         // release the shader object
+         glDeleteShader(sobj);
+
+         // return the null shader
+         sobj = 0;
+      }
    }
 
    return sobj;
@@ -57,27 +82,39 @@ GLuint LoadShaderSrc( const GLenum type, const std::string & src )
 
 GLuint LoadShaderFile( const GLenum type, const std::string & file )
 {
-   // open the specified file
-   std::ifstream input(file);
-   
-   if (input.is_open())
+   return LoadShaderFile(type, std::vector< const std::string > { file });
+}
+
+GLuint LoadShaderFile( const GLenum type, const std::vector< const std::string > & file )
+{
+   // collection of all the source files
+   std::vector< const std::string > sources;
+
+   std::for_each(file.cbegin(), file.cend(),
+   [ &sources ] ( const std::string & file )
    {
-      // determine the size of the input file
-      const std::streamoff beg = input.tellg();
-      input.seekg(0, std::ios::end);
-      const std::streamoff size = input.tellg() - beg;
-      input.seekg(0);
+      // open the specified file
+      std::ifstream input(file);
+      
+      if (input.is_open())
+      {
+         // determine the size of the input file
+         const std::streamoff beg = input.tellg();
+         input.seekg(0, std::ios::end);
+         const std::streamoff size = input.tellg() - beg;
+         input.seekg(0);
 
-      // read the file begin to end
-      std::string src(static_cast< uint32_t >(size), '\0');
-      input.read(&src[0], size);
+         // read the file begin to end
+         std::string src(static_cast< uint32_t >(size), '\0');
+         input.read(&src[0], size);
 
-      // load the shader src
-      return LoadShaderSrc(type, src);
-   }
+         // add to the vector of sources
+         sources.push_back(src);
+      }
+   });
 
-   // return the null shader
-   return 0;
+   // load the shader src
+   return LoadShaderSrc(type, sources);
 }
 
 bool LinkShaders( const GLuint prog,
