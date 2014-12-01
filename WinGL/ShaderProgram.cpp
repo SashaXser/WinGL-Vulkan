@@ -79,10 +79,41 @@ bool ShaderProgram::Attach( const GLenum shader, const std::string & src )
    {
       if (const GLuint shader_obj = shader::LoadShaderSrc(shader, src))
       {
-         // attach the shader to the program...
-         glAttachShader(mShaderProg, shader_obj);
-         // release the reference from the shader...
-         glDeleteShader(shader_obj);
+         // determine if the shader is already attached
+         const auto attached_shaders = GetAttachedShaders(shader);
+
+         if (attached_shaders.empty())
+         {
+            // attach the shader to the program...
+            glAttachShader(mShaderProg, shader_obj);
+            // release the reference from the shader...
+            glDeleteShader(shader_obj);
+         }
+         else
+         {
+            // get the shader source for the currently attached shader
+            const std::string attached_shader_source = GetShaderSource(attached_shaders[0]);
+
+            // get the new shader source
+            const std::string new_shader_source = GetShaderSource(shader_obj);
+
+            // get the locations that should not be substringed
+            // #version must be specified; otherwise it will not compile correctly (core profile)
+            const size_t version_location_beg = new_shader_source.find("#version");
+            const size_t version_location_end = new_shader_source.find("\n", version_location_beg);
+
+            // substring out the #version
+            const std::string new_shader_source_minus_version =
+               new_shader_source.substr(0, version_location_beg) + new_shader_source.substr(version_location_end + 1);
+
+            // remove the currently attached shader
+            glDetachShader(mShaderProg, attached_shaders[0]);
+            // release the created shader object
+            glDeleteShader(shader_obj);
+
+            // attach the new source
+            Attach(shader, attached_shader_source + "\n\n" + new_shader_source_minus_version);
+         }
 
          attached = true;
       }
@@ -99,10 +130,41 @@ bool ShaderProgram::AttachFile( const GLenum shader, const std::string & file )
    {
       if (const GLuint shader_obj = shader::LoadShaderFile(shader, file))
       {
-         // attach the shader to the program...
-         glAttachShader(mShaderProg, shader_obj);
-         // release the reference from the shader...
-         glDeleteShader(shader_obj);
+         // determine if the shader is already attached
+         const auto attached_shaders = GetAttachedShaders(shader);
+
+         if (attached_shaders.empty())
+         {
+            // attach the shader to the program...
+            glAttachShader(mShaderProg, shader_obj);
+            // release the reference from the shader...
+            glDeleteShader(shader_obj);
+         }
+         else
+         {
+            // get the shader source for the currently attached shader
+            const std::string attached_shader_source = GetShaderSource(attached_shaders[0]);
+
+            // get the new shader source
+            const std::string new_shader_source = GetShaderSource(shader_obj);
+
+            // get the locations that should not be substringed
+            // #version must be specified; otherwise it will not compile correctly (core profile)
+            const size_t version_location_beg = new_shader_source.find("#version");
+            const size_t version_location_end = new_shader_source.find("\n", version_location_beg);
+
+            // substring out the #version
+            const std::string new_shader_source_minus_version =
+               new_shader_source.substr(0, version_location_beg) + new_shader_source.substr(version_location_end + 1);
+
+            // remove the currently attached shader
+            glDetachShader(mShaderProg, attached_shaders[0]);
+            // release the created shader object
+            glDeleteShader(shader_obj);
+
+            // attach the new source
+            Attach(shader, attached_shader_source + "\n\n" + new_shader_source_minus_version);
+         }
 
          attached = true;
       }
@@ -149,6 +211,32 @@ std::vector< GLuint > ShaderProgram::GetAttachedShaders( const GLenum shader ) c
    }
 
    return shaders;
+}
+
+std::string ShaderProgram::GetShaderSource( const GLenum shader ) const
+{
+   std::string shader_source;
+
+   // get the size of the shader source
+   const GLsizei source_length =
+   [ shader ] ( ) -> GLsizei
+   {
+      GLsizei source_length = 0;
+      glGetShaderiv(shader, GL_SHADER_SOURCE_LENGTH, &source_length);
+
+      return source_length;
+   }();
+
+   if (source_length)
+   {
+      // resize the shader source
+      shader_source.resize(source_length - 1);
+
+      // fill in the shader source
+      glGetShaderSource(shader, source_length, nullptr, &shader_source[0]);
+   }
+
+   return shader_source;
 }
 
 bool ShaderProgram::Link( )

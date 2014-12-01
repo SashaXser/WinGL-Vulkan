@@ -66,6 +66,9 @@ public:
    // get shader from the program
    std::vector< GLuint > GetAttachedShaders( const GLenum shader ) const;
 
+   // gets the shader source for the specified shader
+   std::string GetShaderSource( const GLenum shader ) const;
+
    // links all the attached shaders together
    bool Link( );
 
