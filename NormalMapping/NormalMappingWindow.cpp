@@ -15,6 +15,8 @@
 #include <GL/GL.h>
 
 // std includes
+#include <string>
+#include <vector>
 #include <cstring>
 
 NormalMappingWindow::NormalMappingWindow( ) :
@@ -82,9 +84,12 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
       // init the vertex data
       InitVertexData();
 
+      // init the lighting data
+      InitLightingData();
+
       // initialize the camera matrix
       // the projection will be initialized in the window sizing
-      mCamera.MakeLookAt(0.0f, 15.0f, 20.0f,
+      mCamera.MakeLookAt(40.0f, 40.0f, 40.0f,
                          0.0f, 0.0f, 0.0f,
                          0.0f, 1.0f, 0.0f);
       
@@ -133,14 +138,7 @@ int NormalMappingWindow::Run( )
 
          mpShader->Enable();
          mpDiffuseTex->Bind(GL_TEXTURE0);
-         //tex0.SetTextureParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-         //tex0.SetParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-         //tex0.SetParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         mpNormalTex->Bind(GL_TEXTURE1);
-         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         mpShader->SetUniformValue("tex_unit_0", 0);
-         mpShader->SetUniformValue("tex_unit_1", 1);
+         mpShader->SetUniformValue("diffuse_texture", 0);
 
          mpWallVAO->Bind();
 
@@ -150,7 +148,6 @@ int NormalMappingWindow::Run( )
          mpShader->Disable();
 
          mpDiffuseTex->Unbind();
-         mpNormalTex->Unbind();
 
          SwapBuffers(GetHDC());
       }
@@ -183,7 +180,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
                  static_cast< GLsizei >(height));
 
       // update the projection matrix
-      mProjection.MakePerspective(45.0f, static_cast< float >(width) / static_cast< float >(height), 0.01f, 100.0f);
+      mProjection.MakePerspective(45.0f, static_cast< float >(width) / static_cast< float >(height), 0.01f, 1000.0f);
 
       // update the shader
       update_shader_matrix = true;
@@ -278,7 +275,9 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
    if (update_shader_matrix && mpShader)
    {
       mpShader->Enable();
-      mpShader->SetUniformMatrix< 1, 4, 4 >("proj_model_view_mat", mProjection * mCamera);
+      mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_mat4", mCamera);
+      mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat4", mCamera.Inverse().Transpose());
+      mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat4", mProjection * mCamera);
       mpShader->Disable();
    }
    
@@ -295,8 +294,8 @@ void NormalMappingWindow::LoadShader( const Shader shader )
    case FLAT_SHADER:
    default: 
       // attach the frag and vert sources
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, "normal_mapping_flat_shader.frag");
-      mpShader->AttachFile(GL_VERTEX_SHADER, "normal_mapping_flat_shader.vert");
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_flat_shader.vert" });
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_flat_shader.frag" });
 
       break;
    }
@@ -322,8 +321,8 @@ void NormalMappingWindow::InitVertexData( )
    mpWallVerts.reset(new VertexBufferObject);
    mpWallVerts->GenBuffer(GL_ARRAY_BUFFER);
    mpWallVerts->Bind();
-   const float vertices[] = { -20.0f, 0.0f, 20.0f, -20.0f, 0.0f, -20.0f, 20.0f, 0.0f,  20.0f,
-                               20.0f, 0.0f, 20.0f, -20.0f, 0.0f, -20.0f, 20.0f, 0.0f, -20.0f };
+   const float vertices[] = { -40.0f, 0.0f, 40.0f, -40.0f, 0.0f, -40.0f, 40.0f, 0.0f,  40.0f,
+                               40.0f, 0.0f, 40.0f, -40.0f, 0.0f, -40.0f, 40.0f, 0.0f, -40.0f };
    mpWallVerts->BufferData(sizeof(vertices), vertices, GL_STATIC_DRAW);
    mpWallVerts->VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallVerts->Unbind();
@@ -343,6 +342,47 @@ void NormalMappingWindow::InitVertexData( )
    // bind slot 1 to the texture coords
    mpWallVAO->EnableVertexAttribArray(1);
 
+   // generate the normal data for the object
+   mpWallNorms.reset(new VertexBufferObject);
+   mpWallNorms->GenBuffer(GL_ARRAY_BUFFER);
+   mpWallNorms->Bind();
+   const float normals[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                             0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
+   mpWallNorms->BufferData(sizeof(normals), normals, GL_STATIC_DRAW);
+   mpWallNorms->VertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+   mpWallNorms->Unbind();
+
+   // bind slot 2 to the vertex normals
+   mpWallVAO->EnableVertexAttribArray(2);
+
    // no longer need the vao
    mpWallVAO->Unbind();
+}
+
+void NormalMappingWindow::InitLightingData( )
+{
+   // enable the shader
+   mpShader->Enable();
+
+   // constants shared by both shader attributes
+   const float ambient_intensity = 0.05f;
+   const float diffuse_intensity = 1.0f;
+
+   // init the directional light
+   mpShader->SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
+   mpShader->SetUniformValue("directional_light.base.ambient_intensity", ambient_intensity);
+   mpShader->SetUniformValue("directional_light.base.diffuse_intensity", diffuse_intensity);
+   mpShader->SetUniformValue("directional_light.direction_world_space", Vec3f(0.0f, -1.0f, 0.0f));
+
+   // init the point light
+   mpShader->SetUniformValue("point_light.base.color", Vec3f(0.0f, 0.0f, 1.0f));
+   mpShader->SetUniformValue("point_light.base.ambient_intensity", ambient_intensity);
+   mpShader->SetUniformValue("point_light.base.diffuse_intensity", diffuse_intensity);
+   mpShader->SetUniformValue("point_light.position_world_space", Vec3f(0.0f, 1.0f, 0.0f));
+   mpShader->SetUniformValue("point_light.attenuation.constant_component", 0.5f);
+   mpShader->SetUniformValue("point_light.attenuation.linear_component", 0.1f);
+   mpShader->SetUniformValue("point_light.attenuation.exponential_component", 0.0f);
+
+   // disable the shader
+   mpShader->Disable();
 }

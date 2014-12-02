@@ -64,6 +64,9 @@ private:
    // initializes the vertex data
    void InitVertexData( );
 
+   // initializes the lighting data
+   void InitLightingData( );
+
    // defines the type of shader being used (flat / normal / parallax)
    std::shared_ptr< ShaderProgram >    mpShader;
 
