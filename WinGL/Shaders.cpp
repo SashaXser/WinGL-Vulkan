@@ -15,6 +15,32 @@
 namespace shader
 {
 
+std::string Read( const std::string & file )
+{
+   // this function really needs to be in an IO namespace (move at a later time)
+
+   // empty string if unable to open
+   std::string src;
+
+   // open the specified file
+   std::ifstream input(file);
+   
+   if (input.is_open())
+   {
+      // determine the size of the input file
+      const std::streamoff beg = input.tellg();
+      input.seekg(0, std::ios::end);
+      const std::streamoff size = input.tellg() - beg;
+      input.seekg(0);
+   
+      // read the file begin to end
+      src.resize(static_cast< uint32_t >(size), '\0');
+      input.read(&src[0], size);
+   }
+
+   return src;
+}
+
 GLuint LoadShaderSrc( const GLenum type, const std::string & src )
 {
    return LoadShaderSrc(type, std::vector< const std::string > { src });
@@ -93,24 +119,8 @@ GLuint LoadShaderFile( const GLenum type, const std::vector< const std::string >
    std::for_each(file.cbegin(), file.cend(),
    [ &sources ] ( const std::string & file )
    {
-      // open the specified file
-      std::ifstream input(file);
-      
-      if (input.is_open())
-      {
-         // determine the size of the input file
-         const std::streamoff beg = input.tellg();
-         input.seekg(0, std::ios::end);
-         const std::streamoff size = input.tellg() - beg;
-         input.seekg(0);
-
-         // read the file begin to end
-         std::string src(static_cast< uint32_t >(size), '\0');
-         input.read(&src[0], size);
-
-         // add to the vector of sources
-         sources.push_back(src);
-      }
+      // read and add to the vector of sources
+      sources.push_back(Read(file));
    });
 
    // load the shader src

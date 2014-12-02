@@ -1,6 +1,10 @@
 #ifndef _WGL_ASSERT_H_
 #define _WGL_ASSERT_H_
 
+// std includes
+#include <ostream>
+#include <iostream>
+
 #ifdef _DEBUG
 
 #define __STRINGIFY( x ) #x
@@ -51,8 +55,15 @@ int __WglAssertMsgBox( const char * const pCaption, const char * const pMessage 
 
 #define WGL_ASSERT( exp )
 #define WGL_ASSERT_INIT( init, exp )
+#define WGL_ASSERT_INIT_DEINIT( init, exp, deinit )
 
 #endif // _DEBUG
+
+#define WGL_ASSERT_REPORT( exp, msg ) \
+{ \
+WGL_ASSERT( exp ); \
+if (!(exp)) std::cerr << "Assertion Failed - Expression (" #exp  ") : " << (msg) << std::endl; \
+}
 
 int WglMsgBox( const char * const pCaption, const char * const pMessage );
 

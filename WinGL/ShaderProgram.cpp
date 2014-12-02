@@ -121,6 +121,42 @@ bool ShaderProgram::AttachFile( const GLenum shader, const std::vector< const st
    return attached;
 }
 
+bool ShaderProgram::AddIncludeSrc( const std::string & src, const std::string & include_name )
+{
+   // untested code (as the card does not support or driver not updated)
+
+   // this extension needs to be present to work
+   WGL_ASSERT_REPORT(glNamedStringARB, "ShaderProgram::AddIncludeSrc : glNamedStringARB Is Not Supported");
+
+   bool include_added = false;
+
+   if (glNamedStringARB && !include_name.empty())
+   {
+      // must have '/' as first character
+      const std::string name = include_name[0] == '/' ? include_name : "/" + include_name;
+
+      // bind the source to the specified name
+      glNamedStringARB(GL_SHADER_INCLUDE_ARB,
+                       static_cast< GLsizei >(name.size()), name.c_str(),
+                       static_cast< GLsizei >(src.size()), src.c_str());
+
+      // source added for includes
+      include_added = true;
+   }
+
+   return include_added;
+}
+
+bool ShaderProgram::AddIncludeFile( const std::string & file, const std::string & include_name )
+{
+   // untested code (as the card does not support or driver not updated)
+
+   // must have '/' as first character
+   const std::string name = include_name.empty() ? file : include_name;
+
+   return AddIncludeSrc(shader::Read(file), name);
+}
+
 std::vector< GLuint > ShaderProgram::GetAttachedShaders( const GLenum shader ) const
 {
    std::vector< GLuint > shaders;

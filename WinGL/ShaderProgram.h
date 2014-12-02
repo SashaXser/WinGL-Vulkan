@@ -58,12 +58,18 @@ public:
    GLuint Handle( ) const { return mShaderProg; }
    operator GLuint ( ) const { return Handle(); }
 
-   // attaches a program to the shader
+   // attaches the shader to the program
    bool Attach( const GLenum shader, const GLuint shader_obj );
    bool Attach( const GLenum shader, const std::string & src );
    bool Attach( const GLenum shader, const std::vector< const std::string > & src );
    bool AttachFile( const GLenum shader, const std::string & file );
    bool AttachFile( const GLenum shader, const std::vector< const std::string > & file );
+
+   // attaches source to a specified name
+   // this allows the shader to use #include "some_file.glsl" for reusable code
+   // this is not in the core and is only an extension, so this will fail depending on the gl context
+   bool AddIncludeSrc( const std::string & src, const std::string & include_name );
+   bool AddIncludeFile( const std::string & file, const std::string & include_name = "" );
 
    // get shader from the program
    std::vector< GLuint > GetAttachedShaders( const GLenum shader ) const;
@@ -86,7 +92,10 @@ public:
    template < typename T > bool GetUniformValue( const std::string & uniform, T & t );
 
    // sets a uniforms value
-   template < typename T > bool SetUniformValue( const GLint uniform, const T & t1 );
+   template < typename T > bool SetUniformValue( const GLint uniform, const T & t1,
+                                                 const typename std::enable_if< !has_floating_point_pointer_operator< T >::value >::type * const unused = nullptr );
+   template < typename T > bool SetUniformValue( const GLint uniform, const T & t1,
+                                                 const typename std::enable_if< has_floating_point_pointer_operator< T >::value >::type * const unused = nullptr );
    template < typename T > bool SetUniformValue( const GLint uniform, const T & t1, const T & t2 );
    template < typename T > bool SetUniformValue( const GLint uniform, const T & t1, const T & t2, const T & t3 );
    template < typename T > bool SetUniformValue( const GLint uniform, const T & t1, const T & t2, const T & t3, const T & t4 );
@@ -317,7 +326,8 @@ inline bool ShaderProgram::GetUniformValue( const std::string & uniform, T & t )
                    GetUniformLocation(name) == uniform);
 
 template < typename T >
-inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1 )
+inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1,
+                                            const typename std::enable_if< !has_floating_point_pointer_operator< T >::value >::type * const unused )
 {
    __VALIDATE_SHADER_UNIFORM((uniform));
 
@@ -325,6 +335,19 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1 )
    typedef UniformValueSelector< Type >::array_selector< std::is_array< T >::value, sizeof(t1) > array_selector;
 
    UniformValueSelector< Type >::SetValue(uniform, t1, array_selector());
+
+   return true;
+}
+
+template < typename T >
+inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1,
+                                            const typename std::enable_if< has_floating_point_pointer_operator< T >::value >::type * const unused )
+{
+   __VALIDATE_SHADER_UNIFORM((uniform));
+
+   typedef UniformValueSelector< T::type >::array_selector< true, sizeof(t1) > array_selector;
+
+   UniformValueSelector< T::type >::SetValue(uniform, t1, array_selector());
 
    return true;
 }

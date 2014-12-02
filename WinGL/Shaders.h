@@ -15,6 +15,8 @@
 namespace shader
 {
 
+std::string Read( const std::string & file );
+
 GLuint LoadShaderSrc( const GLenum type, const std::string & src );
 GLuint LoadShaderSrc( const GLenum type, const std::vector< const std::string > & src );
 
