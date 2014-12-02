@@ -191,8 +191,8 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
       // temp
       {
-      int cur_x = lParam & 0xFFFF;
-      int cur_y = lParam >> 16;
+      int cur_x = static_cast< int >(lParam & 0xFFFF);
+      int cur_y = static_cast< int >(lParam >> 16);
 
       if (wParam & MK_LBUTTON)
       {
