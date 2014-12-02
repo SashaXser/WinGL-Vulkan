@@ -2,7 +2,6 @@
 #include "NormalMappingWindow.h"
 
 // wgl includes
-#include "Vector3.h"
 #include "Texture.h"
 #include "MathHelper.h"
 #include "MatrixHelper.h"
@@ -20,14 +19,16 @@
 #include <cstring>
 
 NormalMappingWindow::NormalMappingWindow( ) :
-mpShader          ( nullptr ),
-mpDiffuseTex      ( nullptr ),
-mpHeightTex       ( nullptr ),
-mpNormalTex       ( nullptr ),
-mpWallVAO         ( nullptr ),
-mpWallVerts       ( nullptr ),
-mpWallNorms       ( nullptr ),
-mpWallTexCoords   ( nullptr )
+mpShader                ( nullptr ),
+mpDiffuseTex            ( nullptr ),
+mpHeightTex             ( nullptr ),
+mpNormalTex             ( nullptr ),
+mpWallVAO               ( nullptr ),
+mpWallVerts             ( nullptr ),
+mpWallNorms             ( nullptr ),
+mpWallTexCoords         ( nullptr ),
+mManipulate             ( MANIPULATE_CAMERA ),
+mDirectionalLightDir    ( 0.0f, -1.0f, 0.0f )
 {
    std::memset(mMousePos, 0x00, sizeof(mMousePos));
 }
@@ -164,6 +165,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
 
    // determines if the shader's matrix needs updating
    bool update_shader_matrix = false;
+   bool update_directional_light = false;
 
    switch (uMsg)
    {
@@ -194,29 +196,39 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       {
       case 'a':
       case 'd':
-         // take the inverse of the view matrix to get into world space
-         mCamera.MakeInverse();
+         if (MANIPULATE_CAMERA == mManipulate)
+         {
+            // take the inverse of the view matrix to get into world space
+            mCamera.MakeInverse();
 
-         // strafe translate based on the current view matrix
-         mCamera = (mCamera * Matrixf::Translate(wParam == 'a' ? -0.20f : 0.20f, 0.0f, 0.0f)).Inverse();
+            // strafe translate based on the current view matrix
+            mCamera = (mCamera * Matrixf::Translate(wParam == 'a' ? -0.20f : 0.20f, 0.0f, 0.0f)).Inverse();
 
-         // update the shader
-         update_shader_matrix = true;
+            // update the shader
+            update_shader_matrix = true;
+         }
 
          break;
 
       case 'w':
       case 's':
-         // take the inverse of the view matrix to get into world space
-         mCamera.MakeInverse();
+         if (MANIPULATE_CAMERA == mManipulate)
+         {
+            // take the inverse of the view matrix to get into world space
+            mCamera.MakeInverse();
 
-         // view translate based on the current view matrix
-         mCamera = (mCamera * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.20f : 0.20f)).Inverse();
+            // view translate based on the current view matrix
+            mCamera = (mCamera * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.20f : 0.20f)).Inverse();
 
-         // update the shader
-         update_shader_matrix = true;
+            // update the shader
+            update_shader_matrix = true;
+         }
 
          break;
+
+      case '1': mManipulate = MANIPULATE_CAMERA; break;
+      case '2': mManipulate = MANIPULATE_DIRECTIONAL_LIGHT; break;
+      case '3': mManipulate = MANIPULATE_POINT_LIGHT; break;
       }
 
       break;
@@ -234,29 +246,44 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          const int32_t delta_x = current_mouse_x - mMousePos[0];
          const int32_t delta_y = current_mouse_y - mMousePos[1];
 
-         // obtain the current yaw and pitch rotations from the view matrix
-         float view_yaw = 0.0f, view_pitch = 0.0f;
-         MatrixHelper::DecomposeYawPitchRollDeg< float >(mCamera, &view_yaw, &view_pitch, nullptr);
+         if (MANIPULATE_CAMERA == mManipulate)
+         {
+            // obtain the current yaw and pitch rotations from the view matrix
+            float view_yaw = 0.0f, view_pitch = 0.0f;
+            MatrixHelper::DecomposeYawPitchRollDeg< float >(mCamera, &view_yaw, &view_pitch, nullptr);
 
-         // update the yaw and pitch values
-         // need to make this more granular
-         // need to get the elapsed time here
-         view_yaw += delta_x * 0.05f;
-         view_pitch += delta_y * 0.05f;
+            // update the yaw and pitch values
+            // need to make this more granular
+            // need to get the elapsed time here
+            view_yaw += delta_x * 0.05f;
+            view_pitch += delta_y * 0.05f;
 
-         // make sure the value for pitch is within [-90, 90]
-         view_pitch = MathHelper::Clamp(view_pitch, -89.9f, 89.9f);
+            // make sure the value for pitch is within [-90, 90]
+            view_pitch = MathHelper::Clamp(view_pitch, -89.9f, 89.9f);
 
-         // obtain the current position of the camera
-         const Vec4f camera_pos = mCamera.Inverse() * Vec4f();
+            // obtain the current position of the camera
+            const Vec4f camera_pos = mCamera.Inverse() * Vec4f();
 
-         // construct the new view matrix
-         mCamera = (Matrixf::Translate(Vec3f(camera_pos)) *
-                    Matrixf::Rotate(view_yaw, 0.0f, 1.0f, 0.0f) *
-                    Matrixf::Rotate(view_pitch, 1.0f, 0.0f, 0.0f)).Inverse();
+            // construct the new view matrix
+            mCamera = (Matrixf::Translate(Vec3f(camera_pos)) *
+                       Matrixf::Rotate(view_yaw, 0.0f, 1.0f, 0.0f) *
+                       Matrixf::Rotate(view_pitch, 1.0f, 0.0f, 0.0f)).Inverse();
 
-         // update the shader
-         update_shader_matrix = true;
+            // update the shader
+            update_shader_matrix = true;
+         }
+         else if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate)
+         {
+            // create a rotation matrix
+            const Matrixf rotation = Matrixf::Rotate(delta_x * 0.05f, 0.0f, 1.0f, 0.0f) *
+                                     Matrixf::Rotate(delta_y * 0.05f, 1.0f, 0.0f, 0.0f);
+
+            // rotate the view vector
+            mDirectionalLightDir = rotation * Vec4f(mDirectionalLightDir, 0.0f);
+
+            // update the directional light
+            update_directional_light = true;
+         }
       }
 
       // save the current state
@@ -271,14 +298,24 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       break;
    }
 
-   // determines if the shader matrix needs to be updated
-   if (update_shader_matrix && mpShader)
+   // determines if the shader needs to be updated
+   if (mpShader)
    {
-      mpShader->Enable();
-      mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_mat4", mCamera);
-      mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat4", mCamera.Inverse().Transpose());
-      mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat4", mProjection * mCamera);
-      mpShader->Disable();
+      if (update_shader_matrix)
+      {
+         mpShader->Enable();
+         mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_mat4", mCamera);
+         mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat4", mCamera.Inverse().Transpose());
+         mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat4", mProjection * mCamera);
+         mpShader->Disable();
+      }
+
+      if (update_directional_light)
+      {
+         mpShader->Enable();
+         mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
+         mpShader->Disable();
+      }
    }
    
    return result;
@@ -372,7 +409,7 @@ void NormalMappingWindow::InitLightingData( )
    mpShader->SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
    mpShader->SetUniformValue("directional_light.base.ambient_intensity", ambient_intensity);
    mpShader->SetUniformValue("directional_light.base.diffuse_intensity", diffuse_intensity);
-   mpShader->SetUniformValue("directional_light.direction_world_space", Vec3f(0.0f, -1.0f, 0.0f));
+   mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
 
    // init the point light
    mpShader->SetUniformValue("point_light.base.color", Vec3f(0.0f, 0.0f, 1.0f));

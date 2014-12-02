@@ -31,8 +31,8 @@ public:
     Vector4( const U u[4] );
     Vector4( const T t[4] );
     template < typename U >
-    Vector4( const Vector3< U > & vec );
-    Vector4( const Vector3< T > & vec );
+    Vector4( const Vector3< U > & vec, const U & w = 1 );
+    Vector4( const Vector3< T > & vec, const T & w = 1 );
    ~Vector4( );
 
    // operator =
@@ -213,15 +213,15 @@ inline Vector4< T >::Vector4( const T t[4] )
 
 template < typename T >
 template < typename U >
-inline Vector4< T >::Vector4( const Vector3< U > & vec )
+inline Vector4< T >::Vector4( const Vector3< U > & vec, const U & w )
 {
-   *this = Vector4< U >(vec.mT[0], vec.mT[1], vec.mT[2]);
+   *this = Vector4< U >(vec.mT[0], vec.mT[1], vec.mT[2], w);
 }
 
 template < typename T >
-inline Vector4< T >::Vector4( const Vector3< T > & vec )
+inline Vector4< T >::Vector4( const Vector3< T > & vec, const T & w )
 {
-   *this = vec;
+   Set(vec.mT[0], vec.mT[1], vec.mT[2], w);
 }
 
 template < typename T >

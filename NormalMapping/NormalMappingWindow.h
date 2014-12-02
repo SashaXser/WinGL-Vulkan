@@ -6,6 +6,7 @@
 
 // wgl includes
 #include "Matrix.h"
+#include "Vector3.h"
 
 // std includes
 #include <memory>
@@ -58,6 +59,14 @@ private:
       PARALLAX_SHADER
    };
 
+   // defines the type of manipulator
+   enum Manipulate
+   {
+      MANIPULATE_CAMERA,
+      MANIPULATE_DIRECTIONAL_LIGHT,
+      MANIPULATE_POINT_LIGHT
+   };
+
    // loads the specified shader
    void LoadShader( const Shader shader );
 
@@ -84,6 +93,12 @@ private:
    // defines the projection and camera matrices
    Matrixf     mProjection;
    Matrixf     mCamera;
+
+   // defines the type of manipulator
+   Manipulate  mManipulate;
+
+   // defines lighting parameters
+   Vec3f       mDirectionalLightDir;
 
    // defines the mouse position in native screen coordinates
    int32_t     mMousePos[2];
