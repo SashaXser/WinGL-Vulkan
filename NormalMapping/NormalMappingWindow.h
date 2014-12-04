@@ -76,8 +76,14 @@ private:
    // initializes the lighting data
    void InitLightingData( );
 
+   // updates the directional light shader
+   void UpdateDirLightShader( );
+
    // defines the type of shader being used (flat / normal / parallax)
    std::shared_ptr< ShaderProgram >    mpShader;
+   
+   // defines a very basic shader for the visualization of the directional light
+   std::shared_ptr< ShaderProgram >    mpShaderDirLight;
 
    // textures used by the program
    std::shared_ptr< Texture >    mpDiffuseTex;
@@ -88,7 +94,13 @@ private:
    std::shared_ptr< VertexArrayObject >   mpWallVAO;
    std::shared_ptr< VertexBufferObject >  mpWallVerts;
    std::shared_ptr< VertexBufferObject >  mpWallNorms;
+   std::shared_ptr< VertexBufferObject >  mpWallTangents;
+   std::shared_ptr< VertexBufferObject >  mpWallBitangents;
    std::shared_ptr< VertexBufferObject >  mpWallTexCoords;
+
+   std::shared_ptr< VertexArrayObject >   mpDirLightVAO;
+   std::shared_ptr< VertexBufferObject >  mpDirLightVerts;
+   std::shared_ptr< VertexBufferObject >  mpDirLightColors;
 
    // defines the projection and camera matrices
    Matrixf     mProjection;
@@ -99,6 +111,8 @@ private:
 
    // defines lighting parameters
    Vec3f       mDirectionalLightDir;
+   float       mPointLightAmbientIntensity;
+   float       mPointLightDiffuseIntensity;
 
    // defines the mouse position in native screen coordinates
    int32_t     mMousePos[2];

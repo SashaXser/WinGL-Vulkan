@@ -18,31 +18,31 @@
 #include <vector>
 #include <cstring>
 
+// constants shared by both shader attributes
+static const float AMBIENT_INTENSITY = 0.05f;
+static const float DIFFUSE_INTENSITY = 1.0f;
+
 NormalMappingWindow::NormalMappingWindow( ) :
-mpShader                ( nullptr ),
-mpDiffuseTex            ( nullptr ),
-mpHeightTex             ( nullptr ),
-mpNormalTex             ( nullptr ),
-mpWallVAO               ( nullptr ),
-mpWallVerts             ( nullptr ),
-mpWallNorms             ( nullptr ),
-mpWallTexCoords         ( nullptr ),
-mManipulate             ( MANIPULATE_CAMERA ),
-mDirectionalLightDir    ( 0.0f, -1.0f, 0.0f )
+mpShader                      ( nullptr ),
+mpDiffuseTex                  ( nullptr ),
+mpHeightTex                   ( nullptr ),
+mpNormalTex                   ( nullptr ),
+mpWallVAO                     ( nullptr ),
+mpWallVerts                   ( nullptr ),
+mpWallNorms                   ( nullptr ),
+mpWallTangents                ( nullptr ),
+mpWallBitangents              ( nullptr ),
+mpWallTexCoords               ( nullptr ),
+mManipulate                   ( MANIPULATE_CAMERA ),
+mDirectionalLightDir          ( 0.0f, -1.0f, 0.0f ),
+mPointLightAmbientIntensity   ( AMBIENT_INTENSITY ),
+mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY )
 {
    std::memset(mMousePos, 0x00, sizeof(mMousePos));
 }
 
 NormalMappingWindow::~NormalMappingWindow( )
 {
-   WGL_ASSERT(!mpShader);
-   WGL_ASSERT(!mpDiffuseTex);
-   WGL_ASSERT(!mpHeightTex);
-   WGL_ASSERT(!mpNormalTex);
-   WGL_ASSERT(!mpWallVAO);
-   WGL_ASSERT(!mpWallVerts);
-   WGL_ASSERT(!mpWallNorms);
-   WGL_ASSERT(!mpWallTexCoords);
 }
 
 bool NormalMappingWindow::Create( unsigned int nWidth,
@@ -68,9 +68,9 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
       mpHeightTex.reset(new Texture);
       mpNormalTex.reset(new Texture);
 
-      if (!mpDiffuseTex->Load2D("normal_mapping_diffuse.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
+      if (!mpDiffuseTex->Load2D("normal_mapping_diffuse.jpg", GL_RGB, GL_RGB8, true) ||
           !mpHeightTex->Load2D("normal_mapping_height.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
-          !mpNormalTex->Load2D("normal_mapping_normal.jpg", GL_RGB, GL_COMPRESSED_RGB, true))
+          !mpNormalTex->Load2D("normal_mapping_normal.jpg", GL_RGB, GL_RGB8, true))
       {
          // a texture was not loaded, so just quit
          return false;
@@ -85,14 +85,15 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
       // init the vertex data
       InitVertexData();
 
-      // init the lighting data
-      InitLightingData();
-
       // initialize the camera matrix
       // the projection will be initialized in the window sizing
       mCamera.MakeLookAt(40.0f, 40.0f, 40.0f,
                          0.0f, 0.0f, 0.0f,
                          0.0f, 1.0f, 0.0f);
+
+      // enable the depth buffer and cull faces
+      glEnable(GL_CULL_FACE);
+      glEnable(GL_DEPTH_TEST);
       
       // force the projection matrix to get calculated and updated
       SendMessage(GetHWND(), WM_SIZE, 0, nHeight << 16 | nWidth);
@@ -107,6 +108,7 @@ void NormalMappingWindow::OnDestroy( )
 {
    // release the shader
    mpShader = nullptr;
+   mpShaderDirLight = nullptr;
 
    // release the textures
    mpDiffuseTex = nullptr;
@@ -117,7 +119,13 @@ void NormalMappingWindow::OnDestroy( )
    mpWallVAO = nullptr;
    mpWallVerts = nullptr;
    mpWallNorms = nullptr;
+   mpWallTangents = nullptr;
    mpWallTexCoords = nullptr;
+   mpWallBitangents = nullptr;
+
+   mpDirLightVAO = nullptr;
+   mpDirLightVerts = nullptr;
+   mpDirLightColors = nullptr;
 
    // call the base class destroy
    OpenGLWindow::OnDestroy();
@@ -135,20 +143,35 @@ int NormalMappingWindow::Run( )
       // process all the messages
       if (!(bQuit = PeekAppMessages(appQuitVal)))
       {
-         glClear(GL_COLOR_BUFFER_BIT);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
          mpShader->Enable();
          mpDiffuseTex->Bind(GL_TEXTURE0);
          mpShader->SetUniformValue("diffuse_texture", 0);
+         mpNormalTex->Bind(GL_TEXTURE1);
+         mpShader->SetUniformValue("normal_texture", 1);
 
          mpWallVAO->Bind();
 
-         glDrawArrays(GL_TRIANGLES, 0, 12);
+         glDrawArrays(GL_TRIANGLES, 0, 6);
 
          mpWallVAO->Unbind();
          mpShader->Disable();
 
          mpDiffuseTex->Unbind();
+         mpNormalTex->Unbind();
+
+         if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate)
+         {
+            mpShaderDirLight->Enable();
+            mpDirLightVAO->Bind();
+
+            glDrawArrays(GL_TRIANGLES, 0, 18);
+            glDrawArrays(GL_LINES, 19, 2);
+
+            mpDirLightVAO->Unbind();
+            mpShaderDirLight->Disable();
+         }
 
          SwapBuffers(GetHDC());
       }
@@ -202,7 +225,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
             mCamera.MakeInverse();
 
             // strafe translate based on the current view matrix
-            mCamera = (mCamera * Matrixf::Translate(wParam == 'a' ? -0.20f : 0.20f, 0.0f, 0.0f)).Inverse();
+            mCamera = (mCamera * Matrixf::Translate(wParam == 'a' ? -0.25f : 0.25f, 0.0f, 0.0f)).Inverse();
 
             // update the shader
             update_shader_matrix = true;
@@ -218,7 +241,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
             mCamera.MakeInverse();
 
             // view translate based on the current view matrix
-            mCamera = (mCamera * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.20f : 0.20f)).Inverse();
+            mCamera = (mCamera * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.25f : 0.25f)).Inverse();
 
             // update the shader
             update_shader_matrix = true;
@@ -226,9 +249,39 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
 
          break;
 
+      case 'S':
+         {
+
+         // if the intensity is zero, then turn it on; otherwise turn it off
+         if (MathHelper::Equals(mPointLightAmbientIntensity, 0.0f))
+         {
+            mPointLightAmbientIntensity = AMBIENT_INTENSITY;
+            mPointLightDiffuseIntensity = DIFFUSE_INTENSITY;
+         }
+         else
+         {
+            mPointLightAmbientIntensity = 0.0f;
+            mPointLightDiffuseIntensity = 0.0f;
+         }
+
+         mpShader->Enable();
+
+         mpShader->SetUniformValue("point_light.base.ambient_intensity", mPointLightAmbientIntensity);
+         mpShader->SetUniformValue("point_light.base.diffuse_intensity", mPointLightDiffuseIntensity);
+
+         mpShader->Disable();
+
+         }
+
+         break;
+
       case '1': mManipulate = MANIPULATE_CAMERA; break;
       case '2': mManipulate = MANIPULATE_DIRECTIONAL_LIGHT; break;
       case '3': mManipulate = MANIPULATE_POINT_LIGHT; break;
+
+      case 'f': LoadShader(FLAT_SHADER); update_shader_matrix = true; update_directional_light = true; break;
+      case 'n': LoadShader(NORMAL_SHADER); update_shader_matrix = true; update_directional_light = true; break;
+      case 'p': LoadShader(PARALLAX_SHADER); update_shader_matrix = true; update_directional_light = true; break;
       }
 
       break;
@@ -275,8 +328,9 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          else if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate)
          {
             // create a rotation matrix
+            // todo: fix this (quats maybe?)
             const Matrixf rotation = Matrixf::Rotate(delta_x * 0.05f, 0.0f, 1.0f, 0.0f) *
-                                     Matrixf::Rotate(delta_y * 0.05f, 1.0f, 0.0f, 0.0f);
+                                     Matrixf::Rotate(delta_y * 0.05f, (Vec3f(0.001f, 0.999f, 0.0f).MakeUnitVector() ^ mDirectionalLightDir).MakeUnitVector());
 
             // rotate the view vector
             mDirectionalLightDir = rotation * Vec4f(mDirectionalLightDir, 0.0f);
@@ -315,6 +369,9 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          mpShader->Enable();
          mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
          mpShader->Disable();
+
+         // update the directional light shader
+         UpdateDirLightShader();
       }
    }
    
@@ -328,6 +385,13 @@ void NormalMappingWindow::LoadShader( const Shader shader )
 
    switch (shader)
    {
+   case NORMAL_SHADER:
+      // attach the frag and vert sources
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_normal_shader.vert" });
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_normal_shader.frag" });
+
+      break;
+
    case FLAT_SHADER:
    default: 
       // attach the frag and vert sources
@@ -342,6 +406,33 @@ void NormalMappingWindow::LoadShader( const Shader shader )
    {
       // shader was not linked
       mpShader = nullptr;
+   }
+   else
+   {
+      // init the lighting
+      InitLightingData();
+   }
+
+   if (!mpShaderDirLight)
+   {
+      // create a new shader
+      mpShaderDirLight.reset(new ShaderProgram);
+
+      // attach the frag and vert sources
+      mpShaderDirLight->AttachFile(GL_VERTEX_SHADER, "normal_mapping_dir_light.vert");
+      mpShaderDirLight->AttachFile(GL_FRAGMENT_SHADER, "normal_mapping_dir_light.frag");
+
+      // link the shader
+      if (!mpShaderDirLight->Link())
+      {
+         // shader was not linked
+         mpShaderDirLight = nullptr;
+      }
+      else
+      {
+         // init the direction source
+         UpdateDirLightShader();
+      }
    }
 }
 
@@ -358,8 +449,8 @@ void NormalMappingWindow::InitVertexData( )
    mpWallVerts.reset(new VertexBufferObject);
    mpWallVerts->GenBuffer(GL_ARRAY_BUFFER);
    mpWallVerts->Bind();
-   const float vertices[] = { -40.0f, 0.0f, 40.0f, -40.0f, 0.0f, -40.0f, 40.0f, 0.0f,  40.0f,
-                               40.0f, 0.0f, 40.0f, -40.0f, 0.0f, -40.0f, 40.0f, 0.0f, -40.0f };
+   const float vertices[] = { -40.0f, 0.0f, -40.0f, -40.0f, 0.0f, 40.0f, 40.0f, 0.0f, -40.0f,
+                               40.0f, 0.0f, -40.0f, -40.0f, 0.0f, 40.0f, 40.0f, 0.0f,  40.0f };
    mpWallVerts->BufferData(sizeof(vertices), vertices, GL_STATIC_DRAW);
    mpWallVerts->VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallVerts->Unbind();
@@ -371,7 +462,7 @@ void NormalMappingWindow::InitVertexData( )
    mpWallTexCoords.reset(new VertexBufferObject);
    mpWallTexCoords->GenBuffer(GL_ARRAY_BUFFER);
    mpWallTexCoords->Bind();
-   const float tex_coords[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
+   const float tex_coords[] = { 0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 5.0f, 0.0f };
    mpWallTexCoords->BufferData(sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
    mpWallTexCoords->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallTexCoords->Unbind();
@@ -392,8 +483,84 @@ void NormalMappingWindow::InitVertexData( )
    // bind slot 2 to the vertex normals
    mpWallVAO->EnableVertexAttribArray(2);
 
+   // generate the tangent data for the object
+   // todo: come back and fix this to do the actual calculations
+   mpWallTangents.reset(new VertexBufferObject);
+   mpWallTangents->GenBuffer(GL_ARRAY_BUFFER);
+   mpWallTangents->Bind();
+   const float tangents[] = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+                              1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
+   mpWallTangents->BufferData(sizeof(tangents), tangents, GL_STATIC_DRAW);
+   mpWallTangents->VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+   mpWallTangents->Unbind();
+
+   // bind slot 3 to the vertex tangents
+   mpWallVAO->EnableVertexAttribArray(3);
+
+   // generate the bitangent data for the object
+   // todo: come back and fix this to do the actual calculations
+   mpWallBitangents.reset(new VertexBufferObject);
+   mpWallBitangents->GenBuffer(GL_ARRAY_BUFFER);
+   mpWallBitangents->Bind();
+   const float bitangents[] = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+                                0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
+   mpWallBitangents->BufferData(sizeof(bitangents), bitangents, GL_STATIC_DRAW);
+   mpWallBitangents->VertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
+   mpWallBitangents->Unbind();
+
+   // bind slot 4 to the vertex bitangents
+   mpWallVAO->EnableVertexAttribArray(4);
+
    // no longer need the vao
    mpWallVAO->Unbind();
+
+   // visualize the directional light by creating an arrow for it
+
+   // create a new vertex array object for the light
+   mpDirLightVAO.reset(new VertexArrayObject);
+
+   // generate and bind the vertex array object
+   mpDirLightVAO->GenArray();
+   mpDirLightVAO->Bind();
+
+   // generate the vertex data for the object
+   mpDirLightVerts.reset(new VertexBufferObject);
+   mpDirLightVerts->GenBuffer(GL_ARRAY_BUFFER);
+   mpDirLightVerts->Bind();
+   const float dir_light_vertices[] = { -0.5f, 1.0f, -0.5f,  0.0f, 0.0f,  0.0f, -0.5f, 1.0f,  0.5f,
+                                         0.0f, 0.0f,  0.0f,  0.5f, 1.0f,  0.5f, -0.5f, 1.0f,  0.5f,
+                                         0.0f, 0.0f,  0.0f,  0.5f, 1.0f, -0.5f,  0.5f, 1.0f,  0.5f,
+                                         0.0f, 0.0f,  0.0f, -0.5f, 1.0f, -0.5f,  0.5f, 1.0f, -0.5f,
+                                        -0.5f, 1.0f, -0.5f, -0.5f, 1.0f,  0.5f,  0.5f, 1.0f, -0.5f,
+                                         0.5f, 1.0f, -0.5f, -0.5f, 1.0f,  0.5f,  0.5f, 1.0f,  0.5f,
+                                         0.0f, 1.0f,  0.0f,  0.0f, 2.5f,  0.0f };
+   mpDirLightVerts->BufferData(sizeof(dir_light_vertices), dir_light_vertices, GL_STATIC_DRAW);
+   mpDirLightVerts->VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+   mpDirLightVerts->Unbind();
+
+   // bind slot 0 to the vertices
+   mpDirLightVAO->EnableVertexAttribArray(0);
+
+   // generate the vertex data for the object
+   mpDirLightColors.reset(new VertexBufferObject);
+   mpDirLightColors->GenBuffer(GL_ARRAY_BUFFER);
+   mpDirLightColors->Bind();
+   const float dir_light_colors[] = { 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+                                      0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+                                      0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+                                      0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+                                      1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+                                      1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+                                      1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f };
+   mpDirLightColors->BufferData(sizeof(dir_light_colors), dir_light_colors, GL_STATIC_DRAW);
+   mpDirLightColors->VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+   mpDirLightColors->Unbind();
+
+   // bind slot 1 to the vertices color
+   mpDirLightVAO->EnableVertexAttribArray(1);
+
+   // no longer need the vao
+   mpDirLightVAO->Unbind();
 }
 
 void NormalMappingWindow::InitLightingData( )
@@ -401,25 +568,50 @@ void NormalMappingWindow::InitLightingData( )
    // enable the shader
    mpShader->Enable();
 
-   // constants shared by both shader attributes
-   const float ambient_intensity = 0.05f;
-   const float diffuse_intensity = 1.0f;
-
    // init the directional light
    mpShader->SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
-   mpShader->SetUniformValue("directional_light.base.ambient_intensity", ambient_intensity);
-   mpShader->SetUniformValue("directional_light.base.diffuse_intensity", diffuse_intensity);
+   mpShader->SetUniformValue("directional_light.base.ambient_intensity", AMBIENT_INTENSITY);
+   mpShader->SetUniformValue("directional_light.base.diffuse_intensity", DIFFUSE_INTENSITY);
    mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
 
    // init the point light
-   mpShader->SetUniformValue("point_light.base.color", Vec3f(0.0f, 0.0f, 1.0f));
-   mpShader->SetUniformValue("point_light.base.ambient_intensity", ambient_intensity);
-   mpShader->SetUniformValue("point_light.base.diffuse_intensity", diffuse_intensity);
+   mpShader->SetUniformValue("point_light.base.color", Vec3f(1.0f, 0.0f, 0.0f));
+   mpShader->SetUniformValue("point_light.base.ambient_intensity", mPointLightAmbientIntensity);
+   mpShader->SetUniformValue("point_light.base.diffuse_intensity", mPointLightDiffuseIntensity);
    mpShader->SetUniformValue("point_light.position_world_space", Vec3f(0.0f, 1.0f, 0.0f));
    mpShader->SetUniformValue("point_light.attenuation.constant_component", 0.5f);
    mpShader->SetUniformValue("point_light.attenuation.linear_component", 0.1f);
    mpShader->SetUniformValue("point_light.attenuation.exponential_component", 0.0f);
+   
+   // sometimes the texture y coordinate may be inverted based on the texture
+   // if the uniform is not found, it will not be set or cause any issues
+   mpShader->SetUniformValue("invert_normal_texture_y_component", GL_FALSE);
 
    // disable the shader
    mpShader->Disable();
+}
+
+void NormalMappingWindow::UpdateDirLightShader( )
+{
+   // indicates the initial light direction
+   const Vec3f initial_light_dir(0.0f, -1.0f, 0.0f);
+
+   // obtain the angle between the two vectors
+   const float dot = initial_light_dir * mDirectionalLightDir.MakeUnitVector();
+
+   // get the cross product from the initial light vector and the current one
+   const Vec3f cross = dot != 1.0f && dot != -1.0f ?
+                      (initial_light_dir ^ mDirectionalLightDir).MakeUnitVector() : Vec3f(1.0f, 0.0f, 0.0f);
+
+   // create the matrix that rotates on the cross to align the two vectors
+   const Matrixf mvp =
+      mProjection * mCamera *
+      Matrixf::Translate(0.0f, 1.0f, 0.0f) *
+      Matrixf::Rotate(MathHelper::RadToDeg(std::acos(dot)), cross) *
+      Matrixf::Scale(3.0f);
+
+   // update the shader
+   mpShaderDirLight->Enable();
+   mpShaderDirLight->SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat4", mvp);
+   mpShaderDirLight->Disable();
 }

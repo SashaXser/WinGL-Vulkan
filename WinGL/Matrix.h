@@ -104,6 +104,15 @@ public:
    static Matrix< T > Translate( const T & x, const T & y, const T & z );
    static Matrix< T > Translate( const Vector3< T > & vec );
 
+   // creates a scaling matrix
+   void  MakeScaling( const T & scale );
+   void  MakeScaling( const T & x, const T & y, const T & z );
+   void  MakeScaling( const Vector3< T > & vec );
+
+   static Matrix< T > Scale( const T & scale );
+   static Matrix< T > Scale( const T & x, const T & y, const T & z );
+   static Matrix< T > Scale( const Vector3< T > & vec );
+
    // create a projection matrix
    template < typename U >
    void  MakeOrtho( const U & rLeft, const U & rRight,
@@ -824,6 +833,55 @@ inline Matrix< T > Matrix< T >::Translate( const Vector3< T > & vec )
 {
    Matrix< T > mat;
    mat.MakeTranslation(vec);
+
+   return mat;
+}
+
+template < typename T >
+inline void Matrix< T >::MakeScaling( const T & scale )
+{
+   MakeScaling(scale, scale, scale);
+}
+
+template < typename T >
+inline void Matrix< T >::MakeScaling( const T & x, const T & y, const T & z )
+{
+   MakeIdentity();
+
+   mT[0]  = x;
+   mT[5]  = y;
+   mT[10] = z;
+}
+
+template < typename T >
+inline void Matrix< T >::MakeScaling( const Vector3< T > & vec )
+{
+   MakeScaling(vec.mT[0], vec.mT[1], vec.mT[2]);
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Scale( const T & scale )
+{
+   Matrix< T > mat;
+   mat.MakeScaling(scale);
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Scale( const T & x, const T & y, const T & z )
+{
+   Matrix< T > mat;
+   mat.MakeScaling(x, y, z);
+
+   return mat;
+}
+
+template < typename T >
+inline Matrix< T > Matrix< T >::Scale( const Vector3< T > & vec )
+{
+   Matrix< T > mat;
+   mat.MakeScaling(vec);
 
    return mat;
 }
