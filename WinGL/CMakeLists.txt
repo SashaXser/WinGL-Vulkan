@@ -10,6 +10,7 @@ set(WIN_GL_SRC
 ./OpenGLExtensions.h
 ./OpenGLWindow.cpp
 ./OpenGLWindow.h
+./Quaternion.h
 ./ReadTexture.cpp
 ./ReadTexture.h
 ./ReuseAllocator.h
