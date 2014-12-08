@@ -33,8 +33,8 @@ struct lighting_point
 };
 
 // function that returns the diffuse color
-vec4 CalculateDiffuseLighting( const in vec3 light_direction_eye_space,
-                               const in vec3 surface_normal_eye_space,
+vec4 CalculateDiffuseLighting( const in vec3 light_direction,
+                               const in vec3 surface_normal,
                                const in vec3 light_color,
                                const in float diffuse_intensity )
 {
@@ -43,7 +43,7 @@ vec4 CalculateDiffuseLighting( const in vec3 light_direction_eye_space,
 
    // determine how much of the diffuse component to use
    // determine the angle between the light a the surface normal, making sure to reverse the direction of the light
-   float diffuse_component_factor = dot(surface_normal_eye_space, -1.0f * light_direction_eye_space);
+   float diffuse_component_factor = dot(surface_normal, -1.0f * light_direction);
 
    // we only need acute angles, as those are the ones that produce light and facing the eye
    if (diffuse_component_factor > 0.0f)
@@ -55,8 +55,8 @@ vec4 CalculateDiffuseLighting( const in vec3 light_direction_eye_space,
 }
 
 // function that combines the ambient and diffuse colors
-vec4 CalculateLighting( const in vec3 light_direction_eye_space,
-                        const in vec3 surface_normal_eye_space,
+vec4 CalculateLighting( const in vec3 light_direction,
+                        const in vec3 surface_normal,
                         const in vec3 light_color,
                         const in float ambient_intensity,
                         const in float diffuse_intensity )
@@ -65,8 +65,8 @@ vec4 CalculateLighting( const in vec3 light_direction_eye_space,
    vec4 ambient_color = vec4(light_color, 1.0f) * ambient_intensity;
 
    // determine how much of the diffuse component is used
-   vec4 diffuse_color = CalculateDiffuseLighting(light_direction_eye_space,
-                                                 surface_normal_eye_space,
+   vec4 diffuse_color = CalculateDiffuseLighting(light_direction,
+                                                 surface_normal,
                                                  light_color,
                                                  diffuse_intensity);
 
@@ -74,23 +74,23 @@ vec4 CalculateLighting( const in vec3 light_direction_eye_space,
 }
 
 // function that computes the color for a directional light
-vec4 CalculateDirectionalLighting( const in vec3 light_direction_eye_space,
-                                   const in vec3 surface_normal_eye_space,
+vec4 CalculateDirectionalLighting( const in vec3 light_direction,
+                                   const in vec3 surface_normal,
                                    const in vec3 light_color,
                                    const in float ambient_intensity,
                                    const in float diffuse_intensity )
 {
-   return CalculateLighting(light_direction_eye_space,
-                            surface_normal_eye_space,
+   return CalculateLighting(light_direction,
+                            surface_normal,
                             light_color,
                             ambient_intensity,
                             diffuse_intensity);
 }
 
 // function that computes the color for a point light
-vec4 CalculatePointLighting( const in vec3 light_position_eye_space,
-                             const in vec3 vertex_position_eye_space,
-                             const in vec3 surface_normal_eye_space,
+vec4 CalculatePointLighting( const in vec3 light_position,
+                             const in vec3 vertex_position,
+                             const in vec3 surface_normal,
                              const in vec3 light_color,
                              const in float ambient_intensity,
                              const in float diffuse_intensity,
@@ -99,14 +99,14 @@ vec4 CalculatePointLighting( const in vec3 light_position_eye_space,
                              const in float attenuation_exponential_component )
 {
    // determine the light direction to the vertex position
-   vec3 light_direction_eye_space = vertex_position_eye_space - light_position_eye_space;
+   vec3 light_direction = vertex_position - light_position;
 
    // determine the distance between the eye and vertex
-   float light_direction_distance = length(light_direction_eye_space);
+   float light_direction_distance = length(light_direction);
 
    // calculate the color of the point light
-   vec4 color = CalculateLighting(normalize(light_direction_eye_space),
-                                  surface_normal_eye_space,
+   vec4 color = CalculateLighting(normalize(light_direction),
+                                  surface_normal,
                                   light_color,
                                   ambient_intensity,
                                   diffuse_intensity);
