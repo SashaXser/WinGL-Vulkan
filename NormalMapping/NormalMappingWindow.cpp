@@ -4,6 +4,7 @@
 // wgl includes
 #include "Texture.h"
 #include "MathHelper.h"
+#include "Quaternion.h"
 #include "MatrixHelper.h"
 #include "ShaderProgram.h"
 #include "VertexArrayObject.h"
@@ -14,6 +15,7 @@
 #include <GL/GL.h>
 
 // std includes
+#include <cmath>
 #include <string>
 #include <vector>
 #include <cstring>
@@ -43,6 +45,7 @@ mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY )
 
 NormalMappingWindow::~NormalMappingWindow( )
 {
+   
 }
 
 bool NormalMappingWindow::Create( unsigned int nWidth,
@@ -131,6 +134,7 @@ void NormalMappingWindow::OnDestroy( )
    OpenGLWindow::OnDestroy();
 }
 
+#include "Timer.h"
 int NormalMappingWindow::Run( )
 {
    // vars for the loop
@@ -173,6 +177,15 @@ int NormalMappingWindow::Run( )
             mpShaderDirLight->Disable();
          }
 
+         double time = Timer().GetCurrentTimeSec();
+         Vec3f position(static_cast< float >(std::cos(time) * 20.0f),
+                        1.0f,
+                        static_cast< float >(std::sin(time) * 20.0f));
+
+         mpShader->Enable();
+         mpShader->SetUniformValue("point_light.position_world_space", position);
+         mpShader->Disable();
+
          SwapBuffers(GetHDC());
       }
    }
@@ -214,7 +227,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       break;
 
    case WM_CHAR:
-      // switch based on aswd being pressed
+      // process key presses
       switch (wParam)
       {
       case 'a':
@@ -327,13 +340,28 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          }
          else if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate)
          {
-            // create a rotation matrix
-            // todo: fix this (quats maybe?)
-            const Matrixf rotation = Matrixf::Rotate(delta_x * 0.05f, 0.0f, 1.0f, 0.0f) *
-                                     Matrixf::Rotate(delta_y * 0.05f, (Vec3f(0.001f, 0.999f, 0.0f).MakeUnitVector() ^ mDirectionalLightDir).MakeUnitVector());
+            // determine the pitch axis
+            const Vec3f pitch_axis =
+            [ this ] ( )
+            {
+               Vec3f pitch_axis = (Vec3f(0.001f, 0.999f, 0.0f).UnitVector() ^ mDirectionalLightDir).UnitVector();
+
+               // make sure to make the axis point in the same direction;
+               // otherwise, the cross will flip back and forth causing it to lock at a pole
+               if (pitch_axis.X() > 0.0)
+               {
+                  pitch_axis *= -1.0f;
+               }
+
+               return pitch_axis.UnitVector();
+            }();
+
+            // construct the rotation matrix from the shift in x and y
+            const Matrixf rotation = Matrixf::Rotate(delta_x * 0.1f, 0.0f, 1.0f, 0.0f) *
+                                     Matrixf::Rotate(delta_y * 0.1f, pitch_axis);
 
             // rotate the view vector
-            mDirectionalLightDir = rotation * Vec4f(mDirectionalLightDir, 0.0f);
+            mDirectionalLightDir = (rotation * Vec4f(mDirectionalLightDir, 0.0f)).UnitVector();
 
             // update the directional light
             update_directional_light = true;
@@ -389,6 +417,10 @@ void NormalMappingWindow::LoadShader( const Shader shader )
       // attach the frag and vert sources
       mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_normal_shader.vert" });
       mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_normal_shader.frag" });
+
+      break;
+
+   case PARALLAX_SHADER:
 
       break;
 
@@ -581,7 +613,7 @@ void NormalMappingWindow::InitLightingData( )
    mpShader->SetUniformValue("point_light.position_world_space", Vec3f(0.0f, 1.0f, 0.0f));
    mpShader->SetUniformValue("point_light.attenuation.constant_component", 0.5f);
    mpShader->SetUniformValue("point_light.attenuation.linear_component", 0.1f);
-   mpShader->SetUniformValue("point_light.attenuation.exponential_component", 0.0f);
+   mpShader->SetUniformValue("point_light.attenuation.exponential_component", 0.15f);
    
    // sometimes the texture y coordinate may be inverted based on the texture
    // if the uniform is not found, it will not be set or cause any issues
@@ -596,18 +628,11 @@ void NormalMappingWindow::UpdateDirLightShader( )
    // indicates the initial light direction
    const Vec3f initial_light_dir(0.0f, -1.0f, 0.0f);
 
-   // obtain the angle between the two vectors
-   const float dot = initial_light_dir * mDirectionalLightDir.MakeUnitVector();
-
-   // get the cross product from the initial light vector and the current one
-   const Vec3f cross = dot != 1.0f && dot != -1.0f ?
-                      (initial_light_dir ^ mDirectionalLightDir).MakeUnitVector() : Vec3f(1.0f, 0.0f, 0.0f);
-
-   // create the matrix that rotates on the cross to align the two vectors
+   // create the matrix that rotates the light vector correctly
    const Matrixf mvp =
       mProjection * mCamera *
       Matrixf::Translate(0.0f, 1.0f, 0.0f) *
-      Matrixf::Rotate(MathHelper::RadToDeg(std::acos(dot)), cross) *
+      Quatf::Rotation(initial_light_dir, mDirectionalLightDir).ToMatrix() *
       Matrixf::Scale(3.0f);
 
    // update the shader
