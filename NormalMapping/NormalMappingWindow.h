@@ -79,6 +79,9 @@ private:
    // updates the directional light shader
    void UpdateDirLightShader( );
 
+   // helper function to load textures
+   bool LoadTexture( );
+
    // defines the type of shader being used (flat / normal / parallax)
    std::shared_ptr< ShaderProgram >    mpShader;
    
@@ -113,6 +116,10 @@ private:
    Vec3f       mDirectionalLightDir;
    float       mPointLightAmbientIntensity;
    float       mPointLightDiffuseIntensity;
+
+   // defines the parallax parameters
+   float       mParallaxBias;
+   float       mParallaxScale;
 
    // defines the mouse position in native screen coordinates
    int32_t     mMousePos[2];

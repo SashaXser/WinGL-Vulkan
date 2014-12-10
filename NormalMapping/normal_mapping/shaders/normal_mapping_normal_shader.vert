@@ -31,12 +31,12 @@ void main( )
    frag_tex_coords = vertex_tex_coords.st;
 
    // calculate the tangent, bitangent, and normal for the fragments in eye space
-   frag_normal = (model_view_tinv_mat4 * vec4(vertex_normal, 0.0f)).xyz;
-   frag_tangent = (model_view_tinv_mat4 * vec4(vertex_tangent, 0.0f)).xyz;
-   frag_bitangent = (model_view_tinv_mat4 * vec4(vertex_bitangent, 0.0f)).xyz;
+   frag_normal = normalize((model_view_tinv_mat4 * vec4(vertex_normal, 0.0f)).xyz);
+   frag_tangent = normalize((model_view_tinv_mat4 * vec4(vertex_tangent, 0.0f)).xyz);
+   frag_bitangent = normalize((model_view_tinv_mat4 * vec4(vertex_bitangent, 0.0f)).xyz);
 
    // calculate the eye space direction for the light
-   directional_light_eye_space = (model_view_tinv_mat4 * vec4(directional_light.direction_world_space, 0.0f)).xyz;
+   directional_light_eye_space = normalize((model_view_tinv_mat4 * vec4(directional_light.direction_world_space, 0.0f)).xyz);
 
    // calculate the eye space location of the point light
    point_light_position_eye_space = (model_view_mat4 * vec4(point_light.position_world_space, 1.0f)).xyz;

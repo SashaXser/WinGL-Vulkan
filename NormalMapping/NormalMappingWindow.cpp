@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <sstream>
+#include <iostream>
 
 // constants shared by both shader attributes
 static const float AMBIENT_INTENSITY = 0.05f;
@@ -38,7 +40,9 @@ mpWallTexCoords               ( nullptr ),
 mManipulate                   ( MANIPULATE_CAMERA ),
 mDirectionalLightDir          ( 0.0f, -1.0f, 0.0f ),
 mPointLightAmbientIntensity   ( AMBIENT_INTENSITY ),
-mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY )
+mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY ),
+mParallaxBias                 ( 0.03f ),
+mParallaxScale                ( -0.0225f )
 {
    std::memset(mMousePos, 0x00, sizeof(mMousePos));
 }
@@ -71,9 +75,7 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
       mpHeightTex.reset(new Texture);
       mpNormalTex.reset(new Texture);
 
-      if (!mpDiffuseTex->Load2D("normal_mapping_diffuse.jpg", GL_RGB, GL_RGB8, true) ||
-          !mpHeightTex->Load2D("normal_mapping_height.jpg", GL_RGB, GL_COMPRESSED_RGB, true) ||
-          !mpNormalTex->Load2D("normal_mapping_normal.jpg", GL_RGB, GL_RGB8, true))
+      if (!LoadTexture())
       {
          // a texture was not loaded, so just quit
          return false;
@@ -90,7 +92,8 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
 
       // initialize the camera matrix
       // the projection will be initialized in the window sizing
-      mCamera.MakeLookAt(40.0f, 40.0f, 40.0f,
+      mCamera.MakeLookAt(//40.0f, 40.0f, 40.0f,
+                         0.0f, 40.0f, 40.0f,
                          0.0f, 0.0f, 0.0f,
                          0.0f, 1.0f, 0.0f);
 
@@ -100,6 +103,27 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
       
       // force the projection matrix to get calculated and updated
       SendMessage(GetHWND(), WM_SIZE, 0, nHeight << 16 | nWidth);
+
+      // indicate what actions can be taken
+      std::cout << std::endl
+                << "1 - Manipulates camera" << std::endl
+                << "2 - Manipulates directional lighting" << std::endl
+                << std::endl
+                << "a - Moves camera to the left" << std::endl
+                << "d - Moves camera to the right" << std::endl
+                << "w - Moves camera to the up" << std::endl
+                << "s - Moves camera to the down" << std::endl
+                << std::endl
+                << "t - Changes texture" << std::endl
+                << std::endl
+                << "f - Switch to flat shading" << std::endl
+                << "n - Switch to normal shading" << std::endl
+                << "p - Switch to parallax shading" << std::endl
+                << std::endl
+                << "Shift + s - Turn point light on / off" << std::endl
+                << std::endl
+                << "L-Button Down - Activate camera / directional light rotation" << std::endl
+                << "Mouse X / Y Delta - Manipulate camera / directional light rotation" << std::endl;
 
       return true;
    }
@@ -154,6 +178,8 @@ int NormalMappingWindow::Run( )
          mpShader->SetUniformValue("diffuse_texture", 0);
          mpNormalTex->Bind(GL_TEXTURE1);
          mpShader->SetUniformValue("normal_texture", 1);
+         mpHeightTex->Bind(GL_TEXTURE2);
+         mpShader->SetUniformValue("parallax_texture", 2);
 
          mpWallVAO->Bind();
 
@@ -164,6 +190,7 @@ int NormalMappingWindow::Run( )
 
          mpDiffuseTex->Unbind();
          mpNormalTex->Unbind();
+         mpHeightTex->Unbind();
 
          if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate)
          {
@@ -238,7 +265,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
             mCamera.MakeInverse();
 
             // strafe translate based on the current view matrix
-            mCamera = (mCamera * Matrixf::Translate(wParam == 'a' ? -0.25f : 0.25f, 0.0f, 0.0f)).Inverse();
+            mCamera = (mCamera * Matrixf::Translate(wParam == 'a' ? -0.5f : 0.5f, 0.0f, 0.0f)).Inverse();
 
             // update the shader
             update_shader_matrix = true;
@@ -254,7 +281,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
             mCamera.MakeInverse();
 
             // view translate based on the current view matrix
-            mCamera = (mCamera * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.25f : 0.25f)).Inverse();
+            mCamera = (mCamera * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.5f : 0.5f)).Inverse();
 
             // update the shader
             update_shader_matrix = true;
@@ -289,12 +316,14 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          break;
 
       case '1': mManipulate = MANIPULATE_CAMERA; break;
-      case '2': mManipulate = MANIPULATE_DIRECTIONAL_LIGHT; break;
+      case '2': mManipulate = MANIPULATE_DIRECTIONAL_LIGHT; update_directional_light = true; break;
       case '3': mManipulate = MANIPULATE_POINT_LIGHT; break;
 
       case 'f': LoadShader(FLAT_SHADER); update_shader_matrix = true; update_directional_light = true; break;
       case 'n': LoadShader(NORMAL_SHADER); update_shader_matrix = true; update_directional_light = true; break;
       case 'p': LoadShader(PARALLAX_SHADER); update_shader_matrix = true; update_directional_light = true; break;
+
+      case 't': LoadTexture(); break;
       }
 
       break;
@@ -342,7 +371,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          {
             // determine the pitch axis
             const Vec3f pitch_axis =
-            [ this ] ( )
+            [ this ] ( ) -> Vec3f
             {
                Vec3f pitch_axis = (Vec3f(0.001f, 0.999f, 0.0f).UnitVector() ^ mDirectionalLightDir).UnitVector();
 
@@ -387,8 +416,10 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       {
          mpShader->Enable();
          mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_mat4", mCamera);
-         mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat4", mCamera.Inverse().Transpose());
+         mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat4", (mCamera));
          mpShader->SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat4", mProjection * mCamera);
+
+         mpShader->SetUniformValue("camera_position", Vec3f(mCamera.Inverse()[12]));
          mpShader->Disable();
       }
 
@@ -415,20 +446,29 @@ void NormalMappingWindow::LoadShader( const Shader shader )
    {
    case NORMAL_SHADER:
       // attach the frag and vert sources
-      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_normal_shader.vert" });
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_normal_shader.frag" });
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+                                             { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_normal_shader.vert" });
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+                                               { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_normal_shader.frag" });
 
       break;
 
    case PARALLAX_SHADER:
+      // attach the frag and vert sources
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+                                             { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.vert" });
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+                                               { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.frag" });
 
       break;
 
    case FLAT_SHADER:
    default: 
       // attach the frag and vert sources
-      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_flat_shader.vert" });
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string > { "normal_mapping_lighting.glsl", "normal_mapping_flat_shader.frag" });
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+                                             { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.vert" });
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+                                               { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.frag" });
 
       break;
    }
@@ -494,7 +534,9 @@ void NormalMappingWindow::InitVertexData( )
    mpWallTexCoords.reset(new VertexBufferObject);
    mpWallTexCoords->GenBuffer(GL_ARRAY_BUFFER);
    mpWallTexCoords->Bind();
-   const float tex_coords[] = { 0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 5.0f, 0.0f };
+   //const float tex_coords[] = { 0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 5.0f, 0.0f };
+   const float tex_coords[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f }; // not flipped (this should work)
+   //const float tex_coords[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f }; // flipped (why does this make it work?)
    mpWallTexCoords->BufferData(sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
    mpWallTexCoords->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallTexCoords->Unbind();
@@ -534,8 +576,8 @@ void NormalMappingWindow::InitVertexData( )
    mpWallBitangents.reset(new VertexBufferObject);
    mpWallBitangents->GenBuffer(GL_ARRAY_BUFFER);
    mpWallBitangents->Bind();
-   const float bitangents[] = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                                0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
+   const float bitangents[] = { 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f,
+                                0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f };
    mpWallBitangents->BufferData(sizeof(bitangents), bitangents, GL_STATIC_DRAW);
    mpWallBitangents->VertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallBitangents->Unbind();
@@ -597,30 +639,38 @@ void NormalMappingWindow::InitVertexData( )
 
 void NormalMappingWindow::InitLightingData( )
 {
-   // enable the shader
-   mpShader->Enable();
+   if (mpShader)
+   {
+      // enable the shader
+      mpShader->Enable();
 
-   // init the directional light
-   mpShader->SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
-   mpShader->SetUniformValue("directional_light.base.ambient_intensity", AMBIENT_INTENSITY);
-   mpShader->SetUniformValue("directional_light.base.diffuse_intensity", DIFFUSE_INTENSITY);
-   mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
+      // init the directional light
+      mpShader->SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
+      mpShader->SetUniformValue("directional_light.base.ambient_intensity", AMBIENT_INTENSITY);
+      mpShader->SetUniformValue("directional_light.base.diffuse_intensity", DIFFUSE_INTENSITY);
+      mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
 
-   // init the point light
-   mpShader->SetUniformValue("point_light.base.color", Vec3f(1.0f, 0.0f, 0.0f));
-   mpShader->SetUniformValue("point_light.base.ambient_intensity", mPointLightAmbientIntensity);
-   mpShader->SetUniformValue("point_light.base.diffuse_intensity", mPointLightDiffuseIntensity);
-   mpShader->SetUniformValue("point_light.position_world_space", Vec3f(0.0f, 1.0f, 0.0f));
-   mpShader->SetUniformValue("point_light.attenuation.constant_component", 0.5f);
-   mpShader->SetUniformValue("point_light.attenuation.linear_component", 0.1f);
-   mpShader->SetUniformValue("point_light.attenuation.exponential_component", 0.15f);
+      // init the point light
+      mpShader->SetUniformValue("point_light.base.color", Vec3f(1.0f, 0.0f, 0.0f));
+      mpShader->SetUniformValue("point_light.base.ambient_intensity", mPointLightAmbientIntensity);
+      mpShader->SetUniformValue("point_light.base.diffuse_intensity", mPointLightDiffuseIntensity);
+      mpShader->SetUniformValue("point_light.position_world_space", Vec3f(0.0f, 1.0f, 0.0f));
+      mpShader->SetUniformValue("point_light.attenuation.constant_component", 0.5f);
+      mpShader->SetUniformValue("point_light.attenuation.linear_component", 0.1f);
+      mpShader->SetUniformValue("point_light.attenuation.exponential_component", 0.15f);
    
-   // sometimes the texture y coordinate may be inverted based on the texture
-   // if the uniform is not found, it will not be set or cause any issues
-   mpShader->SetUniformValue("invert_normal_texture_y_component", GL_FALSE);
+      // sometimes the texture y coordinate may be inverted based on the texture
+      // if the uniform is not found, it will not be set or cause any issues
+      mpShader->SetUniformValue("invert_normal_texture_y_component", GL_FALSE);
 
-   // disable the shader
-   mpShader->Disable();
+      // update the parallax values
+      // if the uniform is not found, it will not be set or cause any issues
+      mpShader->SetUniformValue("parallax_bias", mParallaxBias);
+      mpShader->SetUniformValue("parallax_scale", mParallaxScale);
+
+      // disable the shader
+      mpShader->Disable();
+   }
 }
 
 void NormalMappingWindow::UpdateDirLightShader( )
@@ -639,4 +689,62 @@ void NormalMappingWindow::UpdateDirLightShader( )
    mpShaderDirLight->Enable();
    mpShaderDirLight->SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat4", mvp);
    mpShaderDirLight->Disable();
+}
+
+bool NormalMappingWindow::LoadTexture( )
+{
+   bool textures_loaded = true;
+
+   // all the supported textures
+   std::vector< std::vector< const char * const > > textures =
+   {
+      // diffuse tex    offset tex     normal tex     scale    offset
+      { "./normal_mapping/textures/bricks_diffuse.jpg",        "./normal_mapping/textures/bricks_height.png",        "./normal_mapping/textures/bricks_normal.jpg",        "0.03",  "-0.5" },
+      { "./normal_mapping/textures/bricks2_diffuse.jpg",       "./normal_mapping/textures/bricks2_height.jpg",       "./normal_mapping/textures/bricks2_normal.png",       "0.03",  "-0.5" },
+      { "./normal_mapping/textures/genetica_diffuse.jpg",      "./normal_mapping/textures/genetica_height.jpg",      "./normal_mapping/textures/genetica_normal.jpg",      "0.03",  "-0.5" },
+      { "./normal_mapping/textures/lion_diffuse.png",          "./normal_mapping/textures/lion_height.png",          "./normal_mapping/textures/lion_normal.png",          "0.03",  "-0.5" },
+      { "./normal_mapping/textures/cobblestone_diffuse.png",   "./normal_mapping/textures/cobblestone_height.png",   "./normal_mapping/textures/cobblestone_normal.png",   "0.03",  "-0.5" }
+   };
+
+   // indicates what to load
+   static size_t next_texture_index = 0;
+
+   if (!mpDiffuseTex->Load2D(textures[next_texture_index][0], GL_RGB, GL_RGB, true) ||
+       !mpHeightTex->Load2D(textures[next_texture_index][1], GL_RGB, GL_RED, true) ||
+       !mpNormalTex->Load2D(textures[next_texture_index][2], GL_RGB, GL_RGB, true))
+   {
+      // release the textures
+      mpDiffuseTex = nullptr;
+      mpHeightTex = nullptr;
+      mpNormalTex = nullptr;
+
+      // unable to load
+      textures_loaded = false;
+
+      // unable to load textures
+      std::stringstream err;
+      err << "Uanble to load the following textures:" << std::endl
+          << textures[next_texture_index][0] << std::endl
+          << textures[next_texture_index][1] << std::endl
+          << textures[next_texture_index][2] << std::endl;
+
+      PostDebugMessage(GL_DEBUG_TYPE_ERROR, 'LTEX', GL_DEBUG_SEVERITY_HIGH, err.str().c_str());
+   }
+
+   // if the textures were loaded, then update the shader with the scale and bias
+   if (mpDiffuseTex && mpHeightTex && mpNormalTex)
+   {
+      // calculate what the scale and bias should be
+      mParallaxScale = std::stof(textures[next_texture_index][3]);
+      const float base_bias = mParallaxScale * 0.5f;
+      mParallaxBias = -base_bias + base_bias * std::stof(textures[next_texture_index][4]);
+
+      // send all the parameters again
+      InitLightingData();
+   }
+
+   // update the next texture index
+   next_texture_index = ++next_texture_index % textures.size();
+
+   return textures_loaded;
 }
