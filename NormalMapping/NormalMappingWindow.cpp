@@ -20,6 +20,7 @@
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <iomanip>
 #include <iostream>
 
 // constants shared by both shader attributes
@@ -42,7 +43,8 @@ mDirectionalLightDir          ( 0.0f, -1.0f, 0.0f ),
 mPointLightAmbientIntensity   ( AMBIENT_INTENSITY ),
 mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY ),
 mParallaxBias                 ( 0.03f ),
-mParallaxScale                ( -0.0225f )
+mParallaxScale                ( -0.0225f ),
+mInvertNormalY                ( false )
 {
    std::memset(mMousePos, 0x00, sizeof(mMousePos));
 }
@@ -92,8 +94,7 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
 
       // initialize the camera matrix
       // the projection will be initialized in the window sizing
-      mCamera.MakeLookAt(//40.0f, 40.0f, 40.0f,
-                         0.0f, 40.0f, 40.0f,
+      mCamera.MakeLookAt(0.0f, 40.0f, 40.0f,
                          0.0f, 0.0f, 0.0f,
                          0.0f, 1.0f, 0.0f);
 
@@ -171,47 +172,68 @@ int NormalMappingWindow::Run( )
       // process all the messages
       if (!(bQuit = PeekAppMessages(appQuitVal)))
       {
+         // clear the back buffer and the depth buffer
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-         mpShader->Enable();
-         mpDiffuseTex->Bind(GL_TEXTURE0);
-         mpShader->SetUniformValue("diffuse_texture", 0);
-         mpNormalTex->Bind(GL_TEXTURE1);
-         mpShader->SetUniformValue("normal_texture", 1);
-         mpHeightTex->Bind(GL_TEXTURE2);
-         mpShader->SetUniformValue("parallax_texture", 2);
-
-         mpWallVAO->Bind();
-
-         glDrawArrays(GL_TRIANGLES, 0, 6);
-
-         mpWallVAO->Unbind();
-         mpShader->Disable();
-
-         mpDiffuseTex->Unbind();
-         mpNormalTex->Unbind();
-         mpHeightTex->Unbind();
-
-         if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate)
+         if (mpShader && mpDiffuseTex && mpNormalTex && mpHeightTex && mpWallVAO)
          {
-            mpShaderDirLight->Enable();
-            mpDirLightVAO->Bind();
+            // enable the shader for the object
+            mpShader->Enable();
 
-            glDrawArrays(GL_TRIANGLES, 0, 18);
-            glDrawArrays(GL_LINES, 19, 2);
+            // setup the textures to use
+            mpDiffuseTex->Bind(GL_TEXTURE0); mpShader->SetUniformValue("diffuse_texture", 0);
+            mpNormalTex->Bind(GL_TEXTURE1); mpShader->SetUniformValue("normal_texture", 1);
+            mpHeightTex->Bind(GL_TEXTURE2); mpShader->SetUniformValue("parallax_texture", 2);
 
-            mpDirLightVAO->Unbind();
-            mpShaderDirLight->Disable();
+            // bind the object to render
+            mpWallVAO->Bind();
+
+            // draw the two triangles that represent the floor
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            // unbind the object being rendered
+            mpWallVAO->Unbind();
+
+            // disable the shader
+            mpShader->Disable();
+
+            // disable all the textures
+            mpDiffuseTex->Unbind();
+            mpNormalTex->Unbind();
+            mpHeightTex->Unbind();
+
+            // if directional light is being modified, then display the arrow
+            if (MANIPULATE_DIRECTIONAL_LIGHT == mManipulate && mpShaderDirLight && mpDirLightVAO)
+            {
+               // enable the shader for the directional light shape
+               mpShaderDirLight->Enable();
+
+               // bind the arrow shape
+               mpDirLightVAO->Bind();
+
+               // render the arrow head
+               glDrawArrays(GL_TRIANGLES, 0, 18);
+               // render the line coming out the back
+               glDrawArrays(GL_LINES, 19, 2);
+
+               // unbind the arrow shape
+               mpDirLightVAO->Unbind();
+
+               // disable the shader for the light
+               mpShaderDirLight->Disable();
+            }
+
+
+            // todo: fix later
+            double time = Timer().GetCurrentTimeSec();
+            Vec3f position(static_cast< float >(std::cos(time) * 20.0f),
+                           1.0f,
+                           static_cast< float >(std::sin(time) * 20.0f));
+
+            mpShader->Enable();
+            mpShader->SetUniformValue("point_light.position_world_space", position);
+            mpShader->Disable();
          }
-
-         double time = Timer().GetCurrentTimeSec();
-         Vec3f position(static_cast< float >(std::cos(time) * 20.0f),
-                        1.0f,
-                        static_cast< float >(std::sin(time) * 20.0f));
-
-         mpShader->Enable();
-         mpShader->SetUniformValue("point_light.position_world_space", position);
-         mpShader->Disable();
 
          SwapBuffers(GetHDC());
       }
@@ -534,9 +556,7 @@ void NormalMappingWindow::InitVertexData( )
    mpWallTexCoords.reset(new VertexBufferObject);
    mpWallTexCoords->GenBuffer(GL_ARRAY_BUFFER);
    mpWallTexCoords->Bind();
-   //const float tex_coords[] = { 0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 5.0f, 0.0f };
-   const float tex_coords[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f }; // not flipped (this should work)
-   //const float tex_coords[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f }; // flipped (why does this make it work?)
+   const float tex_coords[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
    mpWallTexCoords->BufferData(sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
    mpWallTexCoords->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallTexCoords->Unbind();
@@ -661,7 +681,7 @@ void NormalMappingWindow::InitLightingData( )
    
       // sometimes the texture y coordinate may be inverted based on the texture
       // if the uniform is not found, it will not be set or cause any issues
-      mpShader->SetUniformValue("invert_normal_texture_y_component", GL_FALSE);
+      mpShader->SetUniformValue("invert_normal_texture_y_component", mInvertNormalY ? GL_TRUE : GL_FALSE);
 
       // update the parallax values
       // if the uniform is not found, it will not be set or cause any issues
@@ -698,12 +718,12 @@ bool NormalMappingWindow::LoadTexture( )
    // all the supported textures
    std::vector< std::vector< const char * const > > textures =
    {
-      // diffuse tex    offset tex     normal tex     scale    offset
-      { "./normal_mapping/textures/bricks_diffuse.jpg",        "./normal_mapping/textures/bricks_height.png",        "./normal_mapping/textures/bricks_normal.jpg",        "0.03",  "-0.5" },
-      { "./normal_mapping/textures/bricks2_diffuse.jpg",       "./normal_mapping/textures/bricks2_height.jpg",       "./normal_mapping/textures/bricks2_normal.png",       "0.03",  "-0.5" },
-      { "./normal_mapping/textures/genetica_diffuse.jpg",      "./normal_mapping/textures/genetica_height.jpg",      "./normal_mapping/textures/genetica_normal.jpg",      "0.03",  "-0.5" },
-      { "./normal_mapping/textures/lion_diffuse.png",          "./normal_mapping/textures/lion_height.png",          "./normal_mapping/textures/lion_normal.png",          "0.03",  "-0.5" },
-      { "./normal_mapping/textures/cobblestone_diffuse.png",   "./normal_mapping/textures/cobblestone_height.png",   "./normal_mapping/textures/cobblestone_normal.png",   "0.03",  "-0.5" }
+      // diffuse tex    offset tex     normal tex     scale    offset      invert_y
+      { "./normal_mapping/textures/bricks_diffuse.jpg",        "./normal_mapping/textures/bricks_height.png",        "./normal_mapping/textures/bricks_normal.jpg",        "0.03",  "-0.5",  "false" },
+      { "./normal_mapping/textures/bricks2_diffuse.jpg",       "./normal_mapping/textures/bricks2_height.jpg",       "./normal_mapping/textures/bricks2_normal.png",       "0.03",  "-0.5",  "false" },
+      { "./normal_mapping/textures/genetica_diffuse.jpg",      "./normal_mapping/textures/genetica_height.jpg",      "./normal_mapping/textures/genetica_normal.jpg",      "0.03",  "-0.5",  "false" },
+      { "./normal_mapping/textures/lion_diffuse.png",          "./normal_mapping/textures/lion_height.png",          "./normal_mapping/textures/lion_normal.png",          "0.03",  "-0.5",  "false" },
+      { "./normal_mapping/textures/cobblestone_diffuse.png",   "./normal_mapping/textures/cobblestone_height.png",   "./normal_mapping/textures/cobblestone_normal.png",   "0.03",  "-0.5",  "false" }
    };
 
    // indicates what to load
@@ -738,6 +758,9 @@ bool NormalMappingWindow::LoadTexture( )
       mParallaxScale = std::stof(textures[next_texture_index][3]);
       const float base_bias = mParallaxScale * 0.5f;
       mParallaxBias = -base_bias + base_bias * std::stof(textures[next_texture_index][4]);
+
+      // determine if y should be inverted
+      std::stringstream(textures[next_texture_index][5]) >> std::boolalpha >> mInvertNormalY;
 
       // send all the parameters again
       InitLightingData();

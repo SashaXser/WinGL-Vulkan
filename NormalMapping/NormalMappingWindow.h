@@ -121,6 +121,9 @@ private:
    float       mParallaxBias;
    float       mParallaxScale;
 
+   // indicates if the y component of the normal texture should be inverted
+   bool        mInvertNormalY;
+
    // defines the mouse position in native screen coordinates
    int32_t     mMousePos[2];
 
