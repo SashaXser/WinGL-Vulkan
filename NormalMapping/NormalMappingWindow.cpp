@@ -513,8 +513,8 @@ void NormalMappingWindow::LoadShader( const Shader shader )
       mpShaderDirLight.reset(new ShaderProgram);
 
       // attach the frag and vert sources
-      mpShaderDirLight->AttachFile(GL_VERTEX_SHADER, "normal_mapping_dir_light.vert");
-      mpShaderDirLight->AttachFile(GL_FRAGMENT_SHADER, "normal_mapping_dir_light.frag");
+      mpShaderDirLight->AttachFile(GL_VERTEX_SHADER, "./normal_mapping/shaders/normal_mapping_dir_light.vert");
+      mpShaderDirLight->AttachFile(GL_FRAGMENT_SHADER, "./normal_mapping/shaders/normal_mapping_dir_light.frag");
 
       // link the shader
       if (!mpShaderDirLight->Link())
