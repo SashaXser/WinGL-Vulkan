@@ -38,6 +38,7 @@ mpWallNorms                   ( nullptr ),
 mpWallTangents                ( nullptr ),
 mpWallBitangents              ( nullptr ),
 mpWallTexCoords               ( nullptr ),
+mpWallIndices                 ( nullptr ),
 mManipulate                   ( MANIPULATE_CAMERA ),
 mDirectionalLightDir          ( 0.0f, -1.0f, 0.0f ),
 mPointLightAmbientIntensity   ( AMBIENT_INTENSITY ),
@@ -147,6 +148,7 @@ void NormalMappingWindow::OnDestroy( )
    mpWallVAO = nullptr;
    mpWallVerts = nullptr;
    mpWallNorms = nullptr;
+   mpWallIndices = nullptr;
    mpWallTangents = nullptr;
    mpWallTexCoords = nullptr;
    mpWallBitangents = nullptr;
@@ -189,7 +191,10 @@ int NormalMappingWindow::Run( )
             mpWallVAO->Bind();
 
             // draw the two triangles that represent the floor
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawElements(mShape.geom_type,
+                           static_cast< GLsizei >(mShape.indices.size()),
+                           GL_UNSIGNED_INT,
+                           nullptr);
 
             // unbind the object being rendered
             mpWallVAO->Unbind();
@@ -539,13 +544,14 @@ void NormalMappingWindow::InitVertexData( )
    mpWallVAO->GenArray();
    mpWallVAO->Bind();
 
+   // generate the plane
+   mShape = GeomHelper::ConstructPlane(80.0f, 80.0f);
+
    // generate the vertex data for the object
    mpWallVerts.reset(new VertexBufferObject);
    mpWallVerts->GenBuffer(GL_ARRAY_BUFFER);
    mpWallVerts->Bind();
-   const float vertices[] = { -40.0f, 0.0f, -40.0f, -40.0f, 0.0f, 40.0f, 40.0f, 0.0f, -40.0f,
-                               40.0f, 0.0f, -40.0f, -40.0f, 0.0f, 40.0f, 40.0f, 0.0f,  40.0f };
-   mpWallVerts->BufferData(sizeof(vertices), vertices, GL_STATIC_DRAW);
+   mpWallVerts->BufferData(mShape.vertices.size() * sizeof(Vec3f), &mShape.vertices[0], GL_STATIC_DRAW);
    mpWallVerts->VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallVerts->Unbind();
 
@@ -556,8 +562,7 @@ void NormalMappingWindow::InitVertexData( )
    mpWallTexCoords.reset(new VertexBufferObject);
    mpWallTexCoords->GenBuffer(GL_ARRAY_BUFFER);
    mpWallTexCoords->Bind();
-   const float tex_coords[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
-   mpWallTexCoords->BufferData(sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
+   mpWallTexCoords->BufferData(mShape.tex_coords.size() * sizeof(float), &mShape.tex_coords[0], GL_STATIC_DRAW);
    mpWallTexCoords->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallTexCoords->Unbind();
 
@@ -568,9 +573,7 @@ void NormalMappingWindow::InitVertexData( )
    mpWallNorms.reset(new VertexBufferObject);
    mpWallNorms->GenBuffer(GL_ARRAY_BUFFER);
    mpWallNorms->Bind();
-   const float normals[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-                             0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
-   mpWallNorms->BufferData(sizeof(normals), normals, GL_STATIC_DRAW);
+   mpWallNorms->BufferData(mShape.normals.size() * sizeof(Vec3f), &mShape.normals[0], GL_STATIC_DRAW);
    mpWallNorms->VertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallNorms->Unbind();
 
@@ -578,13 +581,10 @@ void NormalMappingWindow::InitVertexData( )
    mpWallVAO->EnableVertexAttribArray(2);
 
    // generate the tangent data for the object
-   // todo: come back and fix this to do the actual calculations
    mpWallTangents.reset(new VertexBufferObject);
    mpWallTangents->GenBuffer(GL_ARRAY_BUFFER);
    mpWallTangents->Bind();
-   const float tangents[] = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-                              1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
-   mpWallTangents->BufferData(sizeof(tangents), tangents, GL_STATIC_DRAW);
+   mpWallTangents->BufferData(mShape.tangents.size() * sizeof(Vec3f), &mShape.tangents[0], GL_STATIC_DRAW);
    mpWallTangents->VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallTangents->Unbind();
 
@@ -592,21 +592,28 @@ void NormalMappingWindow::InitVertexData( )
    mpWallVAO->EnableVertexAttribArray(3);
 
    // generate the bitangent data for the object
-   // todo: come back and fix this to do the actual calculations
    mpWallBitangents.reset(new VertexBufferObject);
    mpWallBitangents->GenBuffer(GL_ARRAY_BUFFER);
    mpWallBitangents->Bind();
-   const float bitangents[] = { 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f,
-                                0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f };
-   mpWallBitangents->BufferData(sizeof(bitangents), bitangents, GL_STATIC_DRAW);
+   mpWallBitangents->BufferData(mShape.bitangents.size() * sizeof(Vec3f), &mShape.bitangents[0], GL_STATIC_DRAW);
    mpWallBitangents->VertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallBitangents->Unbind();
 
    // bind slot 4 to the vertex bitangents
    mpWallVAO->EnableVertexAttribArray(4);
 
+   // generate the indices for the object
+   // do not unbind the buffer until after the vao is unbound
+   mpWallIndices.reset(new VertexBufferObject);
+   mpWallIndices->GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+   mpWallIndices->Bind();
+   mpWallIndices->BufferData(mShape.indices.size() * sizeof(GLuint), &mShape.indices[0], GL_STATIC_DRAW);
+
    // no longer need the vao
    mpWallVAO->Unbind();
+
+   // unbind the index buffer
+   mpWallIndices->Unbind();
 
    // visualize the directional light by creating an arrow for it
 

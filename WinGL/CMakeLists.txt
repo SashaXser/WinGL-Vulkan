@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.0.0)
 set(WIN_GL_SRC
 ./AllocConsole.cpp
 ./AllocConsole.h
+./GeomHelper.cpp
+./GeomHelper.h
 ./MathHelper.h
 ./Matrix.h
 ./MatrixHelper.h

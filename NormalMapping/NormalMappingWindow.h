@@ -7,6 +7,7 @@
 // wgl includes
 #include "Matrix.h"
 #include "Vector3.h"
+#include "GeomHelper.h"
 
 // std includes
 #include <memory>
@@ -100,10 +101,14 @@ private:
    std::shared_ptr< VertexBufferObject >  mpWallTangents;
    std::shared_ptr< VertexBufferObject >  mpWallBitangents;
    std::shared_ptr< VertexBufferObject >  mpWallTexCoords;
+   std::shared_ptr< VertexBufferObject >  mpWallIndices;
 
    std::shared_ptr< VertexArrayObject >   mpDirLightVAO;
    std::shared_ptr< VertexBufferObject >  mpDirLightVerts;
    std::shared_ptr< VertexBufferObject >  mpDirLightColors;
+
+   // defines the shape being rendered
+   GeomHelper::Shape    mShape;
 
    // defines the projection and camera matrices
    Matrixf     mProjection;
