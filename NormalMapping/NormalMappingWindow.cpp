@@ -183,9 +183,9 @@ int NormalMappingWindow::Run( )
             mpShader->Enable();
 
             // setup the textures to use
-            mpDiffuseTex->Bind(GL_TEXTURE0); mpShader->SetUniformValue("diffuse_texture", 0);
-            mpNormalTex->Bind(GL_TEXTURE1); mpShader->SetUniformValue("normal_texture", 1);
-            mpHeightTex->Bind(GL_TEXTURE2); mpShader->SetUniformValue("parallax_texture", 2);
+            mpDiffuseTex->Bind(GL_TEXTURE0); mpShader->SetUniformValue("diffuse_texture", static_cast< GLint >(mpDiffuseTex->GetBoundTexUnit()));
+            mpNormalTex->Bind(GL_TEXTURE1); mpShader->SetUniformValue("normal_texture", static_cast< GLint >(mpNormalTex->GetBoundTexUnit()));
+            mpHeightTex->Bind(GL_TEXTURE2); mpShader->SetUniformValue("parallax_texture", static_cast< GLint >(mpHeightTex->GetBoundTexUnit()));
 
             // bind the object to render
             mpWallVAO->Bind();

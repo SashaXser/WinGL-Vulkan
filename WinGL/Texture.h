@@ -39,7 +39,10 @@ public:
    GLuint GetHeight( ) const { WGL_ASSERT(mTexID); return mTexHeight; }
 
    // obtains the currently bound texture unit for this texture
-   GLuint GetBoundTexUnit( ) const { WGL_ASSERT(mTexID); return mBoundTexUnit; }
+   GLuint GetBoundTexUnit( ) const { WGL_ASSERT(mTexID); return mBoundTexUnit - GL_TEXTURE0; }
+
+   // obtains the currently bound texture unit opengl id for this texture
+   GLuint GetBoundTexUnitID( ) const { WGL_ASSERT(mTexID); return mBoundTexUnit; }
 
    // determines if the texture is bound
    bool IsBound( ) const { return mBoundTexUnit != INVALID_TEXTURE_UNIT; }
