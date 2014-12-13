@@ -9,9 +9,14 @@
 #include "Vector3.h"
 #include "GeomHelper.h"
 
+// gl includes
+#include <GL/glew.h>
+#include <GL/GL.h>
+
 // std includes
 #include <memory>
 #include <cstdint>
+#include <functional>
 
 // forward declarations
 class Texture;
@@ -57,7 +62,8 @@ private:
    {
       FLAT_SHADER,
       NORMAL_SHADER,
-      PARALLAX_SHADER
+      PARALLAX_SHADER,
+      TESSELLATION_SHADER
    };
 
    // defines the type of manipulator
@@ -116,6 +122,10 @@ private:
 
    // defines the type of manipulator
    Manipulate  mManipulate;
+
+   // indicates the type of draw callback to use for the terrain
+   typedef decltype( std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3) ) DrawElementsFunc;
+   DrawElementsFunc  mDrawElements;
 
    // defines lighting parameters
    Vec3f       mDirectionalLightDir;

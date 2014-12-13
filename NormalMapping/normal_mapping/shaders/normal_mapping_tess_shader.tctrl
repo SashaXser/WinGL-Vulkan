@@ -1,0 +1,38 @@
+#version 410 core
+
+layout (vertices = 3) out;
+
+uniform mat4 model_view_mat4;
+uniform mat4 model_view_proj_mat4;
+
+smooth in vec2 tctrl_tex_coords[];
+
+smooth out vec2 teval_tex_coords[];
+
+float CalculateTessellationLevel( const vec4 clip_space_position )
+{
+   mat4 inv_model_view_proj_mat4 = inverse(model_view_proj_mat4);
+   vec4 near_position = inv_model_view_proj_mat4 * vec4(0.0f, 0.0f, -0.0100000007f, 0.00999999978f);
+   vec4 far_position = inv_model_view_proj_mat4 * vec4(0.0f, 0.0f, 1000.0f, 1000.0f);
+   vec4 vertex_position = inv_model_view_proj_mat4 * clip_space_position;
+   vec4 camera_position = model_view_mat4 * vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+   float distance = distance(camera_position, vertex_position) / 200.0f;
+
+   float level = mix(64.0f, 1.0f, distance / 5.0f);
+
+   return clamp(level, 1.0f, 64.0f);
+}
+
+void main( )
+{
+   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+
+   teval_tex_coords[gl_InvocationID] = tctrl_tex_coords[gl_InvocationID];
+
+   gl_TessLevelOuter[0] = CalculateTessellationLevel(gl_in[0].gl_Position);
+   gl_TessLevelOuter[1] = CalculateTessellationLevel(gl_in[1].gl_Position);
+   gl_TessLevelOuter[2] = CalculateTessellationLevel(gl_in[2].gl_Position);
+
+   gl_TessLevelInner[0] = gl_TessLevelOuter[2];
+}

@@ -10,10 +10,6 @@
 #include "VertexArrayObject.h"
 #include "VertexBufferObject.h"
 
-// gl includes
-#include <GL/glew.h>
-#include <GL/GL.h>
-
 // std includes
 #include <cmath>
 #include <string>
@@ -40,6 +36,7 @@ mpWallBitangents              ( nullptr ),
 mpWallTexCoords               ( nullptr ),
 mpWallIndices                 ( nullptr ),
 mManipulate                   ( MANIPULATE_CAMERA ),
+mDrawElements                 ( nullptr ),
 mDirectionalLightDir          ( 0.0f, -1.0f, 0.0f ),
 mPointLightAmbientIntensity   ( AMBIENT_INTENSITY ),
 mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY ),
@@ -63,7 +60,7 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
    // initialize with a context else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
    {
-      { 4, 0, false, true, false },
+      { 4, 1, false, true, false },
       { 0 }
    };
 
@@ -116,11 +113,12 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
                 << "w - Moves camera to the up" << std::endl
                 << "s - Moves camera to the down" << std::endl
                 << std::endl
-                << "t - Changes texture" << std::endl
+                << "Shift + t - Changes texture" << std::endl
                 << std::endl
                 << "f - Switch to flat shading" << std::endl
                 << "n - Switch to normal shading" << std::endl
                 << "p - Switch to parallax shading" << std::endl
+                << "t - Switch to tessellation shading" << std::endl
                 << std::endl
                 << "Shift + s - Turn point light on / off" << std::endl
                 << std::endl
@@ -160,7 +158,7 @@ void NormalMappingWindow::OnDestroy( )
    // call the base class destroy
    OpenGLWindow::OnDestroy();
 }
-
+            
 #include "Timer.h"
 int NormalMappingWindow::Run( )
 {
@@ -177,6 +175,8 @@ int NormalMappingWindow::Run( )
          // clear the back buffer and the depth buffer
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
          if (mpShader && mpDiffuseTex && mpNormalTex && mpHeightTex && mpWallVAO)
          {
             // enable the shader for the object
@@ -191,10 +191,9 @@ int NormalMappingWindow::Run( )
             mpWallVAO->Bind();
 
             // draw the two triangles that represent the floor
-            glDrawElements(mShape.geom_type,
-                           static_cast< GLsizei >(mShape.indices.size()),
-                           GL_UNSIGNED_INT,
-                           nullptr);
+            mDrawElements(static_cast< GLsizei >(mShape.indices.size()),
+                          GL_UNSIGNED_INT,
+                          nullptr);
 
             // unbind the object being rendered
             mpWallVAO->Unbind();
@@ -349,8 +348,9 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       case 'f': LoadShader(FLAT_SHADER); update_shader_matrix = true; update_directional_light = true; break;
       case 'n': LoadShader(NORMAL_SHADER); update_shader_matrix = true; update_directional_light = true; break;
       case 'p': LoadShader(PARALLAX_SHADER); update_shader_matrix = true; update_directional_light = true; break;
+      case 't': LoadShader(TESSELLATION_SHADER); update_shader_matrix = true; update_directional_light = true; break;
 
-      case 't': LoadTexture(); break;
+      case 'T': LoadTexture(); break;
       }
 
       break;
@@ -478,6 +478,9 @@ void NormalMappingWindow::LoadShader( const Shader shader )
       mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_normal_shader.frag" });
 
+      // indicate that we need to render triangles
+      mDrawElements = std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
       break;
 
    case PARALLAX_SHADER:
@@ -486,6 +489,23 @@ void NormalMappingWindow::LoadShader( const Shader shader )
                                              { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.vert" });
       mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.frag" });
+
+      // indicate that we need to render triangles
+      mDrawElements = std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+      break;
+
+   case TESSELLATION_SHADER:
+      // attach the frag, vert, and tess sources
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+                                             { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_tess_shader.vert" });
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+                                               { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_tess_shader.frag" });
+      mpShader->AttachFile(GL_TESS_CONTROL_SHADER, "./normal_mapping/shaders/normal_mapping_tess_shader.tctrl");
+      mpShader->AttachFile(GL_TESS_EVALUATION_SHADER, "./normal_mapping/shaders/normal_mapping_tess_shader.teval");
+
+      // indicate that we need to render the control patches to generate the terrain on the fly
+      mDrawElements = std::bind(glDrawElements, GL_PATCHES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
       break;
 
@@ -496,6 +516,9 @@ void NormalMappingWindow::LoadShader( const Shader shader )
                                              { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.vert" });
       mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.frag" });
+
+      // indicate that we need to render triangles
+      mDrawElements = std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
       break;
    }
@@ -678,7 +701,7 @@ void NormalMappingWindow::InitLightingData( )
       mpShader->SetUniformValue("directional_light.direction_world_space", mDirectionalLightDir);
 
       // init the point light
-      mpShader->SetUniformValue("point_light.base.color", Vec3f(1.0f, 0.0f, 0.0f));
+      mpShader->SetUniformValue("point_light.base.color", Vec3f(1.0f, 1.0f, 0.0f));
       mpShader->SetUniformValue("point_light.base.ambient_intensity", mPointLightAmbientIntensity);
       mpShader->SetUniformValue("point_light.base.diffuse_intensity", mPointLightDiffuseIntensity);
       mpShader->SetUniformValue("point_light.position_world_space", Vec3f(0.0f, 1.0f, 0.0f));
@@ -708,7 +731,7 @@ void NormalMappingWindow::UpdateDirLightShader( )
    // create the matrix that rotates the light vector correctly
    const Matrixf mvp =
       mProjection * mCamera *
-      Matrixf::Translate(0.0f, 1.0f, 0.0f) *
+      Matrixf::Translate(0.0f, 10.0f, 0.0f) *
       Quatf::Rotation(initial_light_dir, mDirectionalLightDir).ToMatrix() *
       Matrixf::Scale(3.0f);
 

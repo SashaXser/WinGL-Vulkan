@@ -9,6 +9,10 @@ set(NORMAL_MAPPING_SRC
 ./normal_mapping/shaders/normal_mapping_normal_shader.vert
 ./normal_mapping/shaders/normal_mapping_parallax_shader.frag
 ./normal_mapping/shaders/normal_mapping_parallax_shader.vert
+./normal_mapping/shaders/normal_mapping_tess_shader.frag
+./normal_mapping/shaders/normal_mapping_tess_shader.vert
+./normal_mapping/shaders/normal_mapping_tess_shader.tctrl
+./normal_mapping/shaders/normal_mapping_tess_shader.teval
 ./normal_mapping/shaders/normal_mapping_lighting.glsl
 Main.cpp
 NormalMappingWindow.cpp

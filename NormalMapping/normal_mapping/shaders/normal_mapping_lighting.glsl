@@ -1,5 +1,5 @@
 // defines the glsl version to be used
-#version 400
+#version 410 core
 
 // defines the common lighting attributes
 struct lighting_base
