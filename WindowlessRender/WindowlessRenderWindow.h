@@ -32,7 +32,6 @@ protected:
    virtual ~WindowlessRenderWindow( );
 
    // called when the window is about to be destroyed
-   // the opengl context is no longer valid after this call returns
    virtual void OnDestroy( ) override;
 
    // handles messages passed by the system

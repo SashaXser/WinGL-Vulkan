@@ -29,6 +29,14 @@ mDebugRequested   ( false )
 
 OpenGLWindow::~OpenGLWindow( )
 {
+   // the window is still valid during the destruction
+
+   // detach from the debug context...
+   // if one was not created or not requested,
+   // then the function just ignores this operation...
+   DetachFromDebugContext();
+   // release the gl context...
+   ReleaseOpenGLContext();
 }
 
 bool OpenGLWindow::Create( unsigned int nWidth,
@@ -48,13 +56,6 @@ bool OpenGLWindow::Create( unsigned int nWidth,
 
 void OpenGLWindow::OnDestroy( )
 {
-   // detach from the debug context...
-   // if one was not created or not requested,
-   // then the function just ignores this operation...
-   DetachFromDebugContext();
-   // release the gl context...
-   ReleaseOpenGLContext();
-
    // allow base class to cleanup
    Window::OnDestroy();
 }

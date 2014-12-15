@@ -37,7 +37,6 @@ protected:
    virtual ~OpenGLWindow( );
 
    // called when the window is about to be destroyed
-   // the opengl context is no longer valid after this call returns
    virtual void OnDestroy( ) override;
 
    // obtain access to the render context

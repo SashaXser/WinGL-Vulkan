@@ -173,19 +173,25 @@ LRESULT Window::MessageHandler( UINT uMsg,
    switch (uMsg)
    {
    case WM_CLOSE:
+      // allow destroy window to be called
       result = ::DefWindowProc(mHWND, uMsg, wParam, lParam);
+      // the window is no longer valid
       PostQuitMessage(0);
 
       break;
 
    case WM_DESTROY:
+      // all the container window to process
       OnDestroy();
+      // the window is still valid before and after this call
       result = ::DefWindowProc(mHWND, uMsg, wParam, lParam);
 
       break;
 
    case WM_NCDESTROY:
+      // delete the container window
       delete this;
+      // the window is still valid before and after this call
       result = ::DefWindowProc(mHWND, uMsg, wParam, lParam);
 
       break;
@@ -206,9 +212,8 @@ LRESULT Window::WindowProcedure( HWND hWnd,
 {
    LRESULT result = 0;
 
-   Window * pWindow = 
-      reinterpret_cast< Window * >
-      (GetWindowLongPtr(hWnd, GWLP_USERDATA));
+   Window * const pWindow = 
+      reinterpret_cast< Window * >(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
    if (pWindow)
    {
