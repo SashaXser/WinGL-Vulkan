@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+set(WIN_GL_CAMERA_POLICIES_SRC
+./CameraPolicies/RoamNoRollRestrictPitch.inl
+./CameraPolicies/RoamNoRollRestrictPitch.h
+)
+
 set(WIN_GL_SRC
 ./AllocConsole.cpp
 ./AllocConsole.h
+./Camera.h
 ./GeomHelper.cpp
 ./GeomHelper.h
 ./MathHelper.h
@@ -35,9 +41,13 @@ set(WIN_GL_SRC
 ./Window.cpp
 ./Window.h
 ./WindowDefines.h
+
+${WIN_GL_CAMERA_POLICIES_SRC}
 )
 
 add_library(WinGL STATIC ${WIN_GL_SRC})
+
+source_group("Camera Policies" FILES ${WIN_GL_CAMERA_POLICIES_SRC})
 
 target_compile_definitions(WinGL PUBLIC _USE_MATH_DEFINES)
 

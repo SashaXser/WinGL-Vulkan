@@ -34,7 +34,7 @@ inline bool Equals( const T & v1, const T & v2, const T & epsilon = std::numeric
 
 template < typename T > T pi( ) { /* empty so as to error out */ }
 template < > inline double pi( ) { return 3.14159265358979323846; }
-template < > inline float pi( ) { return static_cast< float >(3.14159265358979323846); }
+template < > inline float pi( ) { return static_cast< float >(pi< double >()); }
 
 } // namespace MathHelper
 
