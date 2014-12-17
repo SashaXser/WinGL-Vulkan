@@ -29,7 +29,10 @@ struct up_vector
 template < typename T, typename U >
 const Vector3< T > up_vector< T, U >::up = U::up();
 
-template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR = up_vector< T > >
+template < typename T = float,
+           typename MIN_PITCH_RATIO = std::ratio< -899, 10 >,
+           typename MAX_PITCH_RATIO = std::ratio< 899, 10 >,
+           typename UP_VECTOR = up_vector< T > >
 class RoamNoRollRestrictPitch
 {
 public:
@@ -75,8 +78,11 @@ public:
    // obtains the current euler angles and the pointers can be null
    void GetYPR( type * const yaw_deg, type * const pitch_deg, type * const roll_deg ) const;
 
-   // returns the camera
-   mat_type GetMatrix( ) const;
+   // obtains the current eye position
+   vec_type GetEyePosition( ) const;
+
+   // returns the view camera
+   mat_type GetViewMatrix( ) const;
 
 private:
    // helper function to do translations along the basis vectors
@@ -92,7 +98,7 @@ private:
    const T     MAX_PITCH;
 
    // private members
-   mat_type    mCamMatrix;
+   mat_type    mViewMatrix;
 
 };
 

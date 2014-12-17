@@ -1,6 +1,21 @@
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 
+// local includes
+#include "Matrix.h"
+
+#ifdef near
+   #pragma push_macro("near")
+   #undef near
+   #define restore_near_marco
+#endif // near
+
+#ifdef far
+   #pragma push_macro("far")
+   #undef far
+   #define restore_far_marco
+#endif // far
+
 template < typename Policy >
 class Camera
 {
@@ -12,7 +27,7 @@ public:
 
    // constructor / destructor
     Camera( );
-    Camera( const Camera & camera );
+    Camera( const Camera< Policy > & camera );
     Camera( const vec_type & eye, const vec_type & center );
    ~Camera( );
 
@@ -48,18 +63,49 @@ public:
    void GetYPR( type * const yaw_deg, type * const pitch_deg, type * const roll_deg ) const;
    vec_type GetYPR( ) const;
 
-   // returns the camera
-   mat_type GetMatrix( ) const;
+   // obtains the current eye position
+   vec_type GetEyePosition( ) const;
+
+   // returns the view matrix
+   mat_type GetViewMatrix( ) const;
+
+   // sets the projection matrix
+   void SetPerspective( const type fov, const type aspect, const type near, const type far );
+
+   // obtains properties of the projection matrix
+   type GetProjectionFOV( ) const;
+   type GetProjectionAspect( ) const;
+   type GetProjectionNear( ) const;
+   type GetProjectionFar( ) const;
+
+   // returns the projection matrix
+   const mat_type & GetProjectionMatrix( ) const;
 
 private:
    // camera policy used to define the type of camera
    Policy      mPolicy;
+
+   // defines attributes for the projection
+   type        mProjFOV;
+   type        mProjAspect;
+   type        mProjNear;
+   type        mProjFar;
+
+   // defines the projection matrix associated to the camera
+   mat_type    mProjection;
 
 };
 
 template < typename Policy >
 Camera< Policy >::Camera( )
 {
+}
+
+template < typename Policy >
+Camera< Policy >::Camera( const Camera< Policy > & camera )
+{
+   // fill in
+   WGL_ASSERT(false);
 }
 
 template < typename Policy >
@@ -71,6 +117,13 @@ Camera< Policy >::Camera( const vec_type & eye, const vec_type & center )
 template < typename Policy >
 Camera< Policy >::~Camera( )
 {
+}
+
+template < typename Policy >
+Camera< Policy > & Camera< Policy >::operator = ( const Camera< Policy > & camera )
+{
+   // fill in
+   WGL_ASSERT(false);
 }
 
 template < typename Policy >
@@ -174,9 +227,35 @@ typename Camera< Policy >::vec_type Camera< Policy >::GetYPR( ) const
 }
 
 template < typename Policy >
-typename Camera< Policy >::mat_type Camera< Policy >::GetMatrix( ) const
+typename Camera< Policy >::vec_type Camera< Policy >::GetEyePosition( ) const
 {
-   return mPolicy.GetMatrix();
+   return mPolicy.GetEyePosition();
 }
+
+template < typename Policy >
+typename Camera< Policy >::mat_type Camera< Policy >::GetViewMatrix( ) const
+{
+   return mPolicy.GetViewMatrix();
+}
+
+template < typename Policy >
+typename void Camera< Policy >::SetPerspective( const type fov, const type aspect, const type near, const type far )
+{
+   mProjection.MakePerspective(fov, aspect, near, far);
+}
+
+template < typename Policy >
+typename const Camera< Policy >::mat_type & Camera< Policy >::GetProjectionMatrix( ) const
+{
+   return mProjection;
+}
+
+#ifdef restore_near_marco
+   #pragma pop_macro("near")
+#endif // restore_near_marco
+
+#ifdef restore_far_marco
+   #pragma pop_macro("far")
+#endif // restore_far_marco
 
 #endif // _CAMERA_H_

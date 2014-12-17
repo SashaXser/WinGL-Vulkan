@@ -4,6 +4,7 @@
 // std includes
 #include <limits>
 #include <complex>
+#include <initializer_list>
 
 // crt includes
 #include <math.h>
@@ -41,6 +42,7 @@ public:
             const U & col2_x, const U & col2_y, const U & col2_z, const U & col2_w,
             const U & col3_x, const U & col3_y, const U & col3_z, const U & col3_w,
             const U & col4_x, const U & col4_y, const U & col4_z, const U & col4_w );
+    Matrix( const std::initializer_list< T > & col_list );
    ~Matrix( );
 
    // operator =
@@ -336,6 +338,34 @@ inline Matrix< T >::Matrix( const U & col1_x, const U & col1_y, const U & col1_z
                        Vector4< T >(col2_x, col2_y, col2_z, col2_w),
                        Vector4< T >(col3_x, col3_y, col3_z, col3_w),
                        Vector4< T >(col4_x, col4_y, col4_z, col4_w));
+}
+
+template < typename T >
+inline Matrix< T >::Matrix( const std::initializer_list< T > & col_list )
+{
+   if (col_list.size())
+   {
+      T * mat_beg = mT;
+      const T * const mat_end = mT + sizeof(mT) / sizeof(*mT);
+
+      for (auto col_list_beg = col_list.begin(); col_list_beg != col_list.end() && mat_beg != mat_end; ++col_list_beg, ++mat_beg)
+      {
+         *mat_beg = *col_list_beg;
+
+         if (col_list_beg + 1 == col_list.end() && mat_beg + 1 != mat_end)
+         {
+            for (++mat_beg; mat_beg != mat_end; ++mat_beg)
+            {
+               *mat_beg = *col_list_beg;
+            }
+         }
+      }
+   }
+   else
+   {
+      // nothing in the list, so use 0 to initialize with
+      memset(mT, 0x00, sizeof(mT));
+   }
 }
 
 template < typename T >

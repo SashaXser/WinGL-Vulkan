@@ -18,7 +18,7 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::RoamNoRollRestrictPitch( const RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR > & policy ) :
 RoamNoRollRestrictPitch()
 {
-   mCamMatrix = policy.mMatrix;
+   mViewMatrix = policy.mViewMatrix;
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
@@ -30,13 +30,13 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR > &
 RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::operator = ( const RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR > & policy )
 {
-   mCamMatrix = policy.mMatrix;
+   mViewMatrix = policy.mViewMatrix;
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::LookAt( const vec_type & eye, const vec_type & center )
 {
-   mCamMatrix.MakeLookAt(eye, center, UP_VECTOR::up);
+   mViewMatrix.MakeLookAt(eye, center, UP_VECTOR::up);
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
@@ -48,20 +48,20 @@ void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::TranslateForward( const type amount )
 {
-   Translate< 4 >(amount);
+   Translate< 8 >(amount);
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::TranslateUp( const type amount )
 {
-   Translate< 8 >(amount);
+   Translate< 4 >(amount);
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::Translate( const type amount, const vec_type & direction )
 {
    // invert the camera matrix
-   mCamMatrix.MakeInverse();
+   mViewMatrix.MakeInverse();
 
    // calculate the new translation
    const vec_type translation_vec = axis_vector * amount;
@@ -73,17 +73,17 @@ void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::
                                   Vector4< T >(translation_vec, 1));
 
    // in the current orientation of the camera, translate off of the basis vectors
-   mCamMatrix = translation_mat * mCamMatrix;
+   mViewMatrix = translation_mat * mViewMatrix;
 
    // invert the camera matrix back
-   mCamMatrix.MakeInverse();
+   mViewMatrix.MakeInverse();
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::SetYaw( const type yaw_deg )
 {
    // get the current ypr values
-   const vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix);
+   const vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix);
 
    // update the matrix with the new yaw value
    Rotate(yaw_deg, ypr.Y());
@@ -93,7 +93,7 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::SetPitch( const type pitch_deg )
 {
    // get the current ypr values
-   vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix);
+   vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix);
 
    // make sure the pitch is within bounds
    ypr.Y() = MathHelper::Clamp(pitch_deg, MIN_PITCH, MAX_PITCH);
@@ -112,7 +112,7 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::RotateYaw( const type amount_deg )
 {
    // get the current ypr values
-   const vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix);
+   const vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix);
 
    // increase yaw by the requested amount
    SetYaw(ypr.X() + amount_deg);
@@ -122,10 +122,10 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::RotatePitch( const type amount_deg )
 {
    // get the current ypr values
-   const vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix);
+   const vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix);
 
    // increase yaw by the requested amount
-   SetYaw(ypr.Y() + amount_deg);
+   SetPitch(ypr.Y() + amount_deg);
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
@@ -138,34 +138,41 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 typename RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::type
 RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::GetYaw( ) const
 {
-   return MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix).X();
+   return MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix).X();
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 typename RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::type
 RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::GetPitch( ) const
 {
-   return MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix).Y();
+   return MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix).Y();
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 typename RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::type
 RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::GetRoll( ) const
 {
-   return MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix).Z();
+   return MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix).Z();
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 void RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::GetYPR( type * const yaw_deg, type * const pitch_deg, type * const roll_deg ) const
 {
-   MatrixHelper::DecomposeYawPitchRollDeg(mCamMatrix, yaw_deg, pitch_deg, roll_deg);
+   MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix, yaw_deg, pitch_deg, roll_deg);
+}
+
+template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
+typename RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::vec_type
+RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::GetEyePosition( ) const
+{
+   return vec_type(mViewMatrix.Inverse() * Vector4< T >(0, 0, 0, 1));
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
 typename RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::mat_type
-RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::GetMatrix( ) const
+RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::GetViewMatrix( ) const
 {
-   return mCamMatrix;
+   return mViewMatrix;
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
@@ -173,22 +180,22 @@ template < uint32_t AXIS >
 void RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::Translate( const type amount )
 {
    // invert the camera matrix
-   mCamMatrix.MakeInverse();
+   mViewMatrix.MakeInverse();
 
    // get the eye and axis vector
-   const vec_type eye_vector(mCamMatrix[12], mCamMatrix[13], mCamMatrix[14]);
-   const vec_type axis_vector(mCamMatrix[AXIS], mCamMatrix[AXIS + 1], mCamMatrix[AXIS + 2]);
+   const vec_type eye_vector(mViewMatrix[12], mViewMatrix[13], mViewMatrix[14]);
+   const vec_type axis_vector(mViewMatrix[AXIS], mViewMatrix[AXIS + 1], mViewMatrix[AXIS + 2]);
 
    // calculate the new eye
    const vec_type new_eye_vector = eye_vector + axis_vector * amount;
 
    // update the matrix
-   mCamMatrix[12] = new_eye_vector.X();
-   mCamMatrix[13] = new_eye_vector.Y();
-   mCamMatrix[14] = new_eye_vector.Z();
+   mViewMatrix[12] = new_eye_vector.X();
+   mViewMatrix[13] = new_eye_vector.Y();
+   mViewMatrix[14] = new_eye_vector.Z();
 
    // invert the camera matrix back
-   mCamMatrix.MakeInverse();
+   mViewMatrix.MakeInverse();
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
@@ -200,21 +207,21 @@ void RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RA
       Quaternion< T >::Rotation(pitch_deg, vec_type(1, 0, 0));
 
    // invert the camera matrix
-   mCamMatrix.MakeInverse();
+   mViewMatrix.MakeInverse();
 
    // get the eye location
-   const vec_type eye(mCamMatrix[12], mCamMatrix[13], mCamMatrix[14]);
+   const vec_type eye(mViewMatrix[12], mViewMatrix[13], mViewMatrix[14]);
 
    // set the new rotation for the camera
-   mCamMatrix = rotation.ToMatrix();
+   mViewMatrix = rotation.ToMatrix();
 
    // add the eye location to the matrix
-   mCamMatrix[12] = eye.X();
-   mCamMatrix[13] = eye.Y();
-   mCamMatrix[14] = eye.Z();
+   mViewMatrix[12] = eye.X();
+   mViewMatrix[13] = eye.Y();
+   mViewMatrix[14] = eye.Z();
 
    // invert the camera matrix back
-   mCamMatrix.MakeInverse();
+   mViewMatrix.MakeInverse();
 }
 
 } // namespace camera_policy

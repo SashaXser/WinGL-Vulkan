@@ -42,6 +42,9 @@ protected:
    // called when the window is about to be destroyed
    virtual void OnDestroy( ) { }
 
+   // gains access to the previuos mouse point position
+   const Point & GetPreviousMousePosition( ) const { return mPrevMousePos; }
+
    // handles messages passed by the system
    virtual LRESULT MessageHandler( UINT uMsg,
                                    WPARAM wParam,
@@ -54,6 +57,9 @@ protected:
    // protected member variables
    HDC      mHDC;
    HWND     mHWND;
+
+   // previous mouse point position
+   Point    mPrevMousePos;
 
 private:
    // prohibit copy constructor

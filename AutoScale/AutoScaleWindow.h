@@ -4,6 +4,13 @@
 // local includes
 #include "OpenGLWindow.h"
 
+// wingl includes
+#include "Camera.h"
+#include "ShaderProgram.h"
+#include "VertexArrayObject.h"
+#include "VertexBufferObject.h"
+#include "CameraPolicies/RoamNoRollRestrictPitch.h"
+
 class AutoScaleWindow : public OpenGLWindow
 {
 public:
@@ -36,6 +43,22 @@ protected:
                                    LPARAM lParam ) override;
 
 private:
+   // intializes all the gl attributes
+   void InitGLData( );
+
+   // defines the shape to be auto scaled
+   VertexArrayObject    mAutoScaleShape;
+   VertexBufferObject   mAutoScaleShapeVerts;
+
+   // defines the shape of the floor
+   VertexArrayObject    mFloorShape;
+   VertexBufferObject   mFloorVerts;
+
+   // defines a camera to move about the world
+   Camera< camera_policy::RoamNoRollRestrictPitch< > >   mCamera;
+
+   // defines a very basic shader
+   ShaderProgram        mBasicShader;
 
 };
 

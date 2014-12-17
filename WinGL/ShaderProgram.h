@@ -2,6 +2,7 @@
 #define _SHADER_PROGRAM_H_
 
 // local includes
+#include "Matrix.h"
 #include "WglAssert.h"
 
 // platform includes
@@ -89,6 +90,7 @@ public:
 
    // gets a uniforms value
    template < typename T > bool GetUniformValue( const GLint uniform, T & t ) const;
+   template < typename T > bool GetUniformValue( const GLint uniform, Matrix< T > & t ) const;
    template < typename T > bool GetUniformValue( const std::string & uniform, T & t );
 
    // sets a uniforms value
@@ -292,6 +294,27 @@ inline bool ShaderProgram::GetUniformValue( const GLint uniform, T & t ) const
    bool obtained = false;
 
    T value = { UniformValueSelector< Type >::INVALID_VALUE };
+
+   UniformValueSelector< Type >::GetValue(mShaderProg, uniform, value);
+
+   if (UniformValueSelector< Type >::IsValid(value))
+   {
+      std::memcpy(&t, &value, sizeof(t)); obtained = true;
+   }
+
+   return obtained;
+}
+
+template < typename T >
+inline bool ShaderProgram::GetUniformValue( const GLint uniform, Matrix< T > & t ) const
+{
+   WGL_ASSERT(mShaderProg);
+
+   typedef Matrix< T >::type Type;
+
+   bool obtained = false;
+
+   Matrix< T > value = { UniformValueSelector< Type >::INVALID_VALUE };
 
    UniformValueSelector< Type >::GetValue(mShaderProg, uniform, value);
 

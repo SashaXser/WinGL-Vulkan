@@ -5,12 +5,16 @@
 // window includes
 #include <MMSystem.h>
 
+// std includes
+#include <cstdint>
+
 // library includes
 #pragma comment( lib, "Winmm.lib" )
 
 Window::Window( ) :
-mHDC     ( NULL ),
-mHWND    ( NULL )
+mHDC           ( NULL ),
+mHWND          ( NULL ),
+mPrevMousePos  ( { 0, 0 } )
 {
    // set the min timer resolution
    timeBeginPeriod(1);
@@ -218,6 +222,12 @@ LRESULT Window::WindowProcedure( HWND hWnd,
    if (pWindow)
    {
       result = pWindow->MessageHandler(uMsg, wParam, lParam);
+
+      if (uMsg == WM_MOUSEMOVE)
+      {
+         pWindow->mPrevMousePos.x = static_cast< intptr_t >(lParam & 0xFFFF);
+         pWindow->mPrevMousePos.y = static_cast< intptr_t >(lParam >> 16);
+      }
    }
    else
    {
