@@ -2,15 +2,17 @@
 #include "AutoScaleWindow.h"
 
 // wgl includes
-#include <Matrix.h>
-#include <Vector3.h>
-#include <Vector4.h>
+#include "Matrix.h"
+#include "Vector3.h"
+#include "Vector4.h"
+#include "MathHelper.h"
 
 // gl includes
 #include <GL/glew.h>
 #include <GL/GL.h>
 
 // std incluces
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 
@@ -56,25 +58,13 @@ bool AutoScaleWindow::Create( unsigned int nWidth,
 
       // indicate what actions can be taken
       std::cout << std::endl
-                << "1 - Manipulates camera" << std::endl
-                << "2 - Manipulates directional lighting" << std::endl
-                << std::endl
                 << "a - Moves camera to the left" << std::endl
                 << "d - Moves camera to the right" << std::endl
                 << "w - Moves camera to the up" << std::endl
                 << "s - Moves camera to the down" << std::endl
                 << std::endl
-                << "Shift + t - Changes texture" << std::endl
-                << std::endl
-                << "f - Switch to flat shading" << std::endl
-                << "n - Switch to normal shading" << std::endl
-                << "p - Switch to parallax shading" << std::endl
-                << "t - Switch to tessellation shading" << std::endl
-                << std::endl
-                << "Shift + s - Turn point light on / off" << std::endl
-                << std::endl
-                << "L-Button Down - Activate camera / directional light rotation" << std::endl
-                << "Mouse X / Y Delta - Manipulate camera / directional light rotation" << std::endl;
+                << "L-Button Down - Activate camera rotation" << std::endl
+                << "Mouse X / Y Delta - Manipulate camera rotation" << std::endl;
 
       return true;
    }
@@ -234,9 +224,13 @@ LRESULT AutoScaleWindow::MessageHandler( UINT uMsg,
 
    if (mBasicShader && update_view_proj_matrix)
    {
+      // the auto scale calculation can be easily defined in a shader
+
       // calculate the model matrix
       const Vec3f eye = mCamera.GetEyePosition();
-      const Vec3f eye_dir = (eye - Vec3f(0.0f, 0.0f, 0.0f)).UnitVector();
+      // uncomment this eye_dir to do billboarding that faces the camera
+      //const Vec3f eye_dir = eye.UnitVector();
+      const Vec3f eye_dir = Vec3f(mCamera.GetViewMatrix()[2], mCamera.GetViewMatrix()[6], mCamera.GetViewMatrix()[10]).UnitVector();
       const Vec3f right_dir = (Vec3f(0.0f, 1.0f, 0.0f) ^ eye_dir).UnitVector();
       const Vec3f up_dir = (eye_dir ^ right_dir).UnitVector();
 
@@ -246,8 +240,18 @@ LRESULT AutoScaleWindow::MessageHandler( UINT uMsg,
                                  Vec4f(eye_dir, 0.0f),
                                  Vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
+      // project the vector from the camera to the object onto the eye_dir vector
+      const float distance = ((eye_dir * -1.0f) * ((eye * -1.0f) * eye_dir)).Length();
+
+      // calculate the ratio of a height at distance 1 and the height at the near plane
+      const float ratio = std::tan(MathHelper::DegToRad(mCamera.GetProjectionFOV()) / 2.0f) / (GetSize().height / 2.0f);
+
+      // the scale matrix is defined by the distance * ratio
+      const Matrixf scale_matrix = Matrixf::Scale(distance * ratio);
+
+      // update the matrix in the basic shader
       mBasicShader.Enable();
-      mBasicShader.SetUniformMatrix< 1, 4, 4 >("model_view_proj", mCamera.GetProjectionMatrix() * mCamera.GetViewMatrix() * model_matrix);
+      mBasicShader.SetUniformMatrix< 1, 4, 4 >("model_view_proj", mCamera.GetProjectionMatrix() * mCamera.GetViewMatrix() * model_matrix * scale_matrix);
       mBasicShader.Disable();
    }
    
@@ -263,7 +267,7 @@ void AutoScaleWindow::InitGLData( )
    // generate the vertex data
    mAutoScaleShapeVerts.GenBuffer(GL_ARRAY_BUFFER);
    mAutoScaleShapeVerts.Bind();
-   const float shape_verts[] = { -5.0f, -5.0f, 0.0f, 5.0f, -5.0f, 0.0f, 5.0f, 5.0f, 0.0f, -5.0f, 5.0f, 0.0f };
+   const float shape_verts[] = { -20.0f, -20.0f, 0.0f, 20.0f, -20.0f, 0.0f, 20.0f, 20.0f, 0.0f, -20.0f, 20.0f, 0.0f };
    mAutoScaleShapeVerts.BufferData(sizeof(shape_verts), shape_verts, GL_STATIC_DRAW);
    mAutoScaleShapeVerts.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mAutoScaleShapeVerts.Unbind();
@@ -281,8 +285,8 @@ void AutoScaleWindow::InitGLData( )
    // generate the vertex data
    mFloorVerts.GenBuffer(GL_ARRAY_BUFFER);
    mFloorVerts.Bind();
-   const float floor_verts[] = { -10.0f, 0.0f, 0.0f, -10.0f, 0.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 10.0f, 10.0f, 0.0f, 0.0f, 10.0f, 0.0f, 10.0f,
-                                 -10.0f, 0.0f, -10.0f, -10.0f, 0.0f, 0.0f, 0.0f, 0.0f, -10.0f, 0.0f, 0.0f, 0.0f, 10.0f, 0.0f, -10.0f, 10.0f, 0.0f, 0.0f };
+   const float floor_verts[] = { -25.0f, 0.0f, 0.0f, -25.0f, 0.0f, 25.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 25.0f, 25.0f, 0.0f, 0.0f, 25.0f, 0.0f, 25.0f,
+                                 -25.0f, 0.0f, -25.0f, -25.0f, 0.0f, 0.0f, 0.0f, 0.0f, -25.0f, 0.0f, 0.0f, 0.0f, 25.0f, 0.0f, -25.0f, 25.0f, 0.0f, 0.0f };
    mFloorVerts.BufferData(sizeof(floor_verts), floor_verts, GL_STATIC_DRAW);
    mFloorVerts.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
    mFloorVerts.Unbind();

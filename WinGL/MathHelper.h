@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <limits>
-#include <complex>
 
 namespace MathHelper
 {
@@ -11,13 +10,13 @@ namespace MathHelper
 template < typename T >
 inline T DegToRad( const T & deg )
 {
-   return static_cast< T >(deg * M_PI / 180.0);
+   return static_cast< T >(deg * pi< T >() / 180.0);
 }
 
 template < typename T >
 inline T RadToDeg( const T & rad )
 {
-   return static_cast< T >(rad * 180.0 / M_PI);
+   return static_cast< T >(rad * 180.0 / pi< T >());
 }
 
 template < typename T >

@@ -73,13 +73,13 @@ public:
    void SetPerspective( const type fov, const type aspect, const type near, const type far );
 
    // obtains properties of the projection matrix
-   type GetProjectionFOV( ) const;
-   type GetProjectionAspect( ) const;
-   type GetProjectionNear( ) const;
-   type GetProjectionFar( ) const;
+   type GetProjectionFOV( ) const { return mProjFOV; }
+   type GetProjectionAspect( ) const { return mProjAspect; }
+   type GetProjectionNear( ) const { return mProjNear; }
+   type GetProjectionFar( ) const { return mProjFar; }
 
    // returns the projection matrix
-   const mat_type & GetProjectionMatrix( ) const;
+   const mat_type & GetProjectionMatrix( ) const { return mProjection; }
 
 private:
    // camera policy used to define the type of camera
@@ -242,12 +242,11 @@ template < typename Policy >
 typename void Camera< Policy >::SetPerspective( const type fov, const type aspect, const type near, const type far )
 {
    mProjection.MakePerspective(fov, aspect, near, far);
-}
 
-template < typename Policy >
-typename const Camera< Policy >::mat_type & Camera< Policy >::GetProjectionMatrix( ) const
-{
-   return mProjection;
+   mProjFOV = fov;
+   mProjAspect = aspect;
+   mProjNear = near;
+   mProjFar = far;
 }
 
 #ifdef restore_near_marco
