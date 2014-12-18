@@ -364,7 +364,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
 
       Matrixf model_matrix;
 
-      if (ppNode)
+      if (ppChildrenEnd != ppNode)
       {
          for (const aiNode * pNode = *ppNode; pNode; pNode = pNode->mParent)
          {
