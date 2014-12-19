@@ -1,6 +1,7 @@
 // local includes
 #include "ShadowMapWindow.h"
 #include "Matrix.h"
+#include "Texture.h"
 #include "Vector3.h"
 #include "WglAssert.h"
 #include "ReadTexture.h"
@@ -39,7 +40,7 @@
 struct ShadowMapWindow::Renderable
 {
    // typedefs
-   typedef std::vector< GLuint > TextureCtr;
+   typedef std::vector< std::shared_ptr< Texture > > TextureCtr;
    typedef std::multimap< GLuint, std::pair< GLuint, GLsizei > > RenderBucket;
 
    // vao id
@@ -73,18 +74,6 @@ void ShadowMapWindow::OnDestroy( )
 {
    // should still have a valid context
    WGL_ASSERT(ContextIsCurrent());
-
-   // release all the textures...
-   // need to move the textures into an object...
-   std::for_each(mpEnterpriseE->mTexIDs.cbegin(),
-                 mpEnterpriseE->mTexIDs.cend(),
-   [ ] ( const GLuint tex_id )
-   {
-      if (glIsTexture(tex_id))
-      {
-         glDeleteTextures(1, &tex_id);
-      }
-   });
 
    // clean up the enterprise model
    delete mpEnterpriseE; mpEnterpriseE = nullptr;
@@ -275,27 +264,31 @@ void ShadowMapWindow::RenderScene( )
    //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mpEnterpriseE->mVertBuf.Size< float >() / 3));
    //glDrawElements(GL_TRIANGLES, static_cast< GLsizei >(mpEnterpriseE->mIdxBuf.Size< uint32_t >()), GL_UNSIGNED_INT, nullptr);
 
-   GLuint current_tex_id = 0;
+   Texture * current_tex = nullptr;
    auto rbucketBeg = mpEnterpriseE->mRenderBuckets.cbegin();
    const auto rbucketEnd = mpEnterpriseE->mRenderBuckets.cend();
 
    for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
    {
-      GLuint rbucket_tex_id = mpEnterpriseE->mTexIDs[rbucketBeg->first];
+      Texture * rbucket_tex = mpEnterpriseE->mTexIDs[rbucketBeg->first].get();
 
-      if (current_tex_id != rbucket_tex_id)
+      if (current_tex != rbucket_tex)
       {
-         current_tex_id = rbucket_tex_id;
+         if (current_tex && *current_tex)
+         {
+            current_tex->Unbind();
+         }
 
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GL_TEXTURE_2D, rbucket_tex_id);
+         current_tex = rbucket_tex;
 
-         if (!current_tex_id)
+         if (!current_tex || !*current_tex)
          {
             mpEnterpriseE->mProgram.SetUniformValue("tex_unit_0_active", 0);
          }
          else
          {
+            rbucket_tex->Bind(GL_TEXTURE0);
+
             mpEnterpriseE->mProgram.SetUniformValue("tex_unit_0_active", 1);
          }
       }
@@ -377,10 +370,10 @@ void ShadowMapWindow::GenerateEnterpriseE( )
 
    const auto ReadDiffuseTextures = [ ] ( const aiScene * const pScene,
                                           const std::string & base_model_path,
-                                          std::vector< GLuint > & textures )
+                                          std::vector< std::shared_ptr< Texture > > & textures )
    {
       // make sure we do not load the same texture twice
-      std::map< std::string, GLuint > texture_filenames;
+      std::map< std::string, std::shared_ptr< Texture > > texture_filenames;
 
       // iterate over all the materials collecting the diffuse texture
       const aiMaterial * const * pBeg = pScene->mMaterials;
@@ -389,7 +382,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       for (; pBeg != pEnd; ++pBeg)
       {
          // begin by inserting a null handle into the texture array
-         textures.push_back(0);
+         textures.push_back(std::shared_ptr< Texture >(new Texture));
 
          // if there is a diffuse texture, then set it up
          if ((*pBeg)->GetTextureCount(aiTextureType_DIFFUSE))
@@ -408,36 +401,19 @@ void ShadowMapWindow::GenerateEnterpriseE( )
 
                if (texture_filenames.find(filename) != texture_filenames.end())
                {
-                  // already seen, so just reuse the handle id
+                  // already seen, so just reuse the handle
                   textures.back() = tex_filename->second;
                }
                else
                {
-                  // read the texture
-                  uint32_t tex_width = 0;
-                  uint32_t tex_height = 0;
-                  std::shared_ptr< uint8_t > pTexBuffer = nullptr;
-
-                  if (ReadTexture(filename.c_str(), GL_BGRA, tex_width, tex_height, pTexBuffer))
+                  if (textures.back()->Load2D(filename.c_str(), GL_BGRA, GL_COMPRESSED_RGBA, true))
                   {
-                     // generate a new texture
-                     const GLuint tex_id = [ ] ( ) -> GLuint { GLuint tex_id = 0; glGenTextures(1, &tex_id); return tex_id; }();
-
-                     // load the texture into memory
-                     glBindTexture(GL_TEXTURE_2D, tex_id);
-                     glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex_width, tex_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pTexBuffer.get()); 
-                     glGenerateMipmap(GL_TEXTURE_2D);
-                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                     glBindTexture(GL_TEXTURE_2D, 0);
-
                      // obtain the handle for this texture
                      // this is currently not supported on my HD 5850 with driver version 14.4 (14.100)
                      //const GLuint64 tex_handle = glGetTextureHandleARB(tex_id);
 
                      // save for later use
-                     textures.back() = tex_id;
-                     texture_filenames[filename] = tex_id;
+                     texture_filenames[filename] = textures.back();
                   }
                }
             }
@@ -549,34 +525,8 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       }
    };
 
-   // read all the models in
+   // read all the attributes of the model
    ReadModel(".\\enterprise\\Enterp TOS - Arena.3DS");
-
-   //vertices.push_back(-5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
-   //vertices.push_back(-5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
-   //vertices.push_back(5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
-   //vertices.push_back(5.0f); vertices.push_back(5.0f); vertices.push_back(0.0f);
-   //vertices.push_back(-5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
-   //vertices.push_back(5.0f); vertices.push_back(-5.0f); vertices.push_back(0.0f);
-
-   //colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.0f);
-   //colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.0f);
-   //colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.0f);
-   //colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f);
-   //colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f);
-   //colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f);
-
-   //Vec3f right(10.0f, 0.0f, 1.0f); right.Normalize();
-   //Vec3f left(-10.0f, 0.0f, 1.0f); left.Normalize();
-   //normals.insert(normals.end(), left.mT, left.mT + 3);
-   //normals.insert(normals.end(), left.mT, left.mT + 3);
-   //normals.insert(normals.end(), right.mT, right.mT + 3);
-   //normals.insert(normals.end(), right.mT, right.mT + 3);
-   //normals.insert(normals.end(), left.mT, left.mT + 3);
-   //normals.insert(normals.end(), right.mT, right.mT + 3);
-
-   //indices.push_back(0); indices.push_back(1); indices.push_back(2);
-   //indices.push_back(3); indices.push_back(4); indices.push_back(5);
 
    // create the vao
    mpEnterpriseE->mVAO.GenArray();
