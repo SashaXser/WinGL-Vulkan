@@ -1,9 +1,12 @@
 // local includes
 #include "ShadowMapWindow.h"
+
+// wgl includes
 #include "Matrix.h"
 #include "Texture.h"
 #include "Vector3.h"
 #include "WglAssert.h"
+#include "GeomHelper.h"
 #include "ReadTexture.h"
 #include "MatrixHelper.h"
 #include "ShaderProgram.h"
@@ -22,6 +25,7 @@
 
 // std includes
 #include <map>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -50,9 +54,13 @@ struct ShadowMapWindow::Renderable
    VBO      mIdxBuf;
    VBO      mTexBuf;
    VBO      mNormBuf;
+   VBO      mTgtBuf;
+   VBO      mBitgtBuf;
    VBO      mClrBuf;
-   // texture container
-   TextureCtr     mTexIDs;
+   // texture containers
+   TextureCtr     mDiffuse;
+   TextureCtr     mHeight;
+   TextureCtr     mNormal;
    // shader program
    ShaderProgram  mProgram;
    // defines the render order by texture
@@ -237,7 +245,7 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 }
 
 
-
+#include "Timer.h"
 void ShadowMapWindow::RenderScene( )
 {
    // clear the buffers
@@ -270,7 +278,7 @@ void ShadowMapWindow::RenderScene( )
 
    for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
    {
-      Texture * rbucket_tex = mpEnterpriseE->mTexIDs[rbucketBeg->first].get();
+      Texture * rbucket_tex = mpEnterpriseE->mDiffuse[rbucketBeg->first].get();                           
 
       if (current_tex != rbucket_tex)
       {
@@ -312,7 +320,7 @@ void ShadowMapWindow::GenerateSceneData( )
 {
    GenerateEnterpriseE();
 }
-
+#include "MathHelper.h"
 void ShadowMapWindow::GenerateEnterpriseE( )
 {
    // a set of all the mesh data
@@ -320,6 +328,8 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    std::vector< float > normals;
    std::vector< float > vertices;
    std::vector< float > tex_coords;
+   std::vector< float > tangents;
+   std::vector< float > bitangents;
    std::vector< uint32_t > indices;
    std::multimap< GLuint, std::pair< GLuint, GLsizei > > render_buckets;
 
@@ -371,9 +381,11 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       return model_matrix;
    };
 
-   const auto ReadDiffuseTextures = [ ] ( const aiScene * const pScene,
-                                          const std::string & base_model_path,
-                                          std::vector< std::shared_ptr< Texture > > & textures )
+   const auto ReadTextures = [ ] ( const aiScene * const pScene,
+                                   const std::string & base_model_path,
+                                   std::vector< std::shared_ptr< Texture > > & diffuse,
+                                   std::vector< std::shared_ptr< Texture > > & height,
+                                   std::vector< std::shared_ptr< Texture > > & normal )
    {
       // make sure we do not load the same texture twice
       std::map< std::string, std::shared_ptr< Texture > > texture_filenames;
@@ -382,43 +394,78 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       const aiMaterial * const * pBeg = pScene->mMaterials;
       const aiMaterial * const * const pEnd = pScene->mMaterials + pScene->mNumMaterials;
 
+      // an object that loads the appropriate texture
+      const auto LoadTexture =
+      [ &texture_filenames ] ( const std::string & filename, const GLenum internal_format, std::vector< std::shared_ptr< Texture > > & textures )
+      {
+         // make sure the length is valid
+         if (!filename.empty())
+         {
+            // if the value has already been seen, then use that handle; otherwise create it
+            const auto tex_filename = texture_filenames.find(filename);
+
+            if (texture_filenames.find(filename) != texture_filenames.end())
+            {
+               // already seen, so just reuse the handle
+               textures.back() = tex_filename->second;
+            }
+            else
+            {
+               if (textures.back()->Load2D(filename.c_str(), GL_RGBA, internal_format, true))
+               {
+                  // obtain the handle for this texture
+                  // this is currently not supported on my HD 5850 with driver version 14.4 (14.100)
+                  //const GLuint64 tex_handle = glGetTextureHandleARB(tex_id);
+
+                  // save for later use
+                  texture_filenames[filename] = textures.back();
+               }
+            }
+         }
+      };
+
       for (; pBeg != pEnd; ++pBeg)
       {
          // begin by inserting a null handle into the texture array
-         textures.push_back(std::shared_ptr< Texture >(new Texture));
+         diffuse.push_back(std::shared_ptr< Texture >(new Texture));
+         height.push_back(std::shared_ptr< Texture >(new Texture));
+         normal.push_back(std::shared_ptr< Texture >(new Texture));
 
          // if there is a diffuse texture, then set it up
          if ((*pBeg)->GetTextureCount(aiTextureType_DIFFUSE))
          {
+            // have not found more than one texture so far
+            WGL_ASSERT((*pBeg)->GetTextureCount(aiTextureType_DIFFUSE) <= 1);
+
             // get the texture associated with this material
             const std::string filename = [ &pBeg, &base_model_path ] ( ) -> std::string
             {
                aiString filename; (*pBeg)->GetTexture(aiTextureType_DIFFUSE, 0, &filename); return base_model_path + filename.C_Str();
             }();
 
-            // make sure the length is valid
-            if (!filename.empty())
+            // load the diffuse texture
+            LoadTexture(filename, GL_COMPRESSED_RGBA, diffuse);
+
+            // this model is very incomplete in terms of the associated textures...
+            // try to load height and bump data here as well...
+            // the names of the other textures are very much the same except they have bump and norm in them...
+
+            // determine the offset of the 'diff' in the filename
+            const size_t diff_offset = filename.find("DIFF");
+            
+            if (diff_offset != std::string::npos)
             {
-               // if the value has already been seen, then use that handle; otherwise create it
-               const auto tex_filename = texture_filenames.find(filename);
+               // construct the bump file name
+               const std::string filename_bump = std::string(filename).replace(filename.find("DIFF"), 4, "BUMP");
 
-               if (texture_filenames.find(filename) != texture_filenames.end())
-               {
-                  // already seen, so just reuse the handle
-                  textures.back() = tex_filename->second;
-               }
-               else
-               {
-                  if (textures.back()->Load2D(filename.c_str(), GL_BGRA, GL_COMPRESSED_RGBA, true))
-                  {
-                     // obtain the handle for this texture
-                     // this is currently not supported on my HD 5850 with driver version 14.4 (14.100)
-                     //const GLuint64 tex_handle = glGetTextureHandleARB(tex_id);
+               // load the heigt map texture
+               LoadTexture(filename_bump, GL_RGBA, height);
 
-                     // save for later use
-                     texture_filenames[filename] = textures.back();
-                  }
-               }
+               // construct the normal file name
+               const std::string filename_norm = std::string(filename_bump).insert(filename_bump.find_last_of("."), "_NORM");
+
+               // load the normal texture
+               LoadTexture(filename_norm, GL_RGBA, normal);
             }
          }
       }
@@ -426,6 +473,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
 
    const auto ReadModel = [ & ] ( const char * const pFilename )
    {
+      // think about having assimp provide the tangents and bitangents too
       Assimp::Importer model_import;
       const aiScene * const pScene = model_import.ReadFile(pFilename, 0);
 
@@ -442,7 +490,8 @@ void ShadowMapWindow::GenerateEnterpriseE( )
          };
 
          // start off by reading the diffuse textures
-         ReadDiffuseTextures(pScene, GetBasePath(pFilename), mpEnterpriseE->mTexIDs);
+         ReadTextures(pScene, GetBasePath(pFilename),
+                      mpEnterpriseE->mDiffuse, mpEnterpriseE->mHeight, mpEnterpriseE->mNormal);
 
          for (size_t cur_mesh = 0; cur_mesh < pScene->mNumMeshes; ++cur_mesh)
          {
@@ -453,6 +502,8 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             const aiMesh * const pCurMesh = pScene->mMeshes[cur_mesh];
             const aiVector3D * const pVertices = pCurMesh->mVertices;
             const aiVector3D * const pNormals = pCurMesh->mNormals;
+            const aiVector3D * const pTangents = pCurMesh->mTangents;
+            const aiVector3D * const pBitangents = pCurMesh->mBitangents;
             const aiVector3D * const pTexCoords = pCurMesh->mTextureCoords[0];
             const size_t num_verts = pCurMesh->mNumVertices;
 
@@ -467,17 +518,19 @@ void ShadowMapWindow::GenerateEnterpriseE( )
 
             // temp for now...
             GenColors(num_verts, colors);
-            //normals.insert(normals.end(), &pNormals->x, &pNormals->x + num_verts * 3);
 
             if (pTexCoords)
             {
                // we have texture coordinates, so use them...
-               tex_coords.insert(tex_coords.end(), &pTexCoords->x, &pTexCoords->x + num_verts * 3);
+               for (auto ptex_coord_cur = pTexCoords; ptex_coord_cur != pTexCoords + num_verts; ++ptex_coord_cur)
+               {
+                  tex_coords.insert(tex_coords.end(), &ptex_coord_cur->x, &ptex_coord_cur->x + 2);
+               }
             }
             else
             {
                // we do not have texture coordinates, so fill in the gaps with a zero to keep them in sync...
-               tex_coords.insert(tex_coords.end(), num_verts * 3, 0.0f);
+               tex_coords.insert(tex_coords.end(), num_verts * 2, 0.0f);
 
                // determine what the diffuse color is for this mesh
                const aiMaterial * const pMat = pScene->mMaterials[pCurMesh->mMaterialIndex];
@@ -490,14 +543,42 @@ void ShadowMapWindow::GenerateEnterpriseE( )
                [ &diffuse_color ] ( Vec3f & diffuse) { diffuse = Vec3f(&diffuse_color.r); });
             }
             
-            for (int i = 0; num_verts > i; ++i)
+            for (size_t i = 0; num_verts > i; ++i)
             {
                // need to translate the vertices as they may be in the wrong place...
                const Vec3f vert = mesh_matrix * Vec3f(&((pVertices + i)->x));
                vertices.insert(vertices.end(), vert.mT, vert.mT + 3);
+            }
 
+            for (size_t i = 0; num_verts > i; ++i)
+            {
                // need to translate the normals to the correct location as they too may be in the wrong place...
-               const Vec3f norm = Vec3f(normal_matrix * Vec4f(&((pNormals + i)->x))).MakeUnitVector();
+               Vec3f norm = Vec3f(&(normal_matrix * Vec4f((pNormals + i)->x, (pNormals + i)->y, (pNormals + i)->z, 0.0f)).X()).UnitVector();
+               
+               // this model has bad normal data in it, so just calculate it ourselves
+               if (norm.Length() == 0 || std::isnan(norm.X()) || std::isnan(norm.Y()) || std::isnan(norm.Z()))
+               {
+                  // run across the faces until a matching face is found
+                  const aiFace * const pFace =
+                     std::find_if(pCurMesh->mFaces, pCurMesh->mFaces + pCurMesh->mNumFaces,
+                     [ i ] ( const aiFace & cur_face )
+                     {
+                        // should always be three indices that make up this triangle
+                        WGL_ASSERT(cur_face.mNumIndices == 3);
+
+                        return cur_face.mIndices[0] == i ||
+                               cur_face.mIndices[1] == i ||
+                               cur_face.mIndices[2] == i;
+                     });
+
+                  // calculate the normal based on the face indices
+                  const Vec3f e0(&(vertices[base_index * 3 + pFace->mIndices[0]]));
+                  const Vec3f e1(&(vertices[base_index * 3 + pFace->mIndices[1]]));
+                  const Vec3f e2(&(vertices[base_index * 3 + pFace->mIndices[2]]));
+
+                  norm = ((e1 - e0) ^ (e2 - e0)).UnitVector();
+               }
+               
                normals.insert(normals.end(), norm.mT, norm.mT + 3);
             }
 
@@ -512,6 +593,50 @@ void ShadowMapWindow::GenerateEnterpriseE( )
                indices.push_back(base_index + cur_face.mIndices[1]);
                indices.push_back(base_index + cur_face.mIndices[2]);
             });
+
+            // determine how to handle the tangents and bitangents
+            // if there are no texture coordinates, then the use of the tangent and bitangent is not needed
+            if (!pTexCoords)
+            {
+               // no texture coordinates, so just fill in the tangent and bitangent data with defaults
+               for (uint32_t i = 0; num_verts > i; ++i)
+               {
+                  tangents.push_back(1.0f); tangents.push_back(0.0f); tangents.push_back(0.0f);
+                  bitangents.push_back(0.0f); bitangents.push_back(1.0f); bitangents.push_back(0.0f);
+               }
+            }
+            else
+            {
+               // texture coordinates, so gather up the appropriate information
+               // fill in temp vectors for what is just needed
+               const std::vector< float > temp_vertices(vertices.cbegin() + base_index * 3, vertices.cend());
+               const std::vector< float > temp_normals(normals.cbegin() + base_index * 3, normals.cend());
+               const std::vector< float > temp_tex_coords(tex_coords.cbegin() + base_index * 2, tex_coords.cend());
+               const std::vector< GLuint > temp_indices =
+               [ & ] ( ) -> std::vector< GLuint >
+               {
+                  // need to transform the indices to use base 0
+                  std::vector< GLuint > indices(indices.cbegin() + base_index, indices.cend());
+                  for (auto & index : indices)
+                  { 
+                     index = index - base_index;
+                  }
+
+                  return indices;
+               }();
+
+               // calculate all the vector information
+               const auto tangents_bitangents =
+                  GeomHelper::ConstructTangentsAndBitangents(temp_vertices, temp_normals, temp_tex_coords, temp_indices);
+
+               // add the tangents and bitangents
+               tangents.insert(tangents.cend(),
+                               static_cast< const float * >(*(tangents_bitangents.first.cbegin())),
+                               static_cast< const float * >(*(tangents_bitangents.first.cbegin())) + tangents_bitangents.first.size() * Vec3f::NUM_COMPONENTS);
+               bitangents.insert(bitangents.cend(),
+                                 static_cast< const float * >(*(tangents_bitangents.second.cbegin())),
+                                 static_cast< const float * >(*(tangents_bitangents.second.cbegin())) + tangents_bitangents.second.size() * Vec3f::NUM_COMPONENTS);
+            }
 
             // insert into the render buckets based on the texture index
             // this could be more efficient by pairing up the last bucket and the new bucket
@@ -529,7 +654,11 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    };
 
    // read all the attributes of the model
-   ReadModel(".\\enterprise\\Enterp TOS - Arena.3DS");
+   ReadModel(R"(.\enterprise\Enterp TOS - Arena.3DS)");
+
+   // vertices size should match tangents and bitangents
+   WGL_ASSERT(vertices.size() == tangents.size());
+   WGL_ASSERT(vertices.size() == bitangents.size());
 
    // create the vao
    mpEnterpriseE->mVAO.GenArray();
@@ -554,21 +683,21 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    mpEnterpriseE->mClrBuf.GenBuffer(GL_ARRAY_BUFFER);
    mpEnterpriseE->mClrBuf.Bind();
    mpEnterpriseE->mClrBuf.BufferData(colors.size() * sizeof(decltype(colors.front())), &colors.front(), GL_STATIC_DRAW);
-   mpEnterpriseE->mClrBuf.VertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(colors.front())) * 3, 0);
+   mpEnterpriseE->mClrBuf.VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(colors.front())) * 3, 0);
    glEnableVertexAttribArray(1);
    mpEnterpriseE->mClrBuf.Unbind();
 
    mpEnterpriseE->mNormBuf.GenBuffer(GL_ARRAY_BUFFER);
    mpEnterpriseE->mNormBuf.Bind();
    mpEnterpriseE->mNormBuf.BufferData(normals.size() * sizeof(decltype(normals.front())), &normals.front(), GL_STATIC_DRAW);
-   mpEnterpriseE->mNormBuf.VertexAttribPointer(2, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(normals.front())) * 3, 0);
+   mpEnterpriseE->mNormBuf.VertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(normals.front())) * 3, 0);
    glEnableVertexAttribArray(2);
    mpEnterpriseE->mNormBuf.Unbind();
 
    mpEnterpriseE->mTexBuf.GenBuffer(GL_ARRAY_BUFFER);
    mpEnterpriseE->mTexBuf.Bind();
    mpEnterpriseE->mTexBuf.BufferData(tex_coords.size() * sizeof(decltype(tex_coords.front())), &tex_coords.front(), GL_STATIC_DRAW);
-   mpEnterpriseE->mTexBuf.VertexAttribPointer(3, 3, GL_FLOAT, GL_TRUE, sizeof(decltype(tex_coords.front())) * 3, 0);
+   mpEnterpriseE->mTexBuf.VertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(tex_coords.front())) * 2, 0);
    glEnableVertexAttribArray(3);
    mpEnterpriseE->mTexBuf.Unbind();
 
@@ -578,7 +707,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    mpEnterpriseE->mIdxBuf.BufferData(indices.size() * sizeof(decltype(indices.front())), &indices.front(), GL_STATIC_DRAW);
 
    // make sure we save the render buckets to the model
-   mpEnterpriseE->mRenderBuckets = render_buckets;
+   mpEnterpriseE->mRenderBuckets = std::move(render_buckets);
 
    // disable the vao
    mpEnterpriseE->mVAO.Unbind();
