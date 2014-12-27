@@ -6,7 +6,7 @@
 
 // local includes
 #include "Matrix.h"
-#include "Vector3.h"
+#include "Vector.h"
 
 namespace MatrixHelper
 {
@@ -42,9 +42,9 @@ void DecomposeYawPitchRollDeg( const Matrix< T > & mat,
 }
 
 template < typename T >
-Vector3< T > DecomposeYawPitchRoll( const Matrix< T > & mat )
+Vector< T, 3 > DecomposeYawPitchRoll( const Matrix< T > & mat )
 {
-   Vector3< T > ypr;
+   Vector< T, 3 > ypr;
 
    DecomposeYawPitchRoll(mat, &ypr[0], &ypr[1], &ypr[2]);
 
@@ -52,9 +52,9 @@ Vector3< T > DecomposeYawPitchRoll( const Matrix< T > & mat )
 }
 
 template < typename T >
-Vector3< T > DecomposeYawPitchRollDeg( const Matrix< T > & mat )
+Vector< T, 3 > DecomposeYawPitchRollDeg( const Matrix< T > & mat )
 {
-   Vector3< T > ypr;
+   Vector< T, 3 > ypr;
 
    DecomposeYawPitchRollDeg(mat, &ypr[0], &ypr[1], &ypr[2]);
 
@@ -62,9 +62,9 @@ Vector3< T > DecomposeYawPitchRollDeg( const Matrix< T > & mat )
 }
 
 template < typename T >
-Vector3< T > GetStrafeVector( const Matrix< T > & mat )
+Vector< T, 3 > GetStrafeVector( const Matrix< T > & mat )
 {
-   Vector3< T > v;
+   Vector< T, 3 > v;
 
    v.mT[0] = mat.mT[0];
    v.mT[1] = mat.mT[4];
@@ -74,9 +74,9 @@ Vector3< T > GetStrafeVector( const Matrix< T > & mat )
 }
 
 template < typename T >
-Vector3< T > GetViewVector( const Matrix< T > & mat )
+Vector< T, 3 > GetViewVector( const Matrix< T > & mat )
 {
-   Vector3< T > v;
+   Vector< T, 3 > v;
 
    v.mT[0] = mat.mT[2];
    v.mT[1] = mat.mT[6];
@@ -88,9 +88,9 @@ Vector3< T > GetViewVector( const Matrix< T > & mat )
 }
 
 template < typename T >
-Vector3< T > GetUpVector( const Matrix< T > & mat )
+Vector< T, 3 > GetUpVector( const Matrix< T > & mat )
 {
-   Vector3< T > v;
+   Vector< T, 3 > v;
 
    v.mT[0] = mat.mT[1];
    v.mT[1] = mat.mT[5];

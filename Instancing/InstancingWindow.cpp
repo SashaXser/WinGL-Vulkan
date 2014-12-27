@@ -1,9 +1,9 @@
 // local includes
 #include "InstancingWindow.h"
 #include "Timer.h"
+#include "Vector.h"
 #include "Matrix.h"
 #include "Shaders.h"
-#include "Vector4.h"
 #include "ReadTexture.h"
 #include "MathHelper.h"
 #include "MatrixHelper.h"

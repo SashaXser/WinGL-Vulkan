@@ -2,7 +2,7 @@
 #define _GEOM_HELPER_H_
 
 // local includes
-#include "Vector3.h"
+#include "Vector.h"
 
 // gl includes
 #include <GL/glew.h>
@@ -31,23 +31,23 @@ struct Shape
 // construct the normals
 // assumes indicies align to make triangles
 template < typename T >
-std::vector< Vector3< T > > ConstructNormals( const std::vector< Vector3< T > > & vertices,
-                                              const std::vector< GLuint > & indices );
+std::vector< Vector< T, 3 > > ConstructNormals( const std::vector< Vector< T, 3 > > & vertices,
+                                                const std::vector< GLuint > & indices );
 template < typename T >
-std::vector< Vector3< T > > ConstructNormals( const std::vector< T > & vertices,
-                                              const std::vector< GLuint > & indices );
+std::vector< Vector< T, 3 > > ConstructNormals( const std::vector< T > & vertices,
+                                                const std::vector< GLuint > & indices );
 
 // construct the tangents and bitangents
 // assumes indicies align to make triangles
 // first = tangents, second = bitangents
 template < typename T >
-std::pair< std::vector< Vector3< T > >, std::vector< Vector3< T > > >
-ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
-                                const std::vector< Vector3< T > > & normals,
+std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
+ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
+                                const std::vector< Vector< T, 3 > > & normals,
                                 const std::vector< T > & tex_coords,
                                 const std::vector< GLuint > & indices );
 template < typename T >
-std::pair< std::vector< Vector3< T > >, std::vector< Vector3< T > > >
+std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
 ConstructTangentsAndBitangents( const std::vector< T > & vertices,
                                 const std::vector< T > & normals,
                                 const std::vector< T > & tex_coords,

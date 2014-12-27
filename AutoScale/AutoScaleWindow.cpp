@@ -3,8 +3,7 @@
 
 // wgl includes
 #include "Matrix.h"
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Vector.h"
 #include "MathHelper.h"
 
 // gl includes

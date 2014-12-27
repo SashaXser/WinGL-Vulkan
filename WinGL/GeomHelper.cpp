@@ -1,7 +1,6 @@
 // local includes
 #include "GeomHelper.h"
 //#include "Matrix.h"
-#include "Vector4.h"
 #include "WglAssert.h"
 #include "MathHelper.h"
 //#include "Quaternion.h"
@@ -15,11 +14,11 @@ namespace GeomHelper
 {
 
 template < typename T >
-std::vector< Vector3< T > > ConstructNormals( const std::vector< Vector3< T > > & vertices,
-                                              const std::vector< GLuint > & indices )
+std::vector< Vector< T, 3 > > ConstructNormals( const std::vector< Vector< T, 3 > > & vertices,
+                                                const std::vector< GLuint > & indices )
 {
    // resize the normals
-   std::vector< Vector3< T > > normals(vertices.size(), Vector3< T >(0, 0, 0));
+   std::vector< Vector< T, 3 > > normals(vertices.size(), Vector< T, 3 >(T(0), T(0), T(0)));
 
    // construct the normals for all the indices
    auto index_beg = indices.cbegin();
@@ -33,11 +32,11 @@ std::vector< Vector3< T > > ConstructNormals( const std::vector< Vector3< T > > 
       const GLuint i2 = *(index_beg + 2);
 
       // construct the edge vectors
-      const Vector3< T > e1 = vertices[i1] - vertices[i0];
-      const Vector3< T > e2 = vertices[i2] - vertices[i0];
+      const Vector< T, 3 > e1 = vertices[i1] - vertices[i0];
+      const Vector< T, 3 > e2 = vertices[i2] - vertices[i0];
 
       // construct the normal
-      const Vector3< T > n = (e1 ^ e2).UnitVector();
+      const Vector< T, 3 > n = (e1 ^ e2).UnitVector();
 
       // add the normal to the normal vector
       normals[i0] += n;
@@ -58,14 +57,14 @@ std::vector< Vector3< T > > ConstructNormals( const std::vector< Vector3< T > > 
 }
 
 template < typename T >
-std::vector< Vector3< T > > ConstructNormals( const std::vector< T > & vertices,
-                                              const std::vector< GLuint > & indices )
+std::vector< Vector< T, 3 > > ConstructNormals( const std::vector< T > & vertices,
+                                                const std::vector< GLuint > & indices )
 {
    // there should be 3 components per point
    WGL_ASSERT(vertices.size() % 3 == 0);
 
-   return ConstructNormals(std::vector< Vector3< T > >(reinterpret_cast< const Vector3< T > * >(&(vertices[0])),
-                                                       reinterpret_cast< const Vector3< T > * >(&(vertices[0]) + vertices.size())),
+   return ConstructNormals(std::vector< Vector< T, 3 > >(reinterpret_cast< const Vector< T, 3 > * >(&(vertices[0])),
+                                                         reinterpret_cast< const Vector< T, 3 > * >(&(vertices[0]) + vertices.size())),
                            indices);
 }
 
@@ -82,9 +81,9 @@ void ConstructNormals( Shape & shape )
 }
 
 template < typename T >
-std::pair< std::vector< Vector3< T > >, std::vector< Vector3< T > > >
-ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
-                                const std::vector< Vector3< T > > & normals,
+std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
+ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
+                                const std::vector< Vector< T, 3 > > & normals,
                                 const std::vector< T > & tex_coords,
                                 const std::vector< GLuint > & indices )
 {
@@ -95,9 +94,9 @@ ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
    WGL_ASSERT(vertices.size() == tex_coords.size() / 2);
 
    // resize the tangents
-   std::pair< std::vector< Vector3< T > >, std::vector< Vector3< T > > > tangents_bitangents;
-   tangents_bitangents.first.resize(vertices.size(), Vector3< T >(0, 0, 0));
-   tangents_bitangents.second.resize(vertices.size(), Vector3< T >(0, 0, 0));
+   std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > > tangents_bitangents;
+   tangents_bitangents.first.resize(vertices.size(), Vector< T, 3 >(T(0), T(0), T(0)));
+   tangents_bitangents.second.resize(vertices.size(), Vector< T, 3 >(T(0), T(0), T(0)));
 
    // construct the tangents for all the indices
    auto index_beg = indices.cbegin();
@@ -124,8 +123,8 @@ ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
       const GLuint i2 = *(index_beg + 2);
 
       // construct the edge vectors
-      const Vector3< T > e1 = vertices[i1] - vertices[i0];
-      const Vector3< T > e2 = vertices[i2] - vertices[i0];
+      const Vector< T, 3 > e1 = vertices[i1] - vertices[i0];
+      const Vector< T, 3 > e2 = vertices[i2] - vertices[i0];
 
       // get the edge texture coordinates
       const T s1 = tex_coords[i1 * 2] - tex_coords[i0 * 2];
@@ -138,7 +137,7 @@ ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
       const T det = dividend == 0 ? 1 : 1 / dividend;
 
       // calculate the tangent
-      Vector3< T > t(det * (t2 * e1.X() - t1 * e2.X()),
+      Vector< T, 3 > t(det * (t2 * e1.X() - t1 * e2.X()),
                      det * (t2 * e1.Y() - t1 * e2.Y()),
                      det * (t2 * e1.Z() - t1 * e2.Z()));
 
@@ -160,24 +159,24 @@ ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
 
             //// the tangent could not be calculated so take the three normals,
             //// average them, and normalize and use that as the tangent...
-            //const Vector3< T > & n0 = normals[i0];
-            //const Vector3< T > & n1 = normals[i1];
-            //const Vector3< T > & n2 = normals[i2];
+            //const Vector< T, 3 > & n0 = normals[i0];
+            //const Vector< T, 3 > & n1 = normals[i1];
+            //const Vector< T, 3 > & n2 = normals[i2];
 
             //// average the normals
-            //const Vector3< T > n_avg = (n0 + n1 + n2) * (T(1) / T(3));
+            //const Vector< T, 3 > n_avg = (n0 + n1 + n2) * (T(1) / T(3));
 
             //// take a vertex and create 
 
             //// do the averaging of these vectors and rotate along the z-axis
             //// such that a normal of 0,1,0 will have a tangent of 1,0,0...
-            //t = Matrix< T >::Rotate(T(-90), Vector3< T >(0, 0, 1)) * Vector4< T >(((n0 + n1 + n2) * (T(1) / T(3))), 0);
+            //t = Matrix< T >::Rotate(T(-90), Vector< T, 3 >(0, 0, 1)) * Vector4< T >(((n0 + n1 + n2) * (T(1) / T(3))), 0);
          }
 
          // issue a message to the console
          WGL_ASSERT_REPORT(false, "Creating tangent vector since tangent calculation produced zero length tangent vector");
 
-         //const Vector3< T > b(det * (s1 * e2.X() - s2 * e1.X()),
+         //const Vector< T, 3 > b(det * (s1 * e2.X() - s2 * e1.X()),
          //                     det * (s1 * e2.Y() - s2 * e1.Y()),
          //                     det * (s1 * e2.Z() - s2 * e1.Z()));
          //
@@ -215,7 +214,7 @@ ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
 
       // get the normal
       const auto index_n = std::distance(tangents_bitangents.first.begin(), tangent_beg);
-      const Vector3< T > & n = normals[index_n];
+      const Vector< T, 3 > & n = normals[index_n];
 
       // the normal should already be normalized
       WGL_ASSERT(MathHelper::Equals< T >(n.Length(), 1));
@@ -239,7 +238,7 @@ ConstructTangentsAndBitangents( const std::vector< Vector3< T > > & vertices,
 }
 
 template < typename T >
-std::pair< std::vector< Vector3< T > >, std::vector< Vector3< T > > >
+std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
 ConstructTangentsAndBitangents( const std::vector< T > & vertices,
                                 const std::vector< T > & normals,
                                 const std::vector< T > & tex_coords,
@@ -251,10 +250,10 @@ ConstructTangentsAndBitangents( const std::vector< T > & vertices,
    // there should be 2 components per point
    WGL_ASSERT(tex_coords.size() % 2 == 0);
 
-   return ConstructTangentsAndBitangents(std::vector< Vector3< T > >(reinterpret_cast< const Vector3< T > * >(&(vertices[0])),
-                                                                     reinterpret_cast< const Vector3< T > * >(&(vertices[0]) + vertices.size())),
-                                         std::vector< Vector3< T > >(reinterpret_cast< const Vector3< T > * >(&(normals[0])),
-                                                                     reinterpret_cast< const Vector3< T > * >(&(normals[0]) + normals.size())),
+   return ConstructTangentsAndBitangents(std::vector< Vector< T, 3 > >(reinterpret_cast< const Vector< T, 3 > * >(&(vertices[0])),
+                                                                       reinterpret_cast< const Vector< T, 3 > * >(&(vertices[0]) + vertices.size())),
+                                         std::vector< Vector< T, 3 > >(reinterpret_cast< const Vector< T, 3 > * >(&(normals[0])),
+                                                                       reinterpret_cast< const Vector< T, 3 > * >(&(normals[0]) + normals.size())),
                                          tex_coords,
                                          indices);
 }
@@ -317,6 +316,9 @@ Shape ConstructPlane( const float width, const float height )
 Shape ConstructBox( const float width, const float height, const float depth )
 {
    Shape shape;
+
+   // todo: fill in
+   WGL_ASSERT(false);
 
    return shape;
 }

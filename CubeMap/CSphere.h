@@ -6,7 +6,7 @@
 #include "StdIncludes.h"
 
 // wingl includes
-#include "Vector3.h"
+#include "Vector.h"
 #include "ReadTexture.h"
 
 #include <string>

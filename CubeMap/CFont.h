@@ -2,7 +2,7 @@
 #define _C_FONT_H_
 
 // wingl includes
-#include "Vector3.h"
+#include "Vector.h"
 #include "ReadTexture.h"
 
 // std includes

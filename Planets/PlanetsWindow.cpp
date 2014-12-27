@@ -2,8 +2,7 @@
 #include "PlanetsWindow.h"
 #include "Timer.h"
 #include "Planet.h"
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Vector.h"
 #include "MathHelper.h"
 #include "MatrixHelper.h"
 

@@ -3,7 +3,7 @@
 
 // local includes
 #include "../Matrix.h"
-#include "../Vector3.h"
+#include "../Vector.h"
 
 // std includes
 #include <ratio>
@@ -17,17 +17,17 @@ namespace camera_policy
 template < typename T >
 struct up_vector_y_axis
 {
-   static Vector3< T > up( ) { return Vector3< T >(0, 1, 0); }
+   static Vector< T, 3 > up( ) { return Vector< T, 3 >(T(0), T(1), T(0)); }
 };
 
 template < typename T, typename U = up_vector_y_axis< T > >
 struct up_vector
 {
-   static const Vector3< T > up;
+   static const Vector< T, 3 > up;
 };
 
 template < typename T, typename U >
-const Vector3< T > up_vector< T, U >::up = U::up();
+const Vector< T, 3 > up_vector< T, U >::up = U::up();
 
 template < typename T = float,
            typename MIN_PITCH_RATIO = std::ratio< -899, 10 >,
@@ -39,7 +39,7 @@ public:
    // public typedefs
    typedef T               type;
    typedef Matrix< T >     mat_type;
-   typedef Vector3< T >    vec_type;
+   typedef Vector< T, 3 >  vec_type;
 
    // constructor / destructor
     RoamNoRollRestrictPitch( );

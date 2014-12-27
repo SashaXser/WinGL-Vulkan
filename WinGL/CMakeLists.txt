@@ -30,8 +30,7 @@ set(WIN_GL_SRC
 ./Texture.cpp
 ./Texture.h
 ./Timer.h
-./Vector3.h
-./Vector4.h
+./Vector.h
 ./VertexArrayObject.cpp
 ./VertexArrayObject.h
 ./VertexBufferObject.cpp

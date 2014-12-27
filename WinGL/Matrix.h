@@ -11,8 +11,7 @@
 #include <memory.h>
 
 // local includes
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Vector.h"
 #include "WglAssert.h"
 
 template < typename T >
@@ -28,11 +27,11 @@ public:
     Matrix( const Matrix< T > & mat );
     template < typename U >
     Matrix( const Matrix< U > & mat );
-    Matrix( const Vector4< T > & col1, const Vector4< T > & col2,
-            const Vector4< T > & col3, const Vector4< T > & col4 );
+    Matrix( const Vector< T, 4 > & col1, const Vector< T, 4 > & col2,
+            const Vector< T, 4 > & col3, const Vector< T, 4 > & col4 );
     template < typename U >
-    Matrix( const Vector4< U > & col1, const Vector4< U > & col2,
-            const Vector4< U > & col3, const Vector4< U > & col4 );
+    Matrix( const Vector< U, 4 > & col1, const Vector< U, 4 > & col2,
+            const Vector< U, 4 > & col3, const Vector< U, 4 > & col4 );
     Matrix( const T & col1_x, const T & col1_y, const T & col1_z, const T & col1_w,
             const T & col2_x, const T & col2_y, const T & col2_z, const T & col2_w,
             const T & col3_x, const T & col3_y, const T & col3_z, const T & col3_w,
@@ -62,11 +61,11 @@ public:
    Matrix< T > & operator *= ( const Matrix< T > & mat );
 
    template < typename U >
-   Vector3< T > operator * ( const Vector3< U > & vec ) const;
-   Vector3< T > operator * ( const Vector3< T > & vec ) const;
+   Vector< T, 3 > operator * ( const Vector< U, 3 > & vec ) const;
+   Vector< T, 3 > operator * ( const Vector< T, 3 > & vec ) const;
    template< typename U >
-   Vector4< T > operator * ( const Vector4< U > & vec ) const;
-   Vector4< T > operator * ( const Vector4< T > & vec ) const;
+   Vector< T, 4 > operator * ( const Vector< U, 4 > & vec ) const;
+   Vector< T, 4 > operator * ( const Vector< T, 4 > & vec ) const;
 
    template < typename U >
    Matrix< T > operator * ( const U & scaler ) const;
@@ -94,26 +93,26 @@ public:
 
    // creates a rotation matrix
    void  MakeRotation( const T & degrees, const T & x, const T & y, const T & z );
-   void  MakeRotation( const T & degrees, const Vector3< T > & vec );
+   void  MakeRotation( const T & degrees, const Vector< T, 3 > & vec );
 
    static Matrix< T > Rotate( const T & degrees, const T & x, const T & y, const T & z );
-   static Matrix< T > Rotate( const T & degrees, const Vector3< T > & vec );
+   static Matrix< T > Rotate( const T & degrees, const Vector< T, 3 > & vec );
 
    // creates a translation matrix
    void  MakeTranslation( const T & x, const T & y, const T & z );
-   void  MakeTranslation( const Vector3< T > & vec );
+   void  MakeTranslation( const Vector< T, 3 > & vec );
 
    static Matrix< T > Translate( const T & x, const T & y, const T & z );
-   static Matrix< T > Translate( const Vector3< T > & vec );
+   static Matrix< T > Translate( const Vector< T, 3 > & vec );
 
    // creates a scaling matrix
    void  MakeScaling( const T & scale );
    void  MakeScaling( const T & x, const T & y, const T & z );
-   void  MakeScaling( const Vector3< T > & vec );
+   void  MakeScaling( const Vector< T, 3 > & vec );
 
    static Matrix< T > Scale( const T & scale );
    static Matrix< T > Scale( const T & x, const T & y, const T & z );
-   static Matrix< T > Scale( const Vector3< T > & vec );
+   static Matrix< T > Scale( const Vector< T, 3 > & vec );
 
    // create a projection matrix
    template < typename U >
@@ -194,20 +193,20 @@ public:
                               const T * const pUp );
 
    template < typename U >
-   void  MakeLookAt( const Vector3< U > & rEye,
-                     const Vector3< U > & rCenter,
-                     const Vector3< U > & rUp );
-   void  MakeLookAt( const Vector3< T > & rEye,
-                     const Vector3< T > & rCenter,
-                     const Vector3< T > & rUp );
+   void  MakeLookAt( const Vector< U, 3 > & rEye,
+                     const Vector< U, 3 > & rCenter,
+                     const Vector< U, 3 > & rUp );
+   void  MakeLookAt( const Vector< T, 3 > & rEye,
+                     const Vector< T, 3 > & rCenter,
+                     const Vector< T, 3 > & rUp );
 
    template < typename U >
-   static Matrix< U > LookAt( const Vector3< U > & rEye,
-                              const Vector3< U > & rCenter,
-                              const Vector3< U > & rUp );
-   static Matrix< T > LookAt( const Vector3< T > & rEye,
-                              const Vector3< T > & rCenter,
-                              const Vector3< T > & rUp );
+   static Matrix< U > LookAt( const Vector< U, 3 > & rEye,
+                              const Vector< U, 3 > & rCenter,
+                              const Vector< U, 3 > & rUp );
+   static Matrix< T > LookAt( const Vector< T, 3 > & rEye,
+                              const Vector< T, 3 > & rCenter,
+                              const Vector< T, 3 > & rUp );
 
    template < typename U >
    bool GetFrustum( U & rLeft, U & rRight,
@@ -291,10 +290,10 @@ inline Matrix< T >::Matrix( const Matrix< U > & mat )
 }
 
 template < typename T >
-inline Matrix< T >::Matrix( const Vector4< T > & col1,
-                            const Vector4< T > & col2,
-                            const Vector4< T > & col3,
-                            const Vector4< T > & col4 )
+inline Matrix< T >::Matrix( const Vector< T, 4 > & col1,
+                            const Vector< T, 4 > & col2,
+                            const Vector< T, 4 > & col3,
+                            const Vector< T, 4 > & col4 )
 {
    memcpy(mT, col1.mT, sizeof(col1.mT));
    memcpy(mT + 4, col2.mT, sizeof(col2.mT));
@@ -304,15 +303,15 @@ inline Matrix< T >::Matrix( const Vector4< T > & col1,
 
 template < typename T >
 template < typename U >
-inline Matrix< T >::Matrix( const Vector4< U > & col1,
-                            const Vector4< U > & col2,
-                            const Vector4< U > & col3,
-                            const Vector4< U > & col4 )
+inline Matrix< T >::Matrix( const Vector< U, 4 > & col1,
+                            const Vector< U, 4 > & col2,
+                            const Vector< U, 4 > & col3,
+                            const Vector< U, 4 > & col4 )
 {
-   *this = Matrix< T >(Vector4< T >(col1),
-                       Vector4< T >(col2),
-                       Vector4< T >(col3),
-                       Vector4< T >(col4));
+   *this = Matrix< T >(Vector< T, 4 >(col1),
+                       Vector< T, 4 >(col2),
+                       Vector< T, 4 >(col3),
+                       Vector< T, 4 >(col4));
 }
 
 template < typename T >
@@ -334,10 +333,10 @@ inline Matrix< T >::Matrix( const U & col1_x, const U & col1_y, const U & col1_z
                             const U & col3_x, const U & col3_y, const U & col3_z, const U & col3_w,
                             const U & col4_x, const U & col4_y, const U & col4_z, const U & col4_w )
 {
-   *this = Matrix< T >(Vector4< T >(col1_x, col1_y, col1_z, col1_w),
-                       Vector4< T >(col2_x, col2_y, col2_z, col2_w),
-                       Vector4< T >(col3_x, col3_y, col3_z, col3_w),
-                       Vector4< T >(col4_x, col4_y, col4_z, col4_w));
+   *this = Matrix< T >(Vector< T, 4 >(col1_x, col1_y, col1_z, col1_w),
+                       Vector< T, 4 >(col2_x, col2_y, col2_z, col2_w),
+                       Vector< T, 4 >(col3_x, col3_y, col3_z, col3_w),
+                       Vector< T, 4 >(col4_x, col4_y, col4_z, col4_w));
 }
 
 template < typename T >
@@ -481,30 +480,30 @@ inline Matrix< T > & Matrix< T >::operator *= ( const Matrix< T > & mat )
 
 template < typename T >
 template < typename U >
-inline Vector3< T > Matrix< T >::operator * ( const Vector3< U > & vec ) const
+inline Vector< T, 3 > Matrix< T >::operator * ( const Vector< U, 3 > & vec ) const
 {
-   return *this * Vector3< T >(vec);
+   return *this * Vector< T, 3 >(vec);
 }
 
 template < typename T >
-inline Vector3< T > Matrix< T >::operator * ( const Vector3< T > & vec ) const
+inline Vector< T, 3 > Matrix< T >::operator * ( const Vector< T, 3 > & vec ) const
 {
-   Vector4< T > v = *this * Vector4< T >(vec);
+   Vector< T, 4 > v = *this * Vector< T, 4 >(vec);
 
    v *= 1 / v.mT[3];
 
-   return Vector3< T >(v.mT[0], v.mT[1], v.mT[2]);
+   return Vector< T, 3 >(v.mT[0], v.mT[1], v.mT[2]);
 }
 
 template < typename T >
 template < typename U >
-inline Vector4< T > Matrix< T >::operator * ( const Vector4< U > & vec ) const
+inline Vector< T, 4 > Matrix< T >::operator * ( const Vector< U, 4 > & vec ) const
 {
-   return *this * Vector4< T >(vec);
+   return *this * Vector< T, 4 >(vec);
 }
 
 template < typename T >
-inline Vector4< T > Matrix< T >::operator * ( const Vector4< T > & vec ) const
+inline Vector< T, 4 > Matrix< T >::operator * ( const Vector< T, 4 > & vec ) const
 {
    // note: post multiplication used to conform to opengl
 
@@ -530,7 +529,7 @@ inline Vector4< T > Matrix< T >::operator * ( const Vector4< T > & vec ) const
          *(mT + 11) * *(pT + 2) +
          *(mT + 15) * *(pT + 3);
 
-   return Vector4< T >(x, y, z, w);
+   return Vector< T, 4 >(x, y, z, w);
 }
 
 template < typename T >
@@ -633,11 +632,11 @@ inline void Matrix< T >::MakeRotation( const T & degrees,
                                        const T & y,
                                        const T & z )
 {
-   MakeRotation(degrees, Vector3< T >(x, y, z));
+   MakeRotation(degrees, Vector< T, 3 >(x, y, z));
 }
 
 template < typename T >
-inline void Matrix< T >::MakeRotation( const T & degrees, const Vector3< T > & vec )
+inline void Matrix< T >::MakeRotation( const T & degrees, const Vector< T, 3 > & vec )
 {
    // validate a unit vector...
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= vec.Length() &&
@@ -678,7 +677,7 @@ inline Matrix< T > Matrix< T >::Rotate( const T & degrees,
 
 template < typename T >
 inline Matrix< T > Matrix< T >::Rotate( const T & degrees,
-                                        const Vector3< T > & vec )
+                                        const Vector< T, 3 > & vec )
 {
    Matrix< T > mat;
    mat.MakeRotation(degrees, vec);
@@ -844,7 +843,7 @@ inline void Matrix< T >::MakeTranslation( const T & x, const T & y, const T & z 
 }
 
 template < typename T >
-inline void Matrix< T >::MakeTranslation( const Vector3< T > & vec )
+inline void Matrix< T >::MakeTranslation( const Vector< T, 3 > & vec )
 {
    MakeTranslation(vec.mT[0], vec.mT[1], vec.mT[2]);
 }
@@ -859,7 +858,7 @@ inline Matrix< T > Matrix< T >::Translate( const T & x, const T & y, const T & z
 }
 
 template < typename T >
-inline Matrix< T > Matrix< T >::Translate( const Vector3< T > & vec )
+inline Matrix< T > Matrix< T >::Translate( const Vector< T, 3 > & vec )
 {
    Matrix< T > mat;
    mat.MakeTranslation(vec);
@@ -884,7 +883,7 @@ inline void Matrix< T >::MakeScaling( const T & x, const T & y, const T & z )
 }
 
 template < typename T >
-inline void Matrix< T >::MakeScaling( const Vector3< T > & vec )
+inline void Matrix< T >::MakeScaling( const Vector< T, 3 > & vec )
 {
    MakeScaling(vec.mT[0], vec.mT[1], vec.mT[2]);
 }
@@ -908,7 +907,7 @@ inline Matrix< T > Matrix< T >::Scale( const T & x, const T & y, const T & z )
 }
 
 template < typename T >
-inline Matrix< T > Matrix< T >::Scale( const Vector3< T > & vec )
+inline Matrix< T > Matrix< T >::Scale( const Vector< T, 3 > & vec )
 {
    Matrix< T > mat;
    mat.MakeScaling(vec);
@@ -1070,9 +1069,9 @@ inline void Matrix< T >::MakeLookAt( const U & rEyeX, const U & rEyeY, const U &
                                      const U & rCenterX, const U & rCenterY, const U & rCenterZ,
                                      const U & rUpX, const U & rUpY, const U & rUpZ )
 {
-   MakeLookAt(Vector3< T >(rEyeX, rEyeY, rEyeZ),
-              Vector3< T >(rCenterX, rCenterY, rCenterZ),
-              Vector3< T >(rUpX, rUpY, rUpZ));
+   MakeLookAt(Vector< T, 3 >(rEyeX, rEyeY, rEyeZ),
+              Vector< T, 3 >(rCenterX, rCenterY, rCenterZ),
+              Vector< T, 3 >(rUpX, rUpY, rUpZ));
 }
 
 template < typename T >
@@ -1080,9 +1079,9 @@ inline void Matrix< T >::MakeLookAt( const T & rEyeX, const T & rEyeY, const T &
                                      const T & rCenterX, const T & rCenterY, const T & rCenterZ,
                                      const T & rUpX, const T & rUpY, const T & rUpZ )
 {
-   MakeLookAt(Vector3< T >(rEyeX, rEyeY, rEyeZ),
-              Vector3< T >(rCenterX, rCenterY, rCenterZ),
-              Vector3< T >(rUpX, rUpY, rUpZ));
+   MakeLookAt(Vector< T, 3 >(rEyeX, rEyeY, rEyeZ),
+              Vector< T, 3 >(rCenterX, rCenterY, rCenterZ),
+              Vector< T, 3 >(rUpX, rUpY, rUpZ));
 }
 
 template < typename T >
@@ -1118,9 +1117,9 @@ inline void Matrix< T >::MakeLookAt( const U * const pEye,
                                      const U * const pCenter,
                                      const U * const pUp )
 {
-   MakeLookAt(Vector3< T >(pEye[0], pEye[1], pEye[2]),
-              Vector3< T >(pCenter[0], pCenter[1], pCenter[2]),
-              Vector3< T >(pUp[0], pUp[1], pUp[2]));
+   MakeLookAt(Vector< T, 3 >(pEye[0], pEye[1], pEye[2]),
+              Vector< T, 3 >(pCenter[0], pCenter[1], pCenter[2]),
+              Vector< T, 3 >(pUp[0], pUp[1], pUp[2]));
 }
 
 template < typename T >
@@ -1128,9 +1127,9 @@ inline void Matrix< T >::MakeLookAt( const T * const pEye,
                                      const T * const pCenter,
                                      const T * const pUp )
 {
-   MakeLookAt(Vector3< T >(pEye[0], pEye[1], pEye[2]),
-              Vector3< T >(pCenter[0], pCenter[1], pCenter[2]),
-              Vector3< T >(pUp[0], pUp[1], pUp[2]));
+   MakeLookAt(Vector< T, 3 >(pEye[0], pEye[1], pEye[2]),
+              Vector< T, 3 >(pCenter[0], pCenter[1], pCenter[2]),
+              Vector< T, 3 >(pUp[0], pUp[1], pUp[2]));
 }
 
 template < typename T >
@@ -1156,28 +1155,28 @@ inline static Matrix< T > Matrix< T >::LookAt( const T * const pEye,
 
 template < typename T >
 template < typename U >
-inline void Matrix< T >::MakeLookAt( const Vector3< U > & rEye,
-                                     const Vector3< U > & rCenter,
-                                     const Vector3< U > & rUp )
+inline void Matrix< T >::MakeLookAt( const Vector< U, 3 > & rEye,
+                                     const Vector< U, 3 > & rCenter,
+                                     const Vector< U, 3 > & rUp )
 {
-   MakeLookAt(Vector3< T >(rEye),
-              Vector3< T >(rCenter),
-              Vector3< T >(rUp));
+   MakeLookAt(Vector< T, 3 >(rEye),
+              Vector< T, 3 >(rCenter),
+              Vector< T, 3 >(rUp));
 }
 
 template < typename T >
-inline void Matrix< T >::MakeLookAt( const Vector3< T > & rEye,
-                                     const Vector3< T > & rCenter,
-                                     const Vector3< T > & rUp )
+inline void Matrix< T >::MakeLookAt( const Vector< T, 3 > & rEye,
+                                     const Vector< T, 3 > & rCenter,
+                                     const Vector< T, 3 > & rUp )
 {
    // obtain the z-axis vector...
    // look at vector is in the opposite direction
    // since OpenGL z-axis is a right handed system...
-   const Vector3< T > vZ = (rEye - rCenter).MakeUnitVector();
+   const Vector< T, 3 > vZ = (rEye - rCenter).MakeUnitVector();
    // obtain the x-axis vector...
-   const Vector3< T > vX = (rUp ^ vZ).MakeUnitVector();
+   const Vector< T, 3 > vX = (rUp ^ vZ).MakeUnitVector();
    // obtain the y-axis vector...
-   const Vector3< T > vY = vZ ^ vX;
+   const Vector< T, 3 > vY = vZ ^ vX;
 
    // setup the matrix based on the new x, y, z values...
    mT[0] = vX.mT[0]; mT[4] = vX.mT[1]; mT[8]  = vX.mT[2];  mT[12] = -(rEye * vX);
@@ -1188,17 +1187,17 @@ inline void Matrix< T >::MakeLookAt( const Vector3< T > & rEye,
 
 template < typename T >
 template < typename U >
-inline Matrix< U > Matrix< T >::LookAt( const Vector3< U > & rEye,
-                                        const Vector3< U > & rCenter,
-                                        const Vector3< U > & rUp )
+inline Matrix< U > Matrix< T >::LookAt( const Vector< U, 3 > & rEye,
+                                        const Vector< U, 3 > & rCenter,
+                                        const Vector< U, 3 > & rUp )
 {
    return Matrix< U >::LookAt(rEye.Ptr(), rCenter.Ptr(), rUp.Ptr());
 }
 
 template < typename T >
-inline Matrix< T > Matrix< T >::LookAt( const Vector3< T > & rEye,
-                                        const Vector3< T > & rCenter,
-                                        const Vector3< T > & rUp )
+inline Matrix< T > Matrix< T >::LookAt( const Vector< T, 3 > & rEye,
+                                        const Vector< T, 3 > & rCenter,
+                                        const Vector< T, 3 > & rUp )
 {
    return Matrix< T >::LookAt(rEye.Ptr(), rCenter.Ptr(), rUp.Ptr());
 }
@@ -1310,30 +1309,30 @@ inline T Matrix< T >::Determinant( Matrix< T > & inverse )
    const T coef22 = mT[4] * mT[13] - mT[12] * mT[5];
    const T coef23 = mT[4] * mT[9]  - mT[8]  * mT[5];
 
-   const Vector4< T > fac0(coef00, coef00, coef02, coef03);
-   const Vector4< T > fac1(coef04, coef04, coef06, coef07);
-   const Vector4< T > fac2(coef08, coef08, coef10, coef11);
-   const Vector4< T > fac3(coef12, coef12, coef14, coef15);
-   const Vector4< T > fac4(coef16, coef16, coef18, coef19);
-   const Vector4< T > fac5(coef20, coef20, coef22, coef23);
+   const Vector< T, 4 > fac0(coef00, coef00, coef02, coef03);
+   const Vector< T, 4 > fac1(coef04, coef04, coef06, coef07);
+   const Vector< T, 4 > fac2(coef08, coef08, coef10, coef11);
+   const Vector< T, 4 > fac3(coef12, coef12, coef14, coef15);
+   const Vector< T, 4 > fac4(coef16, coef16, coef18, coef19);
+   const Vector< T, 4 > fac5(coef20, coef20, coef22, coef23);
    
-   const Vector4< T > vec0(mT[4], mT[0], mT[0], mT[0]);
-   const Vector4< T > vec1(mT[5], mT[1], mT[1], mT[1]);
-   const Vector4< T > vec2(mT[6], mT[2], mT[2], mT[2]);
-   const Vector4< T > vec3(mT[7], mT[3], mT[3], mT[3]);
+   const Vector< T, 4 > vec0(mT[4], mT[0], mT[0], mT[0]);
+   const Vector< T, 4 > vec1(mT[5], mT[1], mT[1], mT[1]);
+   const Vector< T, 4 > vec2(mT[6], mT[2], mT[2], mT[2]);
+   const Vector< T, 4 > vec3(mT[7], mT[3], mT[3], mT[3]);
 
-   const Vector4< T > inv0(vec1 % fac0 - vec2 % fac1 + vec3 % fac2);
-   const Vector4< T > inv1(vec0 % fac0 - vec2 % fac3 + vec3 % fac4);
-   const Vector4< T > inv2(vec0 % fac1 - vec1 % fac3 + vec3 % fac5);
-   const Vector4< T > inv3(vec0 % fac2 - vec1 % fac4 + vec2 % fac5);
+   const Vector< T, 4 > inv0(vec1 % fac0 - vec2 % fac1 + vec3 % fac2);
+   const Vector< T, 4 > inv1(vec0 % fac0 - vec2 % fac3 + vec3 % fac4);
+   const Vector< T, 4 > inv2(vec0 % fac1 - vec1 % fac3 + vec3 % fac5);
+   const Vector< T, 4 > inv3(vec0 % fac2 - vec1 % fac4 + vec2 % fac5);
 
-   const Vector4< T > signa(+1, -1, +1, -1);
-   const Vector4< T > signb(-1, +1, -1, +1);
+   const Vector< T, 4 > signa(T(+1), T(-1), T(+1), T(-1));
+   const Vector< T, 4 > signb(T(-1), T(+1), T(-1), T(+1));
 
    inverse = Matrix< T >(inv0 % signa, inv1 % signb, inv2 % signa, inv3 % signb);
 
-   const Vector4< T > row0(inverse[0], inverse[4], inverse[8], inverse[12]);
-   const Vector4< T > dot0(Vector4< T >(mT) % row0);
+   const Vector< T, 4 > row0(inverse[0], inverse[4], inverse[8], inverse[12]);
+   const Vector< T, 4 > dot0(Vector< T, 4 >(mT) % row0);
 
    const T determinant = dot0.X() + dot0.Y() + dot0.Z() + dot0.W();
    

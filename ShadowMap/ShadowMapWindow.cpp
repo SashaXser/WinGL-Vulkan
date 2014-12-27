@@ -3,8 +3,8 @@
 
 // wgl includes
 #include "Matrix.h"
+#include "Vector.h"
 #include "Texture.h"
-#include "Vector3.h"
 #include "WglAssert.h"
 #include "GeomHelper.h"
 #include "ReadTexture.h"

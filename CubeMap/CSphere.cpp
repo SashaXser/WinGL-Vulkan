@@ -1,5 +1,4 @@
 // includes
-#include "Vector3.h"
 #include "CSphere.h"
 #include "CPBuffer.h"
 #include "CFrameBuffer.h"

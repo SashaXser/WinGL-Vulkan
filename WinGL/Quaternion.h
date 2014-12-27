@@ -3,8 +3,7 @@
 
 // local includes
 #include "Matrix.h"
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Vector.h"
 #include "WglAssert.h"
 #include "MathHelper.h"
 
@@ -85,11 +84,11 @@ public:
    Quaternion< T > & operator %= ( const Quaternion< T > & quat );
 
    template < typename U >
-   Quaternion< T > operator % ( const Vector3< U > & vec ) const;
-   Quaternion< T > operator % ( const Vector3< T > & vec ) const;
+   Quaternion< T > operator % ( const Vector< U, 3 > & vec ) const;
+   Quaternion< T > operator % ( const Vector< T, 3 > & vec ) const;
    template < typename U >
-   Quaternion< T > & operator %= ( const Vector3< U > & vec );
-   Quaternion< T > & operator %= ( const Vector3< T > & vec );
+   Quaternion< T > & operator %= ( const Vector< U, 3 > & vec );
+   Quaternion< T > & operator %= ( const Vector< T, 3 > & vec );
 
    // operator + (addition)
    template < typename U >
@@ -109,8 +108,8 @@ public:
 
    // rotation operation
    template < typename U >
-   Quaternion< T > Rotate( const U & degrees, const Vector3< U > & vec );
-   Quaternion< T > Rotate( const T & degrees, const Vector3< T > & vec );
+   Quaternion< T > Rotate( const U & degrees, const Vector< U, 3 > & vec );
+   Quaternion< T > Rotate( const T & degrees, const Vector< T, 3 > & vec );
    template < typename U >
    Quaternion< T > Rotate( const Quaternion< U > & quat );
    Quaternion< T > Rotate( const Quaternion< T > & quat );
@@ -127,7 +126,7 @@ public:
    const T & W( ) const { return mT[3]; }
 
    T RealPart( ) const { return mT[3]; }
-   Vector3< T > ImaginaryPart( ) const { return Vector3< T >(mT[0], mT[1], mT[2]); }
+   Vector< T, 3 > ImaginaryPart( ) const { return Vector< T, 3 >(mT[0], mT[1], mT[2]); }
 
    // normalizes the quat
    Quaternion< T > & Normalize( );
@@ -151,10 +150,10 @@ public:
    static Quaternion< T > ToQuaternion( const Matrix< T > & mat );
 
    // static helper function to create rotation quat from two vectors
-   static Quaternion< T > Rotation( const T & degrees, const Vector3< T > & axis );
-   static Quaternion< T > Rotation( const T & degrees, const Vector4< T > & axis );
-   static Quaternion< T > Rotation( const Vector3< T > & origin, const Vector3< T > & destination );
-   static Quaternion< T > Rotation( const Vector4< T > & origin, const Vector4< T > & destination );
+   static Quaternion< T > Rotation( const T & degrees, const Vector< T, 3 > & axis );
+   static Quaternion< T > Rotation( const T & degrees, const Vector< T, 4 > & axis );
+   static Quaternion< T > Rotation( const Vector< T, 3 > & origin, const Vector< T, 3 > & destination );
+   static Quaternion< T > Rotation( const Vector< T, 4 > & origin, const Vector< T, 4 > & destination );
 
 private:
    // components that define the quat
@@ -301,19 +300,19 @@ bool Quaternion< T >::operator != ( const Quaternion< T > & quat ) const
 template < typename T >
 Matrix< T > Quaternion< T >::ToMatrix( ) const
 {
-   const Vector4< T > x(1 - 2 * mT[1] * mT[1] - 2 * mT[2] * mT[2],
-                        2 * mT[0] * mT[1] + 2 * mT[3] * mT[2],
-                        2 * mT[0] * mT[2] - 2 * mT[3] * mT[1],
-                        0);
-   const Vector4< T > y(2 * mT[0] * mT[1] - 2 * mT[3] * mT[2],
-                        1 - 2 * mT[0] * mT[0] - 2 * mT[2] * mT[2],
-                        2 * mT[1] * mT[2] + 2 * mT[3] * mT[0],
-                        0);
-   const Vector4< T > z(2 * mT[0] * mT[2] + 2 * mT[3] * mT[1],
-                        2 * mT[1] * mT[2] - 2 * mT[3] * mT[0],
-                        1 - 2 * mT[0] * mT[0] - 2 * mT[1] * mT[1],
-                        0);
-   const Vector4< T > w(0, 0, 0, 1);
+   const Vector< T, 4 > x(T(1) - T(2) * mT[1] * mT[1] - T(2) * mT[2] * mT[2],
+                          T(2) * mT[0] * mT[1] + T(2) * mT[3] * mT[2],
+                          T(2) * mT[0] * mT[2] - T(2) * mT[3] * mT[1],
+                          T(0));
+   const Vector< T, 4 > y(T(2) * mT[0] * mT[1] - T(2) * mT[3] * mT[2],
+                          T(1) - T(2) * mT[0] * mT[0] - T(2) * mT[2] * mT[2],
+                          T(2) * mT[1] * mT[2] + T(2) * mT[3] * mT[0],
+                          T(0));
+   const Vector< T, 4 > z(T(2) * mT[0] * mT[2] + T(2) * mT[3] * mT[1],
+                          T(2) * mT[1] * mT[2] - T(2) * mT[3] * mT[0],
+                          T(1) - T(2) * mT[0] * mT[0] - T(2) * mT[1] * mT[1],
+                          T(0));
+   const Vector< T, 4 > w(T(0), T(0), T(0), T(1));
 
    return Matrix< T >(x, y, z, w);
 }
@@ -322,10 +321,10 @@ template < typename T >
 template < typename U >
 Quaternion< T > Quaternion< T >::operator * ( const Quaternion< U > & quat ) const
 {
-   const Vector3< T > i1 = ImaginaryPart();
-   const Vector3< T > i2 = quat.ImaginaryPart();
+   const Vector< T, 3 > i1 = ImaginaryPart();
+   const Vector< T, 3 > i2 = quat.ImaginaryPart();
 
-   const Vector3< T > i = i2 * mT[3] + i1 * quat.mT[3] + i1 ^ i2;
+   const Vector< T, 3 > i = i2 * mT[3] + i1 * quat.mT[3] + i1 ^ i2;
 
    const T x = i.mT[0];
    const T y = i.mT[1];
@@ -338,10 +337,10 @@ Quaternion< T > Quaternion< T >::operator * ( const Quaternion< U > & quat ) con
 template < typename T >
 Quaternion< T > Quaternion< T >::operator * ( const Quaternion< T > & quat ) const
 {
-   const Vector3< T > i1 = ImaginaryPart();
-   const Vector3< T > i2 = quat.ImaginaryPart();
+   const Vector< T, 3 > i1 = ImaginaryPart();
+   const Vector< T, 3 > i2 = quat.ImaginaryPart();
 
-   const Vector3< T > i = i2 * mT[3] + i1 * quat.mT[3] + i1 ^ i2;
+   const Vector< T, 3 > i = i2 * mT[3] + i1 * quat.mT[3] + i1 ^ i2;
 
    const T x = i.mT[0];
    const T y = i.mT[1];
@@ -450,7 +449,7 @@ Quaternion< T > & Quaternion< T >::operator + ( const Quaternion< T > & quat )
 
 template < typename T >
 template < typename U >
-Quaternion< T > Quaternion< T >::operator % ( const Vector3< U > & vec ) const
+Quaternion< T > Quaternion< T >::operator % ( const Vector< U, 3 > & vec ) const
 {
    T x =   mT[3] * vec.mT[0] + mT[1] * vec.mT[2] - mT[2] * vec.mT[1];
    T y =   mT[3] * vec.mT[1] - mT[0] * vec.mT[2] + mT[2] * vec.mT[0];
@@ -461,7 +460,7 @@ Quaternion< T > Quaternion< T >::operator % ( const Vector3< U > & vec ) const
 }
 
 template < typename T >
-Quaternion< T > Quaternion< T >::operator % ( const Vector3< T > & vec ) const
+Quaternion< T > Quaternion< T >::operator % ( const Vector< T, 3 > & vec ) const
 {
    T x =   mT[3] * vec.mT[0] + mT[1] * vec.mT[2] - mT[2] * vec.mT[1];
    T y =   mT[3] * vec.mT[1] - mT[0] * vec.mT[2] + mT[2] * vec.mT[0];
@@ -473,7 +472,7 @@ Quaternion< T > Quaternion< T >::operator % ( const Vector3< T > & vec ) const
 
 template < typename T >
 template < typename U >
-Quaternion< T > & Quaternion< T >::operator %= ( const Vector3< U > & vec )
+Quaternion< T > & Quaternion< T >::operator %= ( const Vector< U, 3 > & vec )
 {
    *this = *this % vec;
 
@@ -481,7 +480,7 @@ Quaternion< T > & Quaternion< T >::operator %= ( const Vector3< U > & vec )
 }
 
 template < typename T >
-Quaternion< T > & Quaternion< T >::operator %= ( const Vector3< T > & vec )
+Quaternion< T > & Quaternion< T >::operator %= ( const Vector< T, 3 > & vec )
 {
    *this = *this % vec;
 
@@ -490,13 +489,13 @@ Quaternion< T > & Quaternion< T >::operator %= ( const Vector3< T > & vec )
 
 template < typename T >
 template < typename U >
-Quaternion< T > Quaternion< T >::Rotate( const U & degrees, const Vector3< U > & vec )
+Quaternion< T > Quaternion< T >::Rotate( const U & degrees, const Vector< U, 3 > & vec )
 {
    return *this % Quaternion< T >::Rotation(degrees, vec);
 }
 
 template < typename T >
-Quaternion< T > Quaternion< T >::Rotate( const T & degrees, const Vector3< T > & vec )
+Quaternion< T > Quaternion< T >::Rotate( const T & degrees, const Vector< T, 3 > & vec )
 {
    return *this % Quaternion< T >::Rotation(degrees, vec);
 }
@@ -666,7 +665,7 @@ Quaternion< T > Quaternion< T >::ToQuaternion( const Matrix< T > & mat )
 }
 
 template < typename T >
-Quaternion< T > Quaternion< T >::Rotation( const T & degrees, const Vector3< T > & axis )
+Quaternion< T > Quaternion< T >::Rotation( const T & degrees, const Vector< T, 3 > & axis )
 {
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= axis.Length() &&
               axis.Length() <= 1 + std::numeric_limits< T >::epsilon());
@@ -681,17 +680,17 @@ Quaternion< T > Quaternion< T >::Rotation( const T & degrees, const Vector3< T >
 }
 
 template < typename T >
-Quaternion< T > Quaternion< T >::Rotation( const T & degrees, const Vector4< T > & axis )
+Quaternion< T > Quaternion< T >::Rotation( const T & degrees, const Vector< T, 4 > & axis )
 {
    WGL_ASSERT(axis.W() == 0);
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= axis.Length() &&
               axis.Length() <= 1 + std::numeric_limits< T >::epsilon());
 
-   return Quaternion< T >::Rotation(degrees, Vector3< T >(axis));
+   return Quaternion< T >::Rotation(degrees, Vector< T, 3 >(axis));
 }
 
 template < typename T >
-Quaternion< T > Quaternion< T >::Rotation( const Vector3< T > & origin, const Vector3< T > & destination )
+Quaternion< T > Quaternion< T >::Rotation( const Vector< T, 3 > & origin, const Vector< T, 3 > & destination )
 {
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= origin.Length() &&
               origin.Length() <= 1 + std::numeric_limits< T >::epsilon());
@@ -700,7 +699,7 @@ Quaternion< T > Quaternion< T >::Rotation( const Vector3< T > & origin, const Ve
 
    const T cos_theta = origin * destination;
 
-   Vector3< T > rotation_axis;
+   Vector< T, 3 > rotation_axis;
 
    if (cos_theta < static_cast< T >(-1) + std::numeric_limits< T >::epsilon())
    {
@@ -709,12 +708,12 @@ Quaternion< T > Quaternion< T >::Rotation( const Vector3< T > & origin, const Ve
       // So guess one; any will do as long as it's perpendicular to start
       // This implementation favors a rotation around the Up axis (Y),
       // since it's often what you want to do.
-      rotation_axis = Vector3< T >(0, 0, 1) ^ origin;
+      rotation_axis = Vector< T, 3 >(T(0), T(0), T(1)) ^ origin;
 
       if (std::pow(rotation_axis.Length(), 2) < std::numeric_limits< T >::epsilon())
       {
          // try again as they were parallel
-         rotation_axis = Vector3< T >(1, 0, 0) ^ origin;
+         rotation_axis = Vector< T, 3 >(T(1), T(0), T(0)) ^ origin;
       }
 
       return Quaternion< T >::Rotation(MathHelper::pi< T >(), rotation_axis.UnitVector());
@@ -732,7 +731,7 @@ Quaternion< T > Quaternion< T >::Rotation( const Vector3< T > & origin, const Ve
 }
 
 template < typename T >
-Quaternion< T > Quaternion< T >::Rotation( const Vector4< T > & origin, const Vector4< T > & destination )
+Quaternion< T > Quaternion< T >::Rotation( const Vector< T, 4 > & origin, const Vector< T, 4 > & destination )
 {
    WGL_ASSERT(origin.W() == 0 && destination.W() == 0);
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= origin.Length() &&

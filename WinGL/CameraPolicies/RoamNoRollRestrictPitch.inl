@@ -1,5 +1,5 @@
 // local includes
-#include "../Vector4.h"
+#include "../Vector.h"
 #include "../Quaternion.h"
 #include "../MathHelper.h"
 #include "../MatrixHelper.h"
@@ -165,7 +165,7 @@ template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typen
 typename RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::vec_type
 RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >::GetEyePosition( ) const
 {
-   return vec_type(mViewMatrix.Inverse() * Vector4< T >(0, 0, 0, 1));
+   return vec_type(mViewMatrix.Inverse() * Vector< T, 4 >(T(0), T(0), T(0), T(1)));
 }
 
 template < typename T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RATIO, typename UP_VECTOR >
@@ -204,7 +204,7 @@ void RoamNoRollRestrictPitch< T, typename MIN_PITCH_RATIO, typename MAX_PITCH_RA
    // the result of the rotation of yaw and pitch
    const Quaternion< T > rotation =
       Quaternion< T >::Rotation(yaw_deg, UP_VECTOR::up) %
-      Quaternion< T >::Rotation(pitch_deg, vec_type(1, 0, 0));
+      Quaternion< T >::Rotation(pitch_deg, vec_type(T(1), T(0), T(0)));
 
    // invert the camera matrix
    mViewMatrix.MakeInverse();
