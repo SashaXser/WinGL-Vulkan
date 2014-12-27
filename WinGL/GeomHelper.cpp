@@ -84,7 +84,7 @@ template < typename T >
 std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
 ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
                                 const std::vector< Vector< T, 3 > > & normals,
-                                const std::vector< T > & tex_coords,
+                                const std::vector< Vector< T, 2 > > & tex_coords,
                                 const std::vector< GLuint > & indices )
 {
    // there needs to be vertices and texture coords
@@ -127,10 +127,10 @@ ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
       const Vector< T, 3 > e2 = vertices[i2] - vertices[i0];
 
       // get the edge texture coordinates
-      const T s1 = tex_coords[i1 * 2] - tex_coords[i0 * 2];
-      const T t1 = tex_coords[i1 * 2 + 1] - tex_coords[i0 * 2 + 1];
-      const T s2 = tex_coords[i2 * 2] - tex_coords[i0 * 2];
-      const T t2 = tex_coords[i2 * 2 + 1] - tex_coords[i0 * 2 + 1];
+      const T s1 = tex_coords[i1].X() - tex_coords[i0].X();
+      const T t1 = tex_coords[i1].Y() - tex_coords[i0].Y();
+      const T s2 = tex_coords[i2].X() - tex_coords[i0].X();
+      const T t2 = tex_coords[i2].Y() - tex_coords[i0].Y();
 
       // calculate the determinat
       const T dividend = s1 * t2 - s2 * t1;
@@ -254,17 +254,18 @@ ConstructTangentsAndBitangents( const std::vector< T > & vertices,
                                                                        reinterpret_cast< const Vector< T, 3 > * >(&(vertices[0]) + vertices.size())),
                                          std::vector< Vector< T, 3 > >(reinterpret_cast< const Vector< T, 3 > * >(&(normals[0])),
                                                                        reinterpret_cast< const Vector< T, 3 > * >(&(normals[0]) + normals.size())),
-                                         tex_coords,
+                                         std::vector< Vector< T, 2 > >(reinterpret_cast< const Vector< T, 2 > * >(&(tex_coords[0])),
+                                                                       reinterpret_cast< const Vector< T, 2 > * >(&(tex_coords[0]) + tex_coords.size())),
                                          indices);
 }
 
 // floats and doubles are allowed, nothing else
 template std::pair< std::vector< Vec3f >, std::vector< Vec3f > >
 ConstructTangentsAndBitangents< float >( const std::vector< Vec3f > &, const std::vector< Vec3f > &,
-                                         const std::vector< float > &, const std::vector< GLuint > & );
+                                         const std::vector< Vec2f > &, const std::vector< GLuint > & );
 template std::pair< std::vector< Vec3d >, std::vector< Vec3d > >
 ConstructTangentsAndBitangents< double >( const std::vector< Vec3d > &, const std::vector< Vec3d > &,
-                                          const std::vector< double > &, const std::vector< GLuint > & );
+                                          const std::vector< Vec2d > &, const std::vector< GLuint > & );
 template std::pair< std::vector< Vec3f >, std::vector< Vec3f > >
 ConstructTangentsAndBitangents< float >( const std::vector< float > &, const std::vector< float > &,
                                          const std::vector< float > &, const std::vector< GLuint > & );
@@ -302,7 +303,7 @@ Shape ConstructPlane( const float width, const float height )
    shape.indices = std::vector< GLuint > { 0, 2, 3, 2, 0, 1 };
 
    // construct the texture coords
-   shape.tex_coords = std::vector< float > { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
+   shape.tex_coords = std::vector< Vec2f > { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 
    // construct the normals
    ConstructNormals(shape);

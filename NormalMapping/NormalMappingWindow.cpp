@@ -585,7 +585,7 @@ void NormalMappingWindow::InitVertexData( )
    mpWallTexCoords.reset(new VertexBufferObject);
    mpWallTexCoords->GenBuffer(GL_ARRAY_BUFFER);
    mpWallTexCoords->Bind();
-   mpWallTexCoords->BufferData(mShape.tex_coords.size() * sizeof(float), &mShape.tex_coords[0], GL_STATIC_DRAW);
+   mpWallTexCoords->BufferData(mShape.tex_coords.size() * sizeof(Vec2f), &mShape.tex_coords[0], GL_STATIC_DRAW);
    mpWallTexCoords->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
    mpWallTexCoords->Unbind();
 

@@ -22,7 +22,7 @@ struct Shape
    GLenum                  geom_type;
    std::vector< Vec3f >    vertices;
    std::vector< GLuint >   indices;
-   std::vector< float >    tex_coords;
+   std::vector< Vec2f >    tex_coords;
    std::vector< Vec3f >    normals;
    std::vector< Vec3f >    tangents;
    std::vector< Vec3f >    bitangents;
@@ -44,7 +44,7 @@ template < typename T >
 std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
 ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
                                 const std::vector< Vector< T, 3 > > & normals,
-                                const std::vector< T > & tex_coords,
+                                const std::vector< Vector< T, 2 > > & tex_coords,
                                 const std::vector< GLuint > & indices );
 template < typename T >
 std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > >
