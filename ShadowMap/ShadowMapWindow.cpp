@@ -54,13 +54,9 @@ struct ShadowMapWindow::Renderable
    VBO      mIdxBuf;
    VBO      mTexBuf;
    VBO      mNormBuf;
-   VBO      mTgtBuf;
-   VBO      mBitgtBuf;
    VBO      mClrBuf;
    // texture containers
    TextureCtr     mDiffuse;
-   TextureCtr     mHeight;
-   TextureCtr     mNormal;
    // shader program
    ShaderProgram  mProgram;
    // defines the render order by texture
@@ -289,18 +285,11 @@ void ShadowMapWindow::RenderScene( )
    {
       // activate the texture
       Texture * diffuse_tex = mpEnterpriseE->mDiffuse[rbucketBeg->first].get();
-      Texture * normal_tex = mpEnterpriseE->mNormal[rbucketBeg->first].get();
 
       if (diffuse_tex && *diffuse_tex)
       {
          diffuse_tex->Bind(GL_TEXTURE0);
          mpEnterpriseE->mProgram.SetUniformValue("diffuse_texture", static_cast< GLint >(diffuse_tex->GetBoundTexUnit()));
-      }
-
-      if (normal_tex && *normal_tex)
-      {
-         normal_tex->Bind(GL_TEXTURE1);
-         mpEnterpriseE->mProgram.SetUniformValue("normal_texture", static_cast< GLint >(normal_tex->GetBoundTexUnit()));
       }
 
       for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
@@ -311,11 +300,6 @@ void ShadowMapWindow::RenderScene( )
       if (diffuse_tex && *diffuse_tex)
       {
          diffuse_tex->Unbind();
-      }
-
-      if (normal_tex && *normal_tex)
-      {
-         normal_tex->Unbind();
       }
 
       if (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
@@ -506,9 +490,9 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             return std::string(pFilename, pLoc ? pLoc + 1 : pFilename + std::strlen(pFilename));
          };
 
-         // start off by reading the diffuse textures
-         ReadTextures(pScene, GetBasePath(pFilename),
-                      mpEnterpriseE->mDiffuse, mpEnterpriseE->mHeight, mpEnterpriseE->mNormal);
+         // start off by reading the textures
+         std::vector< std::shared_ptr< Texture > > unused_texs;
+         ReadTextures(pScene, GetBasePath(pFilename), mpEnterpriseE->mDiffuse, unused_texs, unused_texs);
 
          for (size_t cur_mesh = 0; cur_mesh < pScene->mNumMeshes; ++cur_mesh)
          {
@@ -717,20 +701,6 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    mpEnterpriseE->mTexBuf.VertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(tex_coords.front())) * 2, 0);
    glEnableVertexAttribArray(3);
    mpEnterpriseE->mTexBuf.Unbind();
-
-   mpEnterpriseE->mTgtBuf.GenBuffer(GL_ARRAY_BUFFER);
-   mpEnterpriseE->mTgtBuf.Bind();
-   mpEnterpriseE->mTgtBuf.BufferData(tangents.size() * sizeof(decltype(tangents.front())), &tangents.front(), GL_STATIC_DRAW);
-   mpEnterpriseE->mTgtBuf.VertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(tangents.front())) * 3, 0);
-   glEnableVertexAttribArray(4);
-   mpEnterpriseE->mTgtBuf.Unbind();
-
-   mpEnterpriseE->mBitgtBuf.GenBuffer(GL_ARRAY_BUFFER);
-   mpEnterpriseE->mBitgtBuf.Bind();
-   mpEnterpriseE->mBitgtBuf.BufferData(bitangents.size() * sizeof(decltype(bitangents.front())), &bitangents.front(), GL_STATIC_DRAW);
-   mpEnterpriseE->mBitgtBuf.VertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(bitangents.front())) * 3, 0);
-   glEnableVertexAttribArray(5);
-   mpEnterpriseE->mBitgtBuf.Unbind();
 
    // create the index buffer
    mpEnterpriseE->mIdxBuf.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);

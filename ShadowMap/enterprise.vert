@@ -49,6 +49,7 @@ uniform lighting_directional directional_light;
 
 // defines the attributes passed along through the shader pipeline
 smooth out vec2 frag_tex_coords;
+smooth out vec3 frag_normal_eye_space;
 smooth out mat3 frag_tangent_to_eye_space_mat;
 smooth out vec3 frag_vertex_position_eye_space;
 flat out vec3 directional_light_eye_space;
@@ -59,12 +60,15 @@ void main( )
    frag_tex_coords = vertex_tex_coords;
 
    // calculate the tangent, bitangent, and normal for the fragments in eye space
-   vec3 eye_normal = normalize((model_view_tinv_mat * vec4(vertex_normal, 0.0f)).xyz);
-   vec3 eye_tangent = normalize((model_view_tinv_mat * vec4(vertex_tangent, 0.0f)).xyz);
-   vec3 eye_bitangent = normalize((model_view_tinv_mat * vec4(vertex_bitangent, 0.0f)).xyz);
+   //vec3 eye_normal = normalize((model_view_tinv_mat * vec4(vertex_normal, 0.0f)).xyz);
+   //vec3 eye_tangent = normalize((model_view_tinv_mat * vec4(vertex_tangent, 0.0f)).xyz);
+   //vec3 eye_bitangent = normalize((model_view_tinv_mat * vec4(vertex_bitangent, 0.0f)).xyz);
 
    // combine the tangent vectors into a matrix for the fragment shader
-   frag_tangent_to_eye_space_mat = mat3(eye_tangent, eye_bitangent, eye_normal);
+   //frag_tangent_to_eye_space_mat = mat3(eye_tangent, eye_bitangent, eye_normal);
+
+   // calculate the eye space fragment normal
+   frag_normal_eye_space = normalize((model_view_tinv_mat * vec4(vertex_normal, 0.0f)).xyz);
 
    // calculate the eye space direction for the light
    directional_light_eye_space = normalize((model_view_tinv_mat * vec4(directional_light.direction_world_space, 0.0f)).xyz);
