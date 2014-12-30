@@ -119,40 +119,39 @@ vec4 CalculatePointLighting( const in vec3 light_position,
    return color / attenuation_factor;
 }
 
+// defines the per geometry attributes
+uniform sampler2D diffuse_texture;
+uniform sampler2D normal_texture;
+uniform lighting_directional directional_light;
 
-uniform bool light_per_pixel;
-uniform vec3 light_dir;
-uniform mat4 model_view_normal;
-uniform mat4 model_view;
-uniform sampler2D tex_unit_0;
-uniform bool tex_unit_0_active;
-
-smooth in vec3 frag_color;
-smooth in vec3 frag_normal;
+// defines the attributes passed along through the shader pipeline
 smooth in vec2 frag_tex_coords;
+smooth in mat3 frag_tangent_to_eye_space_mat;
+flat in vec3 directional_light_eye_space;
 
+// defines the location of where the color should go
 layout (location = 0) out vec4 frag_color_dest_0;
 
 void main( )
 {
-   vec3 input_frag_color = frag_color;
+   // obtain the normal from the texture
+   // wonder if a floating point texture would be better here?
+   vec3 sampled_normal_tangent_space = texture(normal_texture, frag_tex_coords).rgb;
 
-   if (tex_unit_0_active)
-   {
-      input_frag_color = texture(tex_unit_0, frag_tex_coords).xyz;     
-   }
+   // component of rgb sample is in range of [0.0f, 1.0f], must convert to [-1.0f, 1.0f]
+   sampled_normal_tangent_space = sampled_normal_tangent_space * 2.0f - 1.0f;
    
-   if (light_per_pixel)
-   {
-      vec4 frag_normal_eye = model_view_normal * vec4(frag_normal, 0.0f);
-      vec4 light_dir_eye = model_view * vec4(-1.0f * light_dir, 0.0f);
-      float diffuse_intensity = max(dot(normalize(frag_normal_eye.xyz), normalize(light_dir_eye.xyz)), 0.0f);
-      float ambient_intensity = 0.05f;
-   
-      frag_color_dest_0 = vec4(input_frag_color * diffuse_intensity + ambient_intensity, 1.0f);
-   }
-   else
-   {
-      frag_color_dest_0 = vec4(input_frag_color, 1.0f);
-   }
+   // convert the tangent space normal to eye space
+   vec3 sampled_normal_eye_space = normalize(frag_tangent_to_eye_space_mat * sampled_normal_tangent_space);
+
+   // determine the amount of directional light for this fragment
+   vec4 total_light_frag_color =
+      CalculateDirectionalLighting(directional_light_eye_space,
+                                   sampled_normal_eye_space,
+                                   directional_light.base.color,
+                                   directional_light.base.ambient_intensity,
+                                   directional_light.base.diffuse_intensity);
+
+   // calculate the final output
+   frag_color_dest_0 = texture(diffuse_texture, frag_tex_coords) * total_light_frag_color;
 }

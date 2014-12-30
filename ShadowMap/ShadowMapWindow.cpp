@@ -262,6 +262,13 @@ void ShadowMapWindow::RenderScene( )
    mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view", mv);
    mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mvn);
    mpEnterpriseE->mProgram.SetUniformValue("light_per_pixel", light_per_pixel ? 1 : 0);
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", proj * mv);
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_mat", mv);
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat", mv.Inverse().Transpose());
+   mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
+   mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.ambient_intensity", 0.05f);
+   mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.diffuse_intensity", 1.0f);
+   mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", std::cos(light_dir), std::sin(light_dir), 0.0f);
 
    Vec4f en = mvn * Vec4f(0.0f, 0.0f, 1.0f, 0.0f);
 
@@ -272,45 +279,55 @@ void ShadowMapWindow::RenderScene( )
    //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mpEnterpriseE->mVertBuf.Size< float >() / 3));
    //glDrawElements(GL_TRIANGLES, static_cast< GLsizei >(mpEnterpriseE->mIdxBuf.Size< uint32_t >()), GL_UNSIGNED_INT, nullptr);
 
-   Texture * current_tex = nullptr;
-   auto rbucketBeg = mpEnterpriseE->mRenderBuckets.cbegin();
-   const auto rbucketEnd = mpEnterpriseE->mRenderBuckets.cend();
+   WGL_ASSERT(!mpEnterpriseE->mRenderBuckets.empty());
 
-   for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
+   typedef decltype( Renderable::mRenderBuckets ) RenderBucketType;
+   RenderBucketType::const_iterator rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
+   RenderBucketType::const_iterator rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
+
+   while (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
    {
-      Texture * rbucket_tex = mpEnterpriseE->mDiffuse[rbucketBeg->first].get();                           
+      // activate the texture
+      Texture * diffuse_tex = mpEnterpriseE->mDiffuse[rbucketBeg->first].get();
+      Texture * normal_tex = mpEnterpriseE->mNormal[rbucketBeg->first].get();
 
-      if (current_tex != rbucket_tex)
+      if (diffuse_tex && *diffuse_tex)
       {
-         if (current_tex && *current_tex)
-         {
-            current_tex->Unbind();
-         }
-
-         current_tex = rbucket_tex;
-
-         if (!current_tex || !*current_tex)
-         {
-            mpEnterpriseE->mProgram.SetUniformValue("tex_unit_0_active", 0);
-         }
-         else
-         {
-            rbucket_tex->Bind(GL_TEXTURE0);
-
-            mpEnterpriseE->mProgram.SetUniformValue("tex_unit_0_active", 1);
-         }
+         diffuse_tex->Bind(GL_TEXTURE0);
+         mpEnterpriseE->mProgram.SetUniformValue("diffuse_texture", static_cast< GLint >(diffuse_tex->GetBoundTexUnit()));
       }
 
-      glDrawElements(GL_TRIANGLES, rbucketBeg->second.second, GL_UNSIGNED_INT, reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
-   }
+      if (normal_tex && *normal_tex)
+      {
+         normal_tex->Bind(GL_TEXTURE1);
+         mpEnterpriseE->mProgram.SetUniformValue("normal_texture", static_cast< GLint >(normal_tex->GetBoundTexUnit()));
+      }
 
-   if (current_tex && *current_tex)
-   {
-      current_tex->Unbind();
+      for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
+      {
+         glDrawElements(GL_TRIANGLES, rbucketBeg->second.second, GL_UNSIGNED_INT, reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
+      }
+
+      if (diffuse_tex && *diffuse_tex)
+      {
+         diffuse_tex->Unbind();
+      }
+
+      if (normal_tex && *normal_tex)
+      {
+         normal_tex->Unbind();
+      }
+
+      if (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
+      {
+         rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(rbucketEnd->first);
+         rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(rbucketEnd->first);
+      }
    }
 
    mpEnterpriseE->mVAO.Unbind();
 
+   mpEnterpriseE->mProgram.Disable();
 
    // swap the front and back
    SwapBuffers(GetHDC());
@@ -320,7 +337,7 @@ void ShadowMapWindow::GenerateSceneData( )
 {
    GenerateEnterpriseE();
 }
-#include "MathHelper.h"
+
 void ShadowMapWindow::GenerateEnterpriseE( )
 {
    // a set of all the mesh data
@@ -700,6 +717,20 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    mpEnterpriseE->mTexBuf.VertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(tex_coords.front())) * 2, 0);
    glEnableVertexAttribArray(3);
    mpEnterpriseE->mTexBuf.Unbind();
+
+   mpEnterpriseE->mTgtBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mpEnterpriseE->mTgtBuf.Bind();
+   mpEnterpriseE->mTgtBuf.BufferData(tangents.size() * sizeof(decltype(tangents.front())), &tangents.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mTgtBuf.VertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(tangents.front())) * 3, 0);
+   glEnableVertexAttribArray(4);
+   mpEnterpriseE->mTgtBuf.Unbind();
+
+   mpEnterpriseE->mBitgtBuf.GenBuffer(GL_ARRAY_BUFFER);
+   mpEnterpriseE->mBitgtBuf.Bind();
+   mpEnterpriseE->mBitgtBuf.BufferData(bitangents.size() * sizeof(decltype(bitangents.front())), &bitangents.front(), GL_STATIC_DRAW);
+   mpEnterpriseE->mBitgtBuf.VertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(bitangents.front())) * 3, 0);
+   glEnableVertexAttribArray(5);
+   mpEnterpriseE->mBitgtBuf.Unbind();
 
    // create the index buffer
    mpEnterpriseE->mIdxBuf.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
