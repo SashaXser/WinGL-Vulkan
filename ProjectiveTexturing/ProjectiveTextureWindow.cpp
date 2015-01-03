@@ -20,11 +20,6 @@
 #define VALIDATE_OPENGL() WGL_ASSERT(glGetError() == GL_NO_ERROR)
 
 ProjectiveTextureWindow::ProjectiveTextureWindow( ) :
-mTexWidth            ( 0 ),
-mTexHeight           ( 0 ),
-mLogoTex             ( 0 ),
-mMouseXCoord         ( 0 ),
-mMouseYCoord         ( 0 ),
 mpActiveMViewMat     ( &mCameraVariables.mMViewMat ),
 mpSetupModeFuncPtr   ( &ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace ),
 mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
@@ -33,15 +28,14 @@ mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
    std::cout << "C - Switch between camera and light" << std::endl
              << "1 - Texture projection object space immediate mode" << std::endl
              << "2 - Texture projection eye space immediate mode" << std::endl
+             << "3 - Texture projection object space using shader" << std::endl
              << "WSAD - Move camera or light forwards or backwards and strafe left or right" << std::endl
              << "Left Mouse Button - Enable movement of camera or light" << std::endl
-             << "Esc - Quit application" << std::ends;
+             << "Esc - Quit application" << std::endl << std::endl << std::ends;
 }
 
 ProjectiveTextureWindow::~ProjectiveTextureWindow( )
 {
-   // release the texture object
-   glDeleteTextures(1, &mLogoTex);
 }
 
 bool ProjectiveTextureWindow::Create( unsigned int nWidth,
@@ -53,7 +47,6 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
    const OpenGLWindow::OpenGLInit glInit[] =
    {
       { 4, 0, true, true, false },
-      { 3, 2, true, false, false },
       { 0 }
    };
 
@@ -74,8 +67,8 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
 
       // setup the light parameters
       mLightVariables.mProjMat.MakePerspective(45.0,
-                                               static_cast< double >(mTexWidth) /
-                                               static_cast< double >(mTexHeight),
+                                               static_cast< double >(mLogoTex.GetWidth()) /
+                                               static_cast< double >(mLogoTex.GetHeight()),
                                                1.0, 5.0);
       mLightVariables.mMViewMat.MakeLookAt(Vec3d( 10.0, 10.0,  10.0),
                                            Vec3d(-10.0,  0.0, -10.0),
@@ -177,6 +170,11 @@ void ProjectiveTextureWindow::InitGLState( int vpWidth, int vpHeight )
    const float lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+
+   // setup the shader
+   mProjTexProg.AttachFile(GL_VERTEX_SHADER, "projective_texture.vert");
+   mProjTexProg.AttachFile(GL_FRAGMENT_SHADER, "projective_texture.frag");
+   mProjTexProg.Link();
 }
 
 void ProjectiveTextureWindow::RenderScene( )
@@ -291,10 +289,9 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glLoadMatrixd(projTxtMat);
    glMatrixMode(GL_MODELVIEW);
 
-   // enable texturing
+   // enable texturing and bind the logo
    glEnable(GL_TEXTURE_2D);
-   // bind the logo texture
-   glBindTexture(GL_TEXTURE_2D, mLogoTex);
+   mLogoTex.Bind(GL_TEXTURE0);
 
    // render the bottom wall first
    glColor3f(1.0f, 0.0f, 0.0f);
@@ -327,6 +324,7 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glBindTexture(GL_TEXTURE_2D, 0);
 
    // disable texturing
+   mLogoTex.Unbind();
    glDisable(GL_TEXTURE_2D);
 
    // disable ligthing
@@ -356,17 +354,17 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
 
    // obtain the vectors that make up the
    // eight sides of the viewing matrix...
-   Vec3d f1 = invLightMat * Vec3d(-1.0,  1.0,  1.0);
-   Vec3d f2 = invLightMat * Vec3d(-1.0, -1.0,  1.0);
-   Vec3d f3 = invLightMat * Vec3d( 1.0, -1.0,  1.0);
-   Vec3d f4 = invLightMat * Vec3d( 1.0,  1.0,  1.0);
-   Vec3d n1 = invLightMat * Vec3d(-1.0,  1.0, -1.0);
-   Vec3d n2 = invLightMat * Vec3d(-1.0, -1.0, -1.0);
-   Vec3d n3 = invLightMat * Vec3d( 1.0, -1.0, -1.0);
-   Vec3d n4 = invLightMat * Vec3d( 1.0,  1.0, -1.0);
+   const Vec3d f1 = invLightMat * Vec3d(-1.0,  1.0,  1.0);
+   const Vec3d f2 = invLightMat * Vec3d(-1.0, -1.0,  1.0);
+   const Vec3d f3 = invLightMat * Vec3d( 1.0, -1.0,  1.0);
+   const Vec3d f4 = invLightMat * Vec3d( 1.0,  1.0,  1.0);
+   const Vec3d n1 = invLightMat * Vec3d(-1.0,  1.0, -1.0);
+   const Vec3d n2 = invLightMat * Vec3d(-1.0, -1.0, -1.0);
+   const Vec3d n3 = invLightMat * Vec3d( 1.0, -1.0, -1.0);
+   const Vec3d n4 = invLightMat * Vec3d( 1.0,  1.0, -1.0);
 
    // obtain the light cam position
-   Vec3d lightPos = mLightVariables.mMViewMat.Inverse() * Vec3d(0.0, 0.0, 0.0);
+   const Vec3d lightPos = mLightVariables.mMViewMat.Inverse() * Vec3d(0.0, 0.0, 0.0);
 
    // set the color to yellow
    glColor3f(1.0f, 1.0f, 0.0f);
@@ -404,6 +402,81 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
    glVertex3dv(lightPos);
    glVertex3dv(n4);
    glEnd();
+}
+
+void ProjectiveTextureWindow::RenderSceneWithShader( )
+{
+   // enable the shader
+   mProjTexProg.Enable();
+
+   // update shader uniforms
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat);
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", mLightVariables.mProjMat * mLightVariables.mMViewMat);
+
+   // bind the texture
+   mLogoTex.Bind(GL_TEXTURE0);
+   mProjTexProg.SetUniformValue("logo_texture", static_cast< GLint >(mLogoTex.GetBoundTexUnit()));
+
+   // render the wall geometry
+   const float fWallValues[][4] =
+   {
+      // red bottom wall...
+      { -10.0f,  0.0f, -10.0f, 1.0f },
+      { -10.0f,  0.0f,  10.0f, 1.0f },
+      {  10.0f,  0.0f,  10.0f, 1.0f },
+      {  10.0f,  0.0f, -10.0f, 1.0f },
+      // green left wall...
+      { -10.0f, 20.0f,  10.0f, 1.0f },
+      { -10.0f,  0.0f,  10.0f, 1.0f },
+      { -10.0f,  0.0f, -10.0f, 1.0f },
+      { -10.0f, 20.0f, -10.0f, 1.0f },
+      // blue back wall...
+      { -10.0f, 20.0f, -10.0f, 1.0f },
+      { -10.0f,  0.0f, -10.0f, 1.0f },
+      {  10.0f,  0.0f, -10.0f, 1.0f },
+      {  10.0f, 20.0f, -10.0f, 1.0f }
+   };
+
+   const float fWallValuesColor[][4] =
+   {
+      // red bottom wall...
+      { 1.0f, 0.0f, 0.0f, 1.0f },
+      { 1.0f, 0.0f, 0.0f, 1.0f },
+      { 1.0f, 0.0f, 0.0f, 1.0f },
+      { 1.0f, 0.0f, 0.0f, 1.0f },
+      // green left wall...
+      { 0.0f, 1.0f, 0.0f, 1.0f },
+      { 0.0f, 1.0f, 0.0f, 1.0f },
+      { 0.0f, 1.0f, 0.0f, 1.0f },
+      { 0.0f, 1.0f, 0.0f, 1.0f },
+      // blue back wall...
+      { 0.0f, 0.0f, 1.0f, 1.0f },
+      { 0.0f, 0.0f, 1.0f, 1.0f },
+      { 0.0f, 0.0f, 1.0f, 1.0f },
+      { 0.0f, 0.0f, 1.0f, 1.0f }
+   };
+
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_COLOR_ARRAY);
+
+   glVertexPointer(4, GL_FLOAT, 0, fWallValues);
+   glColorPointer(4, GL_FLOAT, 0, fWallValuesColor);
+
+   glDrawArrays(GL_QUADS, 0, 4);
+   glDrawArrays(GL_QUADS, 4, 4);
+   glDrawArrays(GL_QUADS, 8, 4);
+
+   glDisableClientState(GL_COLOR_ARRAY);
+   glDisableClientState(GL_VERTEX_ARRAY);
+
+   // unbind the texture
+   mLogoTex.Unbind();
+
+   // disable the shader
+   mProjTexProg.Disable();
+
+   // render the spot light
+   RenderSpotLightImmediateMode();
 }
 
 void ProjectiveTextureWindow::SetupRenderSceneImmediateModeEyeSpace( )
@@ -498,36 +571,12 @@ void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
 void ProjectiveTextureWindow::LoadTexture( )
 {
    // load the texture data
-   std::shared_ptr< uint8_t > pTexture = NULL;
-
-   if (ReadRGB("BMLogo.rgb", mTexWidth, mTexHeight, pTexture))
+   if (mLogoTex.Load2D("BMLogo.rgb", GL_RGBA, GL_COMPRESSED_RGBA, true))
    {
-      // generate a texture id
-      glGenTextures(1, &mLogoTex);
-
-      // bind the texture object
-      glBindTexture(GL_TEXTURE_2D, mLogoTex);
-
-      // setup the texture parameters
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-
-      // load the texture data
-      glTexImage2D(GL_TEXTURE_2D,
-                   0,
-                   GL_RGBA8,
-                   mTexWidth,
-                   mTexHeight,
-                   0,
-                   GL_RGBA,
-                   GL_UNSIGNED_BYTE,
-                   pTexture.get());
-
-      // release the bound texture
-      glBindTexture(GL_TEXTURE_2D, 0);
+      mLogoTex.Bind(GL_TEXTURE0);
+      mLogoTex.SetParameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+      mLogoTex.SetParameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+      mLogoTex.Unbind();
    }
 }
 
@@ -581,8 +630,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
       if (wParam & MK_LBUTTON)
       {
          // obtain the mouse deltas
-         const int nXDelta = mMouseXCoord - nCurX;
-         const int nYDelta = mMouseYCoord - nCurY;
+         const int nXDelta = static_cast< int >(GetPreviousMousePosition().x) - nCurX;
+         const int nYDelta = static_cast< int >(GetPreviousMousePosition().y) - nCurY;
          // decompose the current values from the modelview matrix
          double dYaw = 0.0, dPitch = 0.0;
          MatrixHelper::DecomposeYawPitchRollDeg(*mpActiveMViewMat,
@@ -622,9 +671,6 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          }
       }
 
-      // update the mouse coordinates
-      mMouseXCoord = nCurX;
-      mMouseYCoord = nCurY;
       }
 
       break;
@@ -649,6 +695,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          // process the setup functions
          mpSetupModeFuncPtr = &ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace;
          SetupRenderSceneImmediateModeObjectSpace();
+         // setup the render function
+         mpRenderModeFuncPtr = &ProjectiveTextureWindow::RenderSceneImmediateMode;
 
          break;
 
@@ -656,6 +704,16 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          // process the setup functions
          mpSetupModeFuncPtr = &ProjectiveTextureWindow::SetupRenderSceneImmediateModeEyeSpace;
          SetupRenderSceneImmediateModeEyeSpace();
+         // setup the render function
+         mpRenderModeFuncPtr = &ProjectiveTextureWindow::RenderSceneImmediateMode;
+
+         break;
+
+      case '3':
+         // blank the setup function
+         mpSetupModeFuncPtr = nullptr;
+         // setup the render function
+         mpRenderModeFuncPtr = &ProjectiveTextureWindow::RenderSceneWithShader;
 
          break;
       }

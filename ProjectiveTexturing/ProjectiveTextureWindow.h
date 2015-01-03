@@ -1,9 +1,11 @@
 #ifndef _PROJECTIVE_TEXTURE_WINDOW_H_
 #define _PROJECTIVE_TEXTURE_WINDOW_H_
 
-// local includes
+// wingl includes
 #include "Matrix.h"
+#include "Texture.h"
 #include "OpenGLWindow.h"
+#include "ShaderProgram.h"
 
 class ProjectiveTextureWindow : public OpenGLWindow
 {
@@ -61,6 +63,9 @@ private:
    void RenderWallsImmediateMode( );
    void RenderSpotLightImmediateMode( );
 
+   // render the scene using the shader
+   void RenderSceneWithShader( );
+
    // setup the scene for the specified mode
    void SetupRenderSceneImmediateModeEyeSpace( );
    void SetupRenderSceneImmediateModeObjectSpace( );
@@ -72,12 +77,7 @@ private:
    void LoadTexture( );
 
    // private member variables
-   unsigned int   mTexWidth;
-   unsigned int   mTexHeight;
-   unsigned int   mLogoTex;
-
-   int   mMouseXCoord;
-   int   mMouseYCoord;
+   Texture  mLogoTex;
 
    Matrixd *      mpActiveMViewMat;
 
@@ -86,6 +86,8 @@ private:
 
    SetupModeFuncPtr     mpSetupModeFuncPtr;
    RenderModeFuncPtr    mpRenderModeFuncPtr;
+
+   ShaderProgram        mProjTexProg;
 
 };
 
