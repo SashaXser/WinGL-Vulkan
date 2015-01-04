@@ -91,7 +91,7 @@ ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
    WGL_ASSERT(!vertices.empty());
    WGL_ASSERT(!tex_coords.empty());
    // the number of verts must match the number of tex coords
-   WGL_ASSERT(vertices.size() == tex_coords.size() / 2);
+   WGL_ASSERT(vertices.size() == tex_coords.size());
 
    // resize the tangents
    std::pair< std::vector< Vector< T, 3 > >, std::vector< Vector< T, 3 > > > tangents_bitangents;
@@ -284,6 +284,9 @@ void ConstructTangentsAndBitangents( Shape & shape )
 
 Shape ConstructPlane( const float width, const float height )
 {
+   // must have positive width and height
+   WGL_ASSERT(width >= 0.0f && height >= 0.0f);
+
    Shape shape;
 
    // setup the type
@@ -316,10 +319,72 @@ Shape ConstructPlane( const float width, const float height )
 
 Shape ConstructBox( const float width, const float height, const float depth )
 {
+   // must have positive width, height, and depth
+   WGL_ASSERT(width >= 0.0f && height >= 0.0f && depth >= 0.0f);
+
    Shape shape;
 
-   // todo: fill in
-   WGL_ASSERT(false);
+   // setup the type
+   shape.geom_type = GL_TRIANGLES;
+
+   // obtain the half lengths
+   const float half_width = width * 0.5f;
+   const float half_height = height * 0.5f;
+   const float half_depth = depth * 0.5f;
+
+   // construct all the vertices
+   // top    (+y)
+   shape.vertices.push_back(Vec3f(-half_width, half_height, -half_depth)); // 0
+   shape.vertices.push_back(Vec3f(-half_width, half_height,  half_depth)); // 1
+   shape.vertices.push_back(Vec3f( half_width, half_height,  half_depth)); // 2
+   shape.vertices.push_back(Vec3f( half_width, half_height, -half_depth)); // 3
+   // bottom (-y)
+   shape.vertices.push_back(Vec3f(-half_width, -half_height, -half_depth)); // 4
+   shape.vertices.push_back(Vec3f(-half_width, -half_height,  half_depth)); // 5
+   shape.vertices.push_back(Vec3f( half_width, -half_height,  half_depth)); // 6
+   shape.vertices.push_back(Vec3f( half_width, -half_height, -half_depth)); // 7
+   // left   (-x)
+   shape.vertices.push_back(Vec3f(-half_width,  half_height, -half_depth)); // 8
+   shape.vertices.push_back(Vec3f(-half_width, -half_height, -half_depth)); // 9
+   shape.vertices.push_back(Vec3f(-half_width, -half_height,  half_depth)); // 10
+   shape.vertices.push_back(Vec3f(-half_width,  half_height,  half_depth)); // 11
+   // right  (+x)
+   shape.vertices.push_back(Vec3f(half_width,  half_height, -half_depth)); // 12
+   shape.vertices.push_back(Vec3f(half_width, -half_height, -half_depth)); // 13
+   shape.vertices.push_back(Vec3f(half_width, -half_height,  half_depth)); // 14
+   shape.vertices.push_back(Vec3f(half_width,  half_height,  half_depth)); // 15
+   // front  (+z)
+   shape.vertices.push_back(Vec3f(-half_width,  half_height, half_depth)); // 16
+   shape.vertices.push_back(Vec3f(-half_width, -half_height, half_depth)); // 17
+   shape.vertices.push_back(Vec3f( half_width, -half_height, half_depth)); // 18
+   shape.vertices.push_back(Vec3f( half_width,  half_height, half_depth)); // 19
+   // back   (-z)
+   shape.vertices.push_back(Vec3f(-half_width,  half_height, -half_depth)); // 20
+   shape.vertices.push_back(Vec3f(-half_width, -half_height, -half_depth)); // 21
+   shape.vertices.push_back(Vec3f( half_width, -half_height, -half_depth)); // 22
+   shape.vertices.push_back(Vec3f( half_width,  half_height, -half_depth)); // 23
+
+   // construct the indices
+   shape.indices = std::vector< GLuint > { 0, 1, 2, 0, 2, 3,
+                                           4, 6, 5, 4, 7, 6,
+                                           8, 9, 10, 8, 10, 11,
+                                           12, 14, 13, 12, 15, 14,
+                                           16, 17, 18, 16, 18, 19,
+                                           20, 22, 21, 20, 23, 22 };
+
+   // construct the texture coords
+   shape.tex_coords = std::vector< Vec2f > { { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f },
+                                             { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f },
+                                             { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f },
+                                             { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f },
+                                             { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f },
+                                             { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f } };
+
+   // construct the normals
+   ConstructNormals(shape);
+
+   // construct the tangents and bitangents
+   ConstructTangentsAndBitangents(shape);
 
    return shape;
 }

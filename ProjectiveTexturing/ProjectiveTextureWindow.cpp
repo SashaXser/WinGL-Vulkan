@@ -2,6 +2,7 @@
 #include "ProjectiveTextureWindow.h"
 #include "Timer.h"
 #include "WglAssert.h"
+#include "GeomHelper.h"
 #include "ReadTexture.h"
 #include "MatrixHelper.h"
 #include "OpenGLExtensions.h"
@@ -409,10 +410,6 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    // enable the shader
    mProjTexProg.Enable();
 
-   // update shader uniforms
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat);
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", mLightVariables.mProjMat * mLightVariables.mMViewMat);
-
    // bind the texture
    mLogoTex.Bind(GL_TEXTURE0);
    mProjTexProg.SetUniformValue("logo_texture", static_cast< GLint >(mLogoTex.GetBoundTexUnit()));
@@ -456,17 +453,44 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
       { 0.0f, 0.0f, 1.0f, 1.0f }
    };
 
+   // update shader uniforms for the walls
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat);
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", mLightVariables.mProjMat * mLightVariables.mMViewMat);
+
+   // enable the required pointer information
+   // going to use client state compat mode opengl here
    glEnableClientState(GL_VERTEX_ARRAY);
    glEnableClientState(GL_COLOR_ARRAY);
 
+   // feed the location of the data
    glVertexPointer(4, GL_FLOAT, 0, fWallValues);
    glColorPointer(4, GL_FLOAT, 0, fWallValuesColor);
 
+   // render the 3 walls
    glDrawArrays(GL_QUADS, 0, 4);
    glDrawArrays(GL_QUADS, 4, 4);
    glDrawArrays(GL_QUADS, 8, 4);
 
+   // generate a box to display
+   const GeomHelper::Shape box_shape = GeomHelper::ConstructBox(5, 5, 5);
+
+   // update shader uniforms for the box
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", mLightVariables.mProjMat * mLightVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
+
+   // disable the color array, as the box will not use it
    glDisableClientState(GL_COLOR_ARRAY);
+
+   // set the box to the color yellow
+   glColor3f(1.0f, 1.0f, 0.0f);
+
+   // feed the location of the data
+   glVertexPointer(3, GL_FLOAT, 0, &box_shape.vertices[0]);
+
+   // render the box
+   glDrawElements(box_shape.geom_type, static_cast< GLsizei >(box_shape.indices.size()), GL_UNSIGNED_INT, &box_shape.indices[0]);
+
+   // state is no longer required
    glDisableClientState(GL_VERTEX_ARRAY);
 
    // unbind the texture
