@@ -505,6 +505,10 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
 
 void ProjectiveTextureWindow::SetupRenderSceneImmediateModeEyeSpace( )
 {
+   // push the modelview matrix
+   glPushMatrix();
+   glLoadIdentity();
+
    // setup the object plane attributes
    const double pObjPlaneSTRQ[][4] =
    {
@@ -527,10 +531,17 @@ void ProjectiveTextureWindow::SetupRenderSceneImmediateModeEyeSpace( )
 
    // update the light model
    UpdateImmediateModeLightModel();
+
+   // pop the modelview matrix
+   glPopMatrix();
 }
 
 void ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace( )
 {
+   // push the modelview matrix
+   glPushMatrix();
+   glLoadIdentity();
+
    // setup the object plane attributes
    const double pObjPlaneSTRQ[][4] =
    {
@@ -553,6 +564,9 @@ void ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace( )
 
    // update the light model
    UpdateImmediateModeLightModel();
+
+   // pop the modelview matrix
+   glPopMatrix();
 }
 
 void ProjectiveTextureWindow::UpdateImmediateModeLightModel( )
