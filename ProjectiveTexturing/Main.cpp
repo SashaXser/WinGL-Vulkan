@@ -15,8 +15,11 @@ int WINAPI WinMain( HINSTANCE hInstance,
 
    // create the main application window
    ProjectiveTextureWindow * pProjWnd = new ProjectiveTextureWindow;
-   pProjWnd->Create(800, 600, "Projective Texture");
+   if (pProjWnd->Create(800, 600, "Projective Texture"))
+   {
+      // begin processing the main app
+      return pProjWnd->Run();
+   }
 
-   // begin processing the main app
-   return pProjWnd->Run();
+   return -100;
 }

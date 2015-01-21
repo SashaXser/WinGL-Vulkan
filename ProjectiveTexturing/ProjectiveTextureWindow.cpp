@@ -21,6 +21,8 @@
 #define VALIDATE_OPENGL() WGL_ASSERT(glGetError() == GL_NO_ERROR)
 
 ProjectiveTextureWindow::ProjectiveTextureWindow( ) :
+mDepthFrameBuffer    ( 0 ),
+mRenderShadowMap     ( false ),
 mpActiveMViewMat     ( &mCameraVariables.mMViewMat ),
 mpSetupModeFuncPtr   ( &ProjectiveTextureWindow::SetupRenderSceneImmediateModeObjectSpace ),
 mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
@@ -30,6 +32,7 @@ mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
              << "1 - Texture projection object space immediate mode" << std::endl
              << "2 - Texture projection eye space immediate mode" << std::endl
              << "3 - Texture projection object space using shader" << std::endl
+             << "F - Render the depth buffer for case 3" << std::endl
              << "WSAD - Move camera or light forwards or backwards and strafe left or right" << std::endl
              << "Left Mouse Button - Enable movement of camera or light" << std::endl
              << "Esc - Quit application" << std::endl << std::endl << std::ends;
@@ -37,6 +40,11 @@ mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
 
 ProjectiveTextureWindow::~ProjectiveTextureWindow( )
 {
+   // gl should still be active
+   WGL_ASSERT(wglGetCurrentContext() == GetGLContext());
+
+   // release the framebuffer
+   glDeleteFramebuffers(1, &mDepthFrameBuffer);
 }
 
 bool ProjectiveTextureWindow::Create( unsigned int nWidth,
@@ -95,6 +103,53 @@ bool ProjectiveTextureWindow::Create( unsigned int nWidth,
 
       // setup render mode specific attributes
       (this->*mpSetupModeFuncPtr)();
+
+      // create and setup the depth texture
+      mDepthTex.GenerateTexture(GL_TEXTURE_2D, GL_DEPTH_COMPONENT32, mLogoTex.GetWidth(), mLogoTex.GetHeight(), GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+      // bind and setup some basic texture paramemters
+      mDepthTex.Bind();
+      mDepthTex.SetParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      mDepthTex.SetParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      mDepthTex.SetParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      mDepthTex.SetParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      mDepthTex.Unbind();
+
+      // to check that the framebuffer attachment took,
+      // the draw and read must be set to none, since
+      // there is no color attachment...
+      glDrawBuffer(GL_NONE);
+      glReadBuffer(GL_NONE);
+
+      // todo: turn framebuffer into an object
+      // generate and bind the framebuffer
+      glGenFramebuffers(1, &mDepthFrameBuffer);
+      glBindFramebuffer(GL_FRAMEBUFFER, mDepthFrameBuffer);
+      
+      // bind the depth texture to the framebuffer object
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mDepthTex, 0);
+
+      // do the check...
+      const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+      // the framebuffer should be complete
+      WGL_ASSERT(status == GL_FRAMEBUFFER_COMPLETE);
+
+      if (status != GL_FRAMEBUFFER_COMPLETE)
+      {
+         // release the framebuffer
+         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+         glDeleteFramebuffers(1, &mDepthFrameBuffer);
+
+         return false;
+      }
+
+      // no longer needing the framebuffer at this point
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+      // restore the default buffer operations
+      glDrawBuffer(GL_BACK);
+      glReadBuffer(GL_BACK);
       
       return true;
    }
@@ -150,6 +205,7 @@ void ProjectiveTextureWindow::InitGLState( int vpWidth, int vpHeight )
    glViewport(0, 0, vpWidth, vpHeight);
 
    glEnable(GL_DEPTH_TEST);
+   glEnable(GL_CULL_FACE);
 
    // set the shading model to be smooth
    glShadeModel(GL_SMOOTH);
@@ -321,9 +377,6 @@ void ProjectiveTextureWindow::RenderWallsImmediateMode( )
    glTexCoord2f(0,1); glNormal3f(0.0f, 0.0f, 1.0f); glVertex3fv(fWallValues[11]);
    glEnd();
 
-   // unbind the texture
-   glBindTexture(GL_TEXTURE_2D, 0);
-
    // disable texturing
    mLogoTex.Unbind();
    glDisable(GL_TEXTURE_2D);
@@ -407,13 +460,6 @@ void ProjectiveTextureWindow::RenderSpotLightImmediateMode( )
 
 void ProjectiveTextureWindow::RenderSceneWithShader( )
 {
-   // enable the shader
-   mProjTexProg.Enable();
-
-   // bind the texture
-   mLogoTex.Bind(GL_TEXTURE0);
-   mProjTexProg.SetUniformValue("logo_texture", static_cast< GLint >(mLogoTex.GetBoundTexUnit()));
-
    // render the wall geometry
    const float fWallValues[][4] =
    {
@@ -453,9 +499,100 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
       { 0.0f, 0.0f, 1.0f, 1.0f }
    };
 
+   // construct a box to present in the middle of the scene
+   const GeomHelper::Shape box_shape = GeomHelper::ConstructBox(5, 5, 5);
+
+   // obtain the viewport parameters
+   const std::vector< GLint > viewport =
+   [ ] ( )
+   {
+      GLint viewport[4] = { };
+      glGetIntegerv(GL_VIEWPORT, viewport);
+
+      return std::vector< GLint >(viewport, viewport + 4);
+   }();
+
+   // set the view port to match the logo texture
+   glViewport(0, 0, mLogoTex.GetWidth(), mLogoTex.GetHeight());
+
+   // do not allow the default color buffer to be rendered into
+   glDrawBuffer(GL_NONE);
+   glReadBuffer(GL_NONE);
+
+   // bind the framebuffer object for rendering
+   glBindFramebuffer(GL_FRAMEBUFFER, mDepthFrameBuffer);
+   
+   // clear the depth texture
+   glClear(GL_DEPTH_BUFFER_BIT);
+
+   // the light projection just does not have the right parameters
+   // to convey the depth information... just a slightly different projection
+   const Matrixd light_projection =
+      Matrixd::Perspective(45.0,
+                           static_cast< double >(mLogoTex.GetWidth()) / static_cast< double >(mLogoTex.GetHeight()),
+                           0.1,
+                           100.0);
+
+   // todo: create a shader to handle the fixed function stuff
+   // setup the projection and modelview matrices
+   glMatrixMode(GL_PROJECTION);
+   glPushMatrix();
+   glLoadMatrixd(light_projection);
+   glMatrixMode(GL_MODELVIEW);
+   glPushMatrix();
+   glLoadMatrixd(mLightVariables.mMViewMat);
+
+   // enable the client state to render the walls
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glVertexPointer(4, GL_FLOAT, 0, fWallValues);
+   glDrawArrays(GL_QUADS, 0, 4);
+   glDrawArrays(GL_QUADS, 4, 4);
+   glDrawArrays(GL_QUADS, 8, 4);
+
+   // update the modelview matrix to place the box
+   glLoadMatrixd(mLightVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
+
+   // enable the client state and render the box
+   glVertexPointer(3, GL_FLOAT, 0, &box_shape.vertices[0]);
+   glDrawElements(box_shape.geom_type, static_cast< GLsizei >(box_shape.indices.size()), GL_UNSIGNED_INT, &box_shape.indices[0]);
+
+   // disable the use of the client side vertex pointer
+   glDisableClientState(GL_VERTEX_ARRAY);
+
+   // stop rendering into the depth texture
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+   // restore rendering to the default color buffer
+   glDrawBuffer(GL_BACK);
+   glReadBuffer(GL_BACK);
+
+   // restore the matrices
+   glMatrixMode(GL_PROJECTION);
+   glPopMatrix();
+   glMatrixMode(GL_MODELVIEW);
+   glPopMatrix();
+   
+   // restore the viewport
+   glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+   // enable the shader to render the scene with the depth texture
+   mProjTexProg.Enable();
+
+   // update the depth bias...
+   // todo: does not need to be done each loop
+   mProjTexProg.SetUniformValue("depth_bias", 0.0005f);
+
+   // bind the texture
+   mLogoTex.Bind(GL_TEXTURE0);
+   mProjTexProg.SetUniformValue("logo_texture", static_cast< GLint >(mLogoTex.GetBoundTexUnit()));
+
+   // bind the depth texture
+   mDepthTex.Bind(GL_TEXTURE1);
+   mProjTexProg.SetUniformValue("depth_texture", static_cast< GLint >(mDepthTex.GetBoundTexUnit()));
+
    // update shader uniforms for the walls
    mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat);
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", mLightVariables.mProjMat * mLightVariables.mMViewMat);
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", light_projection * mLightVariables.mMViewMat);
 
    // enable the required pointer information
    // going to use client state compat mode opengl here
@@ -471,12 +608,9 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    glDrawArrays(GL_QUADS, 4, 4);
    glDrawArrays(GL_QUADS, 8, 4);
 
-   // generate a box to display
-   const GeomHelper::Shape box_shape = GeomHelper::ConstructBox(5, 5, 5);
-
    // update shader uniforms for the box
    mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", mLightVariables.mProjMat * mLightVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", light_projection * mLightVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
 
    // disable the color array, as the box will not use it
    glDisableClientState(GL_COLOR_ARRAY);
@@ -493,7 +627,10 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    // state is no longer required
    glDisableClientState(GL_VERTEX_ARRAY);
 
-   // unbind the texture
+   // unbind the textures
+   // note: mLogoTex is ubound last, as it sets the active texture back to 0
+   // and allows any other fixed functions to correct be used for texturing...
+   mDepthTex.Unbind();
    mLogoTex.Unbind();
 
    // disable the shader
@@ -501,6 +638,55 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
 
    // render the spot light
    RenderSpotLightImmediateMode();
+
+   if (mRenderShadowMap)
+   {
+      // update the projection and modelview matrices
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      glOrtho(0.0, 1.0, 0.0, 1.0, 1.0, -1.0);
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      glLoadIdentity();
+
+      // update the texture environment to replace color values
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+      // enable 2d texture support
+      glEnable(GL_TEXTURE_2D);
+
+      // bind the depth texture 
+      mDepthTex.Bind();
+
+      // match the apsect of the logo
+      const Size window_size = GetSize();
+      const float logo_aspect = static_cast< float >(mLogoTex.GetWidth()) / static_cast< float >(mLogoTex.GetHeight());
+      const float window_height_pixels = 1.0f / logo_aspect * window_size.width * 0.5f;
+      const float texture_height = window_height_pixels / window_size.height;
+
+      // render the quad in the lower left corner of the screen
+      glBegin(GL_QUADS);
+      glTexCoord2f(0.0f, 0.0f); glVertex3f(0.0f, 0.0f, 0.0f);
+      glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, 0.0f, 0.0f);
+      glTexCoord2f(1.0f, 1.0f); glVertex3f(0.5f, texture_height, 0.0f);
+      glTexCoord2f(0.0f, 1.0f); glVertex3f(0.0f, texture_height, 0.0f);
+      glEnd();
+
+      // unbind the texture
+      mDepthTex.Unbind();
+
+      // disable 2d texture support
+      glDisable(GL_TEXTURE_2D);
+
+      // restore the matrices
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+      glMatrixMode(GL_MODELVIEW);
+      glPopMatrix();
+   }
+
+   WGL_ASSERT(glGetError() == GL_NO_ERROR);
 }
 
 void ProjectiveTextureWindow::SetupRenderSceneImmediateModeEyeSpace( )
@@ -765,6 +951,8 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
       case 'D':
       case 'W':
       case 'S':
+         {
+
          // decompose the current yaw and pitch
          const double dYaw = 0.0, dPitch = 0.0;
          MatrixHelper::DecomposeYawPitchRollDeg(*mpActiveMViewMat,
@@ -821,6 +1009,14 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          {
             UpdateImmediateModeLightModel();
          }
+
+         }
+
+         break;
+
+      case 'F':
+         // update the boolean to indicate rendering the depth texture
+         mRenderShadowMap = !mRenderShadowMap;
 
          break;
       }

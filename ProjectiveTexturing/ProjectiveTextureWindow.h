@@ -78,6 +78,13 @@ private:
 
    // private member variables
    Texture  mLogoTex;
+   Texture  mDepthTex;
+
+   // indicates if the shadow map should be rendered
+   bool     mRenderShadowMap;
+
+   // todo: turn framebuffer into an object
+   GLuint   mDepthFrameBuffer;
 
    Matrixd *      mpActiveMViewMat;
 

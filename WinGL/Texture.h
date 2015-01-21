@@ -9,7 +9,7 @@
 #include <GL/GL.h>
 
 // defines invalid constants used by the texture class
-extern const GLenum INVALID_TEXTURE_TYPE;
+extern const GLenum INVALID_TEXTURE_TARGET;
 extern const GLenum INVALID_INTERNAL_TEXTURE_FORMAT;
 extern const GLenum INVALID_TEXTURE_UNIT;
 
@@ -32,7 +32,7 @@ public:
    operator GLuint ( ) const { return mTexID; }
 
    // obtains the texture type
-   GLenum GetType( ) const { WGL_ASSERT(mTexID); return mTexType; }
+   GLenum GetType( ) const { WGL_ASSERT(mTexID); return mTexTarget; }
 
    // obtains the width and height
    GLuint GetWidth( ) const { WGL_ASSERT(mTexID); return mTexWidth; }
@@ -50,18 +50,25 @@ public:
    // obtains the mipmap status of the texture
    bool IsMipMapped( ) const { WGL_ASSERT(mTexID); return mTexIsMipMapped; }
 
+   // generates a texture of a specific type
+   bool GenerateTexture( const GLenum target, const GLenum internal_format,
+                         const GLuint width, const GLuint height,
+                         const GLenum format, const GLenum type,
+                         const void * const pData,
+                         const bool generate_mipmap = false );
+
    // loads a texture
    bool Load2D( const char * const pFilename,
                 const GLenum intermediate_format,
                 const GLenum internal_format,
-                const bool generate_mipmap );
+                const bool generate_mipmap = false );
 
    // sets the texture parameters
    template < typename T >
    void SetParameter( const GLenum param_name, const T param_value );
 
    // bind / unbind operations
-   void Bind( const GLenum texture_unit );
+   void Bind( const GLenum texture_unit = GL_TEXTURE0 );
    void Unbind( const GLuint texture_id = 0 );
 
 private:
@@ -79,14 +86,14 @@ private:
    GLuint      mTexID;
 
    // defines the type of texture
-   GLenum      mTexType;
+   GLenum      mTexTarget;
 
    // defines the width and height of texture
    GLuint      mTexWidth;
    GLuint      mTexHeight;
 
    // defines the internal format of the texture
-   GLuint      mTexIFormat;
+   GLenum      mTexIFormat;
 
    // currently bound texture unit
    GLuint      mBoundTexUnit;

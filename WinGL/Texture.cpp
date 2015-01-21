@@ -12,7 +12,7 @@
 #include <utility>
 
 // defines an invalid texture type
-const GLenum INVALID_TEXTURE_TYPE = -1;
+const GLenum INVALID_TEXTURE_TARGET = -1;
 const GLenum INVALID_INTERNAL_TEXTURE_FORMAT = -1;
 const GLenum INVALID_TEXTURE_UNIT = -1;
 
@@ -79,7 +79,7 @@ GLuint Texture::GetCurrentTexture( const GLenum target, const GLenum texture_uni
 
 Texture::Texture( ) :
 mTexID            ( 0 ),
-mTexType          ( INVALID_TEXTURE_TYPE ),
+mTexTarget        ( INVALID_TEXTURE_TARGET ),
 mTexWidth         ( 0 ),
 mTexHeight        ( 0 ),
 mTexIFormat       ( INVALID_INTERNAL_TEXTURE_FORMAT ),
@@ -99,7 +99,7 @@ Texture::~Texture( )
 
 Texture::Texture( Texture && texture ) :
 mTexID            ( texture.mTexID ),
-mTexType          ( texture.mTexType ),
+mTexTarget        ( texture.mTexTarget ),
 mTexWidth         ( texture.mTexWidth ),
 mTexHeight        ( texture.mTexHeight ),
 mTexIFormat       ( texture.mTexIFormat ),
@@ -107,7 +107,7 @@ mBoundTexUnit     ( texture.mBoundTexUnit ),
 mTexIsMipMapped   ( texture.mTexIsMipMapped )
 {
    texture.mTexID = 0;
-   texture.mTexType = INVALID_TEXTURE_TYPE;
+   texture.mTexTarget = INVALID_TEXTURE_TARGET;
    texture.mTexWidth = 0;
    texture.mTexHeight = 0;
    texture.mTexIFormat = INVALID_INTERNAL_TEXTURE_FORMAT;
@@ -120,7 +120,7 @@ Texture & Texture::operator = ( Texture && texture )
    if (&texture != this)
    {
       std::swap(mTexID, texture.mTexID);
-      std::swap(mTexType, texture.mTexType);
+      std::swap(mTexTarget, texture.mTexTarget);
       std::swap(mTexWidth, texture.mTexWidth);
       std::swap(mTexHeight, texture.mTexHeight);
       std::swap(mTexIFormat, texture.mTexIFormat);
@@ -129,6 +129,77 @@ Texture & Texture::operator = ( Texture && texture )
    }
 
    return *this;
+}
+
+bool Texture::GenerateTexture( const GLenum target, const GLenum internal_format,
+                               const GLuint width, const GLuint height,
+                               const GLenum format, const GLenum type,
+                               const void * const pData,
+                               const bool generate_mipmap )
+{
+   // must happen within a valid gl context
+   WGL_ASSERT(wglGetCurrentContext());
+
+   bool texture_created = false;
+
+   // release the current texture if there is one
+   DeleteTexture();
+
+   // generate a new texture
+   glGenTextures(1, &mTexID);
+
+   if (mTexID)
+   {
+      // setup some attributes
+      mTexTarget = target;
+      mTexWidth = width;
+      mTexHeight = height;
+      mTexIFormat = internal_format;
+
+      // get the current active texture unit 0
+      const GLuint current_active_tex_unit_0 = Texture::GetCurrentTexture(target);
+
+      // bind this texture to texture unit 0
+      Bind(GL_TEXTURE0);
+
+      // setup the base texture
+      switch (target)
+      {
+      case GL_TEXTURE_2D: glTexImage2D(target, 0, internal_format, width, height, 0, format, type, pData); break;
+
+      // figure out how to handle other cases later
+      default: WGL_ASSERT(false); break;
+      };
+
+      // if generate mipmap is turned on, then create it
+      if(generate_mipmap)
+      {
+         // allow the implementation to generate the mipmaps
+         glGenerateMipmap(target);
+
+         // setup basic attributes
+         SetParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+         SetParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+         mTexIsMipMapped = true;
+      }
+      else
+      {
+         // setup basic attributes
+         SetParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+         SetParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+         mTexIsMipMapped = false;
+      }
+
+      // unbind the texture and restore the previous texture unit
+      Unbind(current_active_tex_unit_0);
+
+      // texture was loaded, assuming no errors
+      texture_created = true;
+   }
+
+   return texture_created;
 }
 
 bool Texture::Load2D( const char * const pFilename,
@@ -156,7 +227,7 @@ bool Texture::Load2D( const char * const pFilename,
       if (mTexID)
       {
          // setup some attributes
-         mTexType = GL_TEXTURE_2D;
+         mTexTarget = GL_TEXTURE_2D;
          mTexWidth = texture_data.width;
          mTexHeight = texture_data.height;
          mTexIFormat = internal_format;
@@ -228,11 +299,11 @@ void Texture::SetParameter( const GLenum param_name, const T param_value )
    WGL_ASSERT(mTexID);
    WGL_ASSERT(IsBound());
    WGL_ASSERT(wglGetCurrentContext());
-   WGL_ASSERT(Texture::GetCurrentTexture(mTexType, mBoundTexUnit) == mTexID);
+   WGL_ASSERT(Texture::GetCurrentTexture(mTexTarget, mBoundTexUnit) == mTexID);
 
    // this is the active texture if passed all the asserts
    // so, select the correct function to call on this texture
-   texture_parameter_function_selector< T >::glTexParameter(mTexType, param_name, param_value);
+   texture_parameter_function_selector< T >::glTexParameter(mTexTarget, param_name, param_value);
 }
 
 // setup the valid functions for the texture parameters
@@ -250,7 +321,7 @@ void Texture::Bind( const GLenum texture_unit )
 
    // bind the texture to the specified texture unit
    glActiveTexture(texture_unit);
-   glBindTexture(mTexType, mTexID);
+   glBindTexture(mTexTarget, mTexID);
 
    // save the texture unit for later
    mBoundTexUnit = texture_unit;
@@ -263,7 +334,7 @@ void Texture::Unbind( const GLuint texture_id )
 
    // bind the texture to the specified texture unit
    glActiveTexture(mBoundTexUnit);
-   glBindTexture(mTexType, texture_id);
+   glBindTexture(mTexTarget, texture_id);
 
    // no longer have a bound texture unit
    mBoundTexUnit = INVALID_TEXTURE_UNIT;
@@ -279,7 +350,7 @@ void Texture::DeleteTexture( )
       glDeleteTextures(1, &mTexID);
 
       mTexID = 0;
-      mTexType = INVALID_TEXTURE_TYPE;
+      mTexTarget = INVALID_TEXTURE_TARGET;
       mTexWidth = 0;
       mTexHeight = 0;
       mTexIFormat = INVALID_INTERNAL_TEXTURE_FORMAT;
