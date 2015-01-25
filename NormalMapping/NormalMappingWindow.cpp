@@ -479,7 +479,7 @@ void NormalMappingWindow::LoadShader( const Shader shader )
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_normal_shader.frag" });
 
       // indicate that we need to render triangles
-      mDrawElements = std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+      mDrawElements = std::bind(&glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
       break;
 
@@ -491,7 +491,7 @@ void NormalMappingWindow::LoadShader( const Shader shader )
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.frag" });
 
       // indicate that we need to render triangles
-      mDrawElements = std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+      mDrawElements = std::bind(&glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
       break;
 
@@ -505,7 +505,7 @@ void NormalMappingWindow::LoadShader( const Shader shader )
       mpShader->AttachFile(GL_TESS_EVALUATION_SHADER, "./normal_mapping/shaders/normal_mapping_tess_shader.teval");
 
       // indicate that we need to render the control patches to generate the terrain on the fly
-      mDrawElements = std::bind(glDrawElements, GL_PATCHES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+      mDrawElements = std::bind(&glDrawElements, GL_PATCHES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
       break;
 
@@ -518,7 +518,7 @@ void NormalMappingWindow::LoadShader( const Shader shader )
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.frag" });
 
       // indicate that we need to render triangles
-      mDrawElements = std::bind(glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+      mDrawElements = std::bind(&glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
       break;
    }

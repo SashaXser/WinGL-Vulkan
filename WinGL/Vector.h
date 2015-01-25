@@ -125,8 +125,8 @@ public:
    bool operator != ( const Vector< T, SIZE > & vec ) const;
 
    // operator []
-   T & operator [] ( const uintptr_t i );
-   const T & operator [] ( const uintptr_t i ) const;
+   T & operator [] ( const ptrdiff_t i );
+   const T & operator [] ( const ptrdiff_t i ) const;
 
    // operator T *
    operator T * ( );
@@ -564,17 +564,17 @@ inline bool Vector< T, SIZE >::operator != ( const Vector< T, SIZE > & vec ) con
 }
 
 template < typename T, uint32_t SIZE >
-inline T & Vector< T, SIZE >::operator [] ( const uintptr_t i )
+inline T & Vector< T, SIZE >::operator [] ( const ptrdiff_t i )
 {
-   WGL_ASSERT(i < SIZE);
+   WGL_ASSERT(i > 0 && i < SIZE);
 
    return mT[i];
 }
 
 template < typename T, uint32_t SIZE >
-inline const T & Vector< T, SIZE >::operator [] ( const uintptr_t i ) const
+inline const T & Vector< T, SIZE >::operator [] ( const ptrdiff_t i ) const
 {
-   WGL_ASSERT(i < SIZE);
+   WGL_ASSERT(i > 0 && i < SIZE);
 
    return mT[i];
 }
