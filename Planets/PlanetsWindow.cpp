@@ -181,7 +181,7 @@ bool PlanetsWindow::Create( unsigned int nWidth,
    // initialize the opengl context
    const OpenGLWindow::OpenGLInit glInit[] =
    {
-      { 4, 4, true, true, false }, 
+      { 4, 0, true, true, false }, 
       { 0 }
    };
 
@@ -207,6 +207,11 @@ bool PlanetsWindow::Create( unsigned int nWidth,
       mViewMat.MakeLookAt(Vec3f(20.0f, 20.0f, 40.0f),
                           Vec3f(0.0f, 0.0f, 0.0f),
                           Vec3f(0.0f, 1.0f, 0.0f));
+
+      // compile and link the planet shader
+      mPlanetPgm.AttachFile(GL_VERTEX_SHADER, "planet.vert");
+      mPlanetPgm.AttachFile(GL_FRAGMENT_SHADER, "planet.frag");
+      mPlanetPgm.Link();
 
       // indicate the controls
       std::cout << std::endl
@@ -441,8 +446,29 @@ void PlanetsWindow::DrawScene( const double elapsed_time_sec )
       glMultMatrixf(mPlanetPos);
       glMultMatrixf(mLocal);
 
+      if (SUN != i)
+      {
+         // enable the shader
+         mPlanetPgm.Enable();
+
+         // provide the world to eye space matrix for the light
+         mPlanetPgm.SetUniformMatrix< 1, 4, 4 >("light_world_to_eye_space_mat", mViewMat.Inverse().Transpose());
+
+         // update the planet's position
+         mPlanetPgm.SetUniformValue("sun_position_world_space",
+                                    mPlanetaryMatrix[SUN][0] * mPlanetaryMatrix[SUN][3] *
+                                    Matrixf::Translate(Vec3f(static_cast< float >(mpMajMinAxes[SUN][2]), 0.0f, 0.0f)) * Vec3f(0.0f, 0.0f, 0.0f));
+         mPlanetPgm.SetUniformValue("planet_position_world_space", mPlanetPos * Vec3f(0.0f, 0.0f, 0.0f));
+      }
+
       // render the planet
       (*pPlanet)->Render();
+
+      if (SUN != i)
+      {
+         // disable the shader
+         mPlanetPgm.Disable();
+      }
 
       glPointSize(4);
       glBegin(GL_POINTS);

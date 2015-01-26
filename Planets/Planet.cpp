@@ -1,5 +1,6 @@
 // project includes
 #include "Planet.h"
+#include "Vector.h"
 #include "MathHelper.h"
 #include "ReadTexture.h"
 
@@ -55,11 +56,13 @@ void Planet::Render( )
       glEnable(GL_TEXTURE_2D);
       glEnableClientState(GL_VERTEX_ARRAY);
       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+      glEnableClientState(GL_NORMAL_ARRAY);
 
       // bind the texture for the planet
       glBindTexture(GL_TEXTURE_2D, mSurfaceImage);
 
       // send down the required vetex and text info
+      glNormalPointer(GL_FLOAT, 0, &mNormals[0]);
       glVertexPointer(3, GL_FLOAT, 0, &mVertices[0]);
       glTexCoordPointer(2, GL_FLOAT, 0, &mTexCoords[0]);
 
@@ -79,6 +82,7 @@ void Planet::Render( )
       glDisable(GL_TEXTURE_2D);
       glDisableClientState(GL_VERTEX_ARRAY);
       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_NORMAL_ARRAY);
 
       // stop rendering the list
       glEndList();
@@ -139,6 +143,11 @@ bool Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
    mVertices.push_back(mRadius);
    mVertices.push_back(0.0f);
 
+   // push back the top normal
+   mNormals.push_back(0.0f);
+   mNormals.push_back(1.0f);
+   mNormals.push_back(0.0f);
+
    // push back the top texture coordinate
    mTexCoords.push_back(0.5f);
    mTexCoords.push_back(1.0f);
@@ -194,6 +203,12 @@ bool Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
          mVertices.push_back(fY);
          mVertices.push_back(fZ);
 
+         // calculate the normal
+         const Vec3f normal = Vec3f(fX, fY, fZ).MakeUnitVector();
+         mNormals.push_back(normal.X());
+         mNormals.push_back(normal.Y());
+         mNormals.push_back(normal.Z());
+
          // calculate the texture coordinate
          float fS = (float)(slice_deg / 360.0);
          float fT = (float)(1.0 - stack_deg / 180.0);
@@ -216,6 +231,12 @@ bool Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
                   mVertices.push_back(fFirstVertex[0]);
                   mVertices.push_back(fFirstVertex[1]);
                   mVertices.push_back(fFirstVertex[2]);
+
+                  // calculate the normal
+                  const Vec3f normal = Vec3f(fFirstVertex[0], fFirstVertex[1], fFirstVertex[2]).MakeUnitVector();
+                  mNormals.push_back(normal.X());
+                  mNormals.push_back(normal.Y());
+                  mNormals.push_back(normal.Z());
 
                   // push back the texture coordinate
                   mTexCoords.push_back(1.0f);
@@ -248,6 +269,12 @@ bool Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
                   mVertices.push_back(fFirstVertex[0]);
                   mVertices.push_back(fFirstVertex[1]);
                   mVertices.push_back(fFirstVertex[2]);
+
+                  // calculate the normal
+                  const Vec3f normal = Vec3f(fFirstVertex[0], fFirstVertex[1], fFirstVertex[2]).MakeUnitVector();
+                  mNormals.push_back(normal.X());
+                  mNormals.push_back(normal.Y());
+                  mNormals.push_back(normal.Z());
 
                   // push back the texture coordinate
                   mTexCoords.push_back(1.0f);
@@ -289,6 +316,11 @@ bool Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
    mVertices.push_back(0.0f);
    mVertices.push_back(-mRadius);
    mVertices.push_back(0.0f);
+
+   // calculate the normal
+   mNormals.push_back(0.0f);
+   mNormals.push_back(-1.0f);
+   mNormals.push_back(0.0f);
 
    // push the bottom texture coordinate
    mTexCoords.push_back(0.5f);

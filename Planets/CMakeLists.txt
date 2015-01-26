@@ -9,6 +9,8 @@ PlanetsWindow.h
 )
 
 set(SHADER_SRC
+planet.frag
+planet.vert
 )
 
 add_executable(Planets WIN32 ${PLANETS_SRC} ${SHADER_SRC})
@@ -16,3 +18,7 @@ add_executable(Planets WIN32 ${PLANETS_SRC} ${SHADER_SRC})
 target_link_libraries(Planets WinGL)
 
 copy_to_bin(./Textures)
+
+foreach(file IN LISTS SHADER_SRC)
+   copy_to_bin(${file})
+endforeach(file IN LISTS SHADER_SRC)

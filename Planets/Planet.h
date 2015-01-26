@@ -43,6 +43,7 @@ protected:
 
    FloatVec    mVertices;
    FloatVec    mTexCoords;
+   FloatVec    mNormals;
    IndicesVec  mIndices;
 
 private:

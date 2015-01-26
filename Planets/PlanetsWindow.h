@@ -4,6 +4,7 @@
 // wingl includes
 #include "Matrix.h"
 #include "OpenGLWindow.h"
+#include "ShaderProgram.h"
 
 // std includes
 #include <cstdint>
@@ -95,6 +96,10 @@ private:
    // defines the projection and camera matrices
    Matrixf mProjMat;
    Matrixf mViewMat;
+
+   // defines the program to render the planets
+   // todo: needs to be moved into the planets
+   ShaderProgram mPlanetPgm;
 
    // stores the current mouse x and y pointes
    int32_t mMousePos[2];
