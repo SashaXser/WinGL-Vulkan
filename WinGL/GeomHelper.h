@@ -11,6 +11,7 @@
 // std includes
 #include <vector>
 #include <utility>
+#include <cstdint>
 
 namespace GeomHelper
 {
@@ -72,6 +73,7 @@ Shape ConstructPlane( const float width, const float height );
 Shape ConstructBox( const float width, const float height, const float depth );
 
 // constructs a sphere
+Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float radius = 1.0f );
 
 } // namespace GeomHelper
 

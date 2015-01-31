@@ -14,6 +14,7 @@
 // stl includes
 #include <memory>
 #include <cstdint>
+#include <iterator>
 #include <iostream>
 #include <algorithm>
 
@@ -502,6 +503,9 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    // construct a box to present in the middle of the scene
    const GeomHelper::Shape box_shape = GeomHelper::ConstructBox(5, 5, 5);
 
+   // construct the sphere to present around the box
+   const GeomHelper::Shape sphere_shape = GeomHelper::ConstructSphere(30, 30, 1.0f);
+
    // obtain the viewport parameters
    const std::vector< GLint > viewport =
    [ ] ( )
@@ -555,6 +559,29 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    // enable the client state and render the box
    glVertexPointer(3, GL_FLOAT, 0, &box_shape.vertices[0]);
    glDrawElements(box_shape.geom_type, static_cast< GLsizei >(box_shape.indices.size()), GL_UNSIGNED_INT, &box_shape.indices[0]);
+
+   // enable the client state for the sphere
+   glVertexPointer(3, GL_FLOAT, 0, &sphere_shape.vertices[0]);
+
+   // sphere matrices
+   const Matrixd sphere_translations[] =
+   {
+      Matrixd::Translate(0.0, 8.75, 0.0),
+      Matrixd::Translate(0.0, 5.0, 3.75),
+      Matrixd::Translate(3.75, 5.0, 0.0),
+      Matrixd::Translate(0.0, 1.25, 0.0)
+   };
+
+   // render all the spheres
+   std::for_each(sphere_translations, sphere_translations + sizeof(sphere_translations) / sizeof(*sphere_translations),
+   [ this, &sphere_shape ] ( const Matrixd & translation )
+   {
+      // update the modelview matrix to place the sphere
+      glLoadMatrixd(mLightVariables.mMViewMat * translation);
+
+      // render the sphere
+      glDrawElements(sphere_shape.geom_type, static_cast< GLsizei >(sphere_shape.indices.size()), GL_UNSIGNED_INT, &sphere_shape.indices[0]);
+   });
 
    // disable the use of the client side vertex pointer
    glDisableClientState(GL_VERTEX_ARRAY);
@@ -618,11 +645,34 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    // set the box to the color yellow
    glColor3f(1.0f, 1.0f, 0.0f);
 
-   // feed the location of the data
-   glVertexPointer(3, GL_FLOAT, 0, &box_shape.vertices[0]);
-
    // render the box
+   glVertexPointer(3, GL_FLOAT, 0, &box_shape.vertices[0]);
    glDrawElements(box_shape.geom_type, static_cast< GLsizei >(box_shape.indices.size()), GL_UNSIGNED_INT, &box_shape.indices[0]);
+
+   // enable the client state for the sphere
+   glVertexPointer(3, GL_FLOAT, 0, &sphere_shape.vertices[0]);
+
+   // defines colors for the spheres
+   const uint8_t sphere_colors[][3] =
+   {
+      { 64, 128, 128 }, { 128, 255, 0 }, { 255, 128, 0 }, { 255, 0, 128 }
+   };
+
+   // render all the spheres
+   std::for_each(sphere_translations, sphere_translations + sizeof(sphere_translations) / sizeof(*sphere_translations),
+   [ this, &sphere_shape, &sphere_colors, &sphere_translations, &light_projection ] ( const Matrixd & translation )
+   {
+      // setup the colors
+      const size_t distance = std::distance(sphere_translations, &translation);
+      glColor3ubv(sphere_colors[distance]);
+
+      // update shader uniforms for the spheres
+      mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat * translation);
+      mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", light_projection * mLightVariables.mMViewMat * translation);
+
+      // render the sphere
+      glDrawElements(sphere_shape.geom_type, static_cast< GLsizei >(sphere_shape.indices.size()), GL_UNSIGNED_INT, &sphere_shape.indices[0]);
+   });
 
    // state is no longer required
    glDisableClientState(GL_VERTEX_ARRAY);

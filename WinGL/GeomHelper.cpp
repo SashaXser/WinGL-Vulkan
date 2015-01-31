@@ -389,4 +389,100 @@ Shape ConstructBox( const float width, const float height, const float depth )
    return shape;
 }
 
+Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float radius )
+{
+   // must have stacks and slices greater than 3
+   WGL_ASSERT(slices >= 3 && stacks >= 3 && radius > 0.0f);
+
+   Shape shape;
+
+   // setup the type
+   shape.geom_type = GL_TRIANGLES;
+
+   // add the top vertex data for the sphere
+   shape.vertices.push_back(Vec3f(0.0f, radius, 0.0f));
+   shape.normals.push_back(Vec3f(0.0f, 1.0f, 0.0f));
+   shape.tex_coords.push_back(Vec2f(0.5f, 1.0f));
+
+   // put together the first set of indices around the top
+   for (uint32_t i = 0; i < slices; ++i)
+   {
+      shape.indices.push_back(0);
+      shape.indices.push_back((i + 1) % slices ? i + 2 : 1);
+      shape.indices.push_back(i + 1);
+   }
+
+   // calculate the offset deltas
+   const float slice_rad_delta = MathHelper::DegToRad(360.0f / slices);
+   const float stack_rad_delta = MathHelper::DegToRad(180.0f / stacks);
+
+   // loop across all the stacks
+   for (uint32_t stack = 1; stacks > stack; ++stack)
+   {
+      // calculate the current stack location in radians
+      const float stack_rad = stack_rad_delta * stack;
+
+      // calculate the y coordinate
+      const float y = std::cos(stack_rad) * radius;
+
+      // calculate the stack radius
+      const float stack_radius = std::sin(stack_rad) * radius;
+
+      // calculate the starting index
+      const uint32_t base_index = ((stack - 1) * slices) + 1;
+
+      // loop across all the slices
+      for (uint32_t slice = 0; slices > slice; ++slice)
+      {
+         // calculate the current slice location in radians
+         const float slice_rad = slice_rad_delta * slice;
+
+         // calculate the vertex and normal data
+         const Vec3f vertex(Vec3f(std::cos(slice_rad) * stack_radius, y, std::sin(slice_rad) * stack_radius));
+         shape.vertices.push_back(vertex);
+         shape.normals.push_back(vertex.UnitVector());
+
+         // calculate the texture coords
+         shape.tex_coords.push_back(Vec2f(slice_rad / (MathHelper::pi< float >() * 2.0f),
+                                          1.0f - stack_rad / MathHelper::pi< float >()));
+
+         // make sure not to create indices for the bottom set
+         if (stack < stacks - 1)
+         {
+            shape.indices.push_back(base_index + slice);
+            shape.indices.push_back((slice + 1) % slices ? base_index + slice + 1 : base_index);
+            shape.indices.push_back(base_index + slice + slices);
+
+            shape.indices.push_back(base_index + slice + slices);
+            shape.indices.push_back((slice + 1) % slices ? base_index + slice + 1 : base_index);
+            shape.indices.push_back((slice + 1) % slices ? base_index + slice + slices + 1 : base_index + slices);
+         }
+      }
+   }
+
+   // add the bottom vertex data for the sphere
+   shape.vertices.push_back(Vec3f(0.0f, -radius, 0.0f));
+   shape.normals.push_back(Vec3f(0.0f, -1.0f, 0.0f));
+   shape.tex_coords.push_back(Vec2f(0.5f, 0.0f));
+
+   // obtain the number of vertices
+   const GLuint num_of_vertices = static_cast< GLuint >(shape.vertices.size());
+
+   // put together the last set of indices around the bottom
+   for (uint32_t i = 0; i < slices; ++i)
+   {
+      shape.indices.push_back(num_of_vertices - slices - 1 + i);
+      shape.indices.push_back((i + 1) % slices ? num_of_vertices - slices + i : num_of_vertices - slices - 1);
+      shape.indices.push_back(num_of_vertices - 1);
+   }
+
+   // construct the normals
+   ConstructNormals(shape);
+
+   // construct the tangents and bitangents
+   ConstructTangentsAndBitangents(shape);
+
+   return shape;
+}
+
 } // namespace GeomHelper

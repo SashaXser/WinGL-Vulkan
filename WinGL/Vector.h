@@ -566,7 +566,7 @@ inline bool Vector< T, SIZE >::operator != ( const Vector< T, SIZE > & vec ) con
 template < typename T, uint32_t SIZE >
 inline T & Vector< T, SIZE >::operator [] ( const ptrdiff_t i )
 {
-   WGL_ASSERT(i > 0 && i < SIZE);
+   WGL_ASSERT(i >= 0 && i < SIZE);
 
    return mT[i];
 }
@@ -574,7 +574,7 @@ inline T & Vector< T, SIZE >::operator [] ( const ptrdiff_t i )
 template < typename T, uint32_t SIZE >
 inline const T & Vector< T, SIZE >::operator [] ( const ptrdiff_t i ) const
 {
-   WGL_ASSERT(i > 0 && i < SIZE);
+   WGL_ASSERT(i >= 0 && i < SIZE);
 
    return mT[i];
 }
