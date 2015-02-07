@@ -22,6 +22,7 @@
 #define VALIDATE_OPENGL() WGL_ASSERT(glGetError() == GL_NO_ERROR)
 
 ProjectiveTextureWindow::ProjectiveTextureWindow( ) :
+mDepthBias           ( 0.0003f ),
 mDepthFrameBuffer    ( 0 ),
 mRenderShadowMap     ( false ),
 mpActiveMViewMat     ( &mCameraVariables.mMViewMat ),
@@ -34,6 +35,8 @@ mpRenderModeFuncPtr  ( &ProjectiveTextureWindow::RenderSceneImmediateMode )
              << "2 - Texture projection eye space immediate mode" << std::endl
              << "3 - Texture projection object space using shader" << std::endl
              << "F - Render the depth buffer for case 3" << std::endl
+             << "+ - Increase depth bias" << std::endl
+             << "- - Decrease depth bias" << std::endl
              << "WSAD - Move camera or light forwards or backwards and strafe left or right" << std::endl
              << "Left Mouse Button - Enable movement of camera or light" << std::endl
              << "Esc - Quit application" << std::endl << std::endl << std::ends;
@@ -607,7 +610,7 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
 
    // update the depth bias...
    // todo: does not need to be done each loop
-   mProjTexProg.SetUniformValue("depth_bias", 0.0005f);
+   mProjTexProg.SetUniformValue("depth_bias", mDepthBias);
 
    // bind the texture
    mLogoTex.Bind(GL_TEXTURE0);
@@ -642,15 +645,20 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    // disable the color array, as the box will not use it
    glDisableClientState(GL_COLOR_ARRAY);
 
+   // enable normals as the box will use it
+   glEnableClientState(GL_NORMAL_ARRAY);
+
    // set the box to the color yellow
    glColor3f(1.0f, 1.0f, 0.0f);
 
    // render the box
    glVertexPointer(3, GL_FLOAT, 0, &box_shape.vertices[0]);
+   glNormalPointer(GL_FLOAT, 0, &box_shape.normals[0]);
    glDrawElements(box_shape.geom_type, static_cast< GLsizei >(box_shape.indices.size()), GL_UNSIGNED_INT, &box_shape.indices[0]);
 
    // enable the client state for the sphere
    glVertexPointer(3, GL_FLOAT, 0, &sphere_shape.vertices[0]);
+   glNormalPointer(GL_FLOAT, 0, &sphere_shape.normals[0]);
 
    // defines colors for the spheres
    const uint8_t sphere_colors[][3] =
@@ -676,6 +684,7 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
 
    // state is no longer required
    glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_NORMAL_ARRAY);
 
    // unbind the textures
    // note: mLogoTex is ubound last, as it sets the active texture back to 0
@@ -1069,6 +1078,9 @@ LRESULT ProjectiveTextureWindow::MessageHandler( UINT uMsg,
          mRenderShadowMap = !mRenderShadowMap;
 
          break;
+
+      case VK_ADD: mDepthBias += 0.00005f; std::cout << "Depth bias : " << mDepthBias << std::endl; break;
+      case VK_SUBTRACT: mDepthBias -= 0.00005f; std::cout << "Depth bias : " << mDepthBias << std::endl; break;
       }
 
       break;

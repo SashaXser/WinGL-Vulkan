@@ -14,6 +14,9 @@ void main( )
    // anything below 0.0f will be automatically clampped by gl
    float percent_light = dot(-light_direction_eye_space, planet_normal_eye_space);
 
+   // there will be some ambient light
+   if (percent_light < 0.035f) percent_light = 0.035f;
+
    // write to the color buffer
    gl_FragColor = texture(planet_texture, gl_TexCoord[0].st) * percent_light;
 }

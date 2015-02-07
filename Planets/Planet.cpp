@@ -14,7 +14,7 @@
 #include "GL/glew.h"
 #include <GL/GL.h>
 
-Planet::Planet( const char * pSurfaceImg,
+Planet::Planet( const char * const pSurfaceImg,
                 const float radius,
                 const double slices_deg,
                 const double stacks_deg ) :

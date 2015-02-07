@@ -80,6 +80,9 @@ private:
    Texture  mLogoTex;
    Texture  mDepthTex;
 
+   // indicates the depth bias of the shadow map
+   float    mDepthBias;
+
    // indicates if the shadow map should be rendered
    bool     mRenderShadowMap;
 

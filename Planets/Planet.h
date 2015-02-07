@@ -9,7 +9,7 @@ class Planet
 {
 public:
    // constructor / destructor
-   Planet( const char * pSurfaceImg,
+   Planet( const char * const pSurfaceImg,
            const float radius,
            const double slices_deg = 10.0,
            const double stacks_deg = 5.0 );
