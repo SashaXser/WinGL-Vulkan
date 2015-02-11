@@ -8,6 +8,7 @@
 // std includes
 #include <string>
 #include <vector>
+#include <memory>
 #include <cstdint>
 
 // gl includes
@@ -66,10 +67,10 @@ private:
    // private data types
    typedef struct TextVerticesTag
    {
-      unsigned int      m_unNumOfVerts;
-      unsigned int      m_unNumOfTexCoords;
-      float *          m_pTexCoords;
-      float *          m_pVertices;
+      unsigned int               m_unNumOfVerts;
+      unsigned int               m_unNumOfTexCoords;
+      std::shared_ptr< float >   m_pTexCoords;
+      std::shared_ptr< float >   m_pVertices;
    } TextVertices;
 
    typedef std::vector< TextVertices > TexVertVector;
@@ -79,7 +80,7 @@ private:
    void ConstructText( );
    void ConstructHorizontal( );
 
-   void FormLines( Lines & rLines );
+   size_t FormLines( Lines & rLines );
 
    // private member data
    float                m_fSize;
@@ -88,7 +89,7 @@ private:
    std::string          m_oText;
    unsigned int         m_unCharWidth;
    unsigned int         m_unCharHeight;
-   unsigned int         m_nNumOfLines;
+   size_t               m_nNumOfLines;
    TexVertVector        m_vText;
 
    GLuint                        m_oImage;

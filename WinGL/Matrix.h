@@ -1134,9 +1134,9 @@ inline void Matrix< T >::MakeLookAt( const T * const pEye,
 
 template < typename T >
 template < typename U >
-inline static Matrix< U > Matrix< T >::LookAt( const U * const pEye,
-                                               const U * const pCenter,
-                                               const U * const pUp )
+inline Matrix< U > Matrix< T >::LookAt( const U * const pEye,
+                                        const U * const pCenter,
+                                        const U * const pUp )
 {
    return Matrix< U >::LookAt(*(pEye + 0), *(pEye + 1), *(pEye + 2),
                               *(pCenter + 0), *(pCenter + 1), *(pCenter + 2),
@@ -1144,9 +1144,9 @@ inline static Matrix< U > Matrix< T >::LookAt( const U * const pEye,
 }
 
 template < typename T >
-inline static Matrix< T > Matrix< T >::LookAt( const T * const pEye,
-                                               const T * const pCenter,
-                                               const T * const pUp )
+inline Matrix< T > Matrix< T >::LookAt( const T * const pEye,
+                                        const T * const pCenter,
+                                        const T * const pUp )
 {
    return Matrix< T >::LookAt(*(pEye + 0), *(pEye + 1), *(pEye + 2),
                               *(pCenter + 0), *(pCenter + 1), *(pCenter + 2),

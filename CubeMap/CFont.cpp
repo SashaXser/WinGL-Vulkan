@@ -82,14 +82,6 @@ CFont::~CFont( )
 {
    // delete the texture
    glDeleteTextures(1, &m_oImage);
-
-   for (TexVertVector::iterator itText = m_vText.begin();
-        itText != m_vText.end();
-        itText++)
-   {
-      delete [] itText->m_pVertices;
-      delete [] itText->m_pTexCoords;
-   }
 }
 
 void CFont::Draw( const double &rElapsedTime )
@@ -115,20 +107,18 @@ void CFont::Draw( const double &rElapsedTime )
       glBindTexture(GL_TEXTURE_2D, m_oImage);
 
       // get the begin iterator to the text
-      TexVertVector::iterator itText = m_vText.begin();
+      TexVertVector::iterator itTextBeg = m_vText.begin();
+      TexVertVector::iterator itTextEnd = m_vText.end();
 
       // draw the text
-      for (unsigned int i = 0; i < m_nNumOfLines; i++)
+      for (; itTextBeg != itTextEnd && (size_t)std::distance(m_vText.begin(), itTextBeg) < m_nNumOfLines; ++itTextBeg)
       {
          // enable vertex and texture coordinate pointers
-         glTexCoordPointer(2, GL_FLOAT, 0, itText->m_pTexCoords + 1);
-         glVertexPointer(3, GL_FLOAT, 0, itText->m_pVertices + 1);
+         glTexCoordPointer(2, GL_FLOAT, 0, itTextBeg->m_pTexCoords.get() + 1);
+         glVertexPointer(3, GL_FLOAT, 0, itTextBeg->m_pVertices.get() + 1);
 
          // draw the quads
-         glDrawArrays(GL_QUADS, 0, itText->m_unNumOfVerts);
-
-         // increase the text
-         itText++;
+         glDrawArrays(GL_QUADS, 0, itTextBeg->m_unNumOfVerts);
       }
 
       // pop the matrix from the stack
@@ -180,10 +170,7 @@ void CFont::ConstructHorizontal( )
    float dDeltaT = (float)m_unCharHeight / m_oImageAttrib.height;
 
    // form the lines
-   FormLines(vLines);
-
-   // set the number of lines
-   m_nNumOfLines = static_cast< unsigned int >(vLines.size());
+   m_nNumOfLines = FormLines(vLines);
 
    // setup the text index and size
    unsigned int nTextVecSize  = static_cast< unsigned int >(m_vText.size());
@@ -229,19 +216,15 @@ void CFont::ConstructHorizontal( )
       pData->m_unNumOfVerts = nDataSize;
       pData->m_unNumOfTexCoords = nDataSize;
       
-      if (!pData->m_pVertices || nDataSize > (unsigned int)pData->m_pVertices[0])
+      if (!pData->m_pVertices || nDataSize > (unsigned int)pData->m_pVertices.get()[0])
       {
-         // release the previous resources
-         delete [] pData->m_pVertices;
-         delete [] pData->m_pTexCoords;
-
          // create the new data
-         pData->m_pVertices = new float[pData->m_unNumOfVerts * 3 + 1];
-         pData->m_pTexCoords = new float[pData->m_unNumOfTexCoords * 2 + 1];
+         pData->m_pVertices.reset(new float[pData->m_unNumOfVerts * 3 + 1], [ ] ( const float * const p ) { delete [] p; });
+         pData->m_pTexCoords.reset(new float[pData->m_unNumOfTexCoords * 2 + 1], [ ] ( const float * const p ) { delete [] p; });
 
          // set the data sizes
-         pData->m_pVertices[0] = (float)nDataSize;
-         pData->m_pTexCoords[0] = (float)nDataSize;
+         pData->m_pVertices.get()[0] = (float)nDataSize;
+         pData->m_pTexCoords.get()[0] = (float)nDataSize;
       }
 
       // determine a starting position
@@ -258,8 +241,8 @@ void CFont::ConstructHorizontal( )
       }
 
       // set up data pointers
-      float *pVerts = pData->m_pVertices + 1;
-      float *pTexCoords = pData->m_pTexCoords + 1;
+      float *pVerts = pData->m_pVertices.get() + 1;
+      float *pTexCoords = pData->m_pTexCoords.get() + 1;
 
       // copy the data into the vectors
       for (unsigned int unPos = 0;
@@ -329,9 +312,10 @@ void CFont::ConstructHorizontal( )
    }
 }
 
-void CFont::FormLines( Lines & rLines )
+size_t CFont::FormLines( Lines & rLines )
 {
    // local(s)
+   size_t num_of_lines = 0;
    std::string sLine = "";
 
    for (unsigned int unPos = 0;
@@ -346,6 +330,7 @@ void CFont::FormLines( Lines & rLines )
       }
       else
       {
+         if (!sLine.empty()) ++num_of_lines;
          rLines.push_back(sLine);
          sLine = "";
       }
@@ -354,5 +339,8 @@ void CFont::FormLines( Lines & rLines )
    if (sLine.size())
    {
       rLines.push_back(sLine);
+      ++num_of_lines;
    }
+
+   return num_of_lines;
 }
