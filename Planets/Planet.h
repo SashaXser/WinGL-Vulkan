@@ -1,6 +1,9 @@
 #ifndef _PLANET_H_
 #define _PLANET_H_
 
+// wingl includes
+#include "GeomHelper.h"
+
 // std includes
 #include <vector>
 #include <cstdint>
@@ -11,8 +14,8 @@ public:
    // constructor / destructor
    Planet( const char * const pSurfaceImg,
            const float radius,
-           const double slices_deg = 10.0,
-           const double stacks_deg = 5.0 );
+           const double slices_deg = 5.0,
+           const double stacks_deg = 2.5 );
    ~Planet( );
 
    // renders the planet
@@ -31,20 +34,17 @@ protected:
    typedef std::vector< UIntVec >      IndicesVec;
 
    // loads the image specified
-   bool     LoadSurfaceImage( const char * pSurfaceImg );
+   bool LoadSurfaceImage( const char * pSurfaceImg );
 
    // constructs the vertices and the image coordinates
-   bool     ConstructPlanet( const double slice_deg, const double stack_deg );
+   void ConstructPlanet( const double slice_deg, const double stack_deg );
 
    // protected member variables
    float       mRadius;
    uint32_t    mSurfaceImage;
    uint32_t    mDisplayList;
 
-   FloatVec    mVertices;
-   FloatVec    mTexCoords;
-   FloatVec    mNormals;
-   IndicesVec  mIndices;
+   GeomHelper::Shape mSphereShape;
 
 private:
    // prohibit default and copy constructor

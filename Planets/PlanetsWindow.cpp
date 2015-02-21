@@ -510,7 +510,7 @@ void PlanetsWindow::GenerateSceneData( )
    // create earth
    mppPlanets[EARTH] = new Planet("Textures\\EarthColor.jpg",
                                   static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[EARTH]),
-                                  5.0, 1.0);
+                                  2.5, 1.0);
    
    // create mars
    mppPlanets[MARS] = new Planet("Textures\\MarsColor.jpg",

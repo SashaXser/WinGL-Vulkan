@@ -408,7 +408,7 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
    for (uint32_t i = 0; i < slices; ++i)
    {
       shape.indices.push_back(0);
-      shape.indices.push_back((i + 1) % slices ? i + 2 : 1);
+      shape.indices.push_back(i + 2);
       shape.indices.push_back(i + 1);
    }
 
@@ -429,7 +429,7 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
       const float stack_radius = std::sin(stack_rad) * radius;
 
       // calculate the starting index
-      const uint32_t base_index = ((stack - 1) * slices) + 1;
+      const uint32_t base_index = ((stack - 1) * slices) + stack;
 
       // loop across all the slices
       for (uint32_t slice = 0; slices > slice; ++slice)
@@ -446,16 +446,27 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
          shape.tex_coords.push_back(Vec2f(slice_rad / (MathHelper::pi< float >() * 2.0f),
                                           1.0f - stack_rad / MathHelper::pi< float >()));
 
+         // if on the final set of slice vertices, add the front base set again
+         if (slices == slice + 1)
+         {
+            // add the base vertex and normal
+            shape.vertices.push_back(shape.vertices[base_index]);
+            shape.normals.push_back(shape.normals[base_index]);
+
+            // calculate the end texture coordinates
+            shape.tex_coords.push_back(Vec2f(1.0f, shape.tex_coords.back().Y()));
+         }
+
          // make sure not to create indices for the bottom set
          if (stack < stacks - 1)
          {
             shape.indices.push_back(base_index + slice);
-            shape.indices.push_back((slice + 1) % slices ? base_index + slice + 1 : base_index);
-            shape.indices.push_back(base_index + slice + slices);
+            shape.indices.push_back(base_index + slice + 1);
+            shape.indices.push_back(base_index + slice + slices + 1);
 
-            shape.indices.push_back(base_index + slice + slices);
-            shape.indices.push_back((slice + 1) % slices ? base_index + slice + 1 : base_index);
-            shape.indices.push_back((slice + 1) % slices ? base_index + slice + slices + 1 : base_index + slices);
+            shape.indices.push_back(base_index + slice + slices + 1);
+            shape.indices.push_back(base_index + slice + 1);
+            shape.indices.push_back(base_index + slice + slices + 2);
          }
       }
    }
@@ -471,16 +482,16 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
    // put together the last set of indices around the bottom
    for (uint32_t i = 0; i < slices; ++i)
    {
+      shape.indices.push_back(num_of_vertices - slices - 2 + i);
       shape.indices.push_back(num_of_vertices - slices - 1 + i);
-      shape.indices.push_back((i + 1) % slices ? num_of_vertices - slices + i : num_of_vertices - slices - 1);
       shape.indices.push_back(num_of_vertices - 1);
    }
 
    // construct the normals
-   ConstructNormals(shape);
+   // normals not needed as they are already constructed
 
    // construct the tangents and bitangents
-   ConstructTangentsAndBitangents(shape);
+//   ConstructTangentsAndBitangents(shape);
 
    return shape;
 }
