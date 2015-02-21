@@ -491,7 +491,7 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
    // normals not needed as they are already constructed
 
    // construct the tangents and bitangents
-//   ConstructTangentsAndBitangents(shape);
+   ConstructTangentsAndBitangents(shape);
 
    return shape;
 }
