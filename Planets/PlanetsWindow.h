@@ -100,10 +100,6 @@ private:
    // defines the camera step speed
    float mCamStepSpeed;
 
-   // defines the program to render the planets
-   // todo: needs to be moved into the planets
-   ShaderProgram mPlanetPgm;
-
    // static helper functions to initialize the major / minor axes arrays
    static void DefineMajorMinorAxes( double & major, double & minor, double & distance, const bool convert_to_gl );
    static double DefineMajorAxis( double major, double minor, const bool convert_to_gl );

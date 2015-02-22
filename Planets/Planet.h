@@ -4,6 +4,7 @@
 // wingl includes
 #include "Texture.h"
 #include "GeomHelper.h"
+#include "ShaderProgram.h"
 #include "VertexBufferObject.h"
 
 // std includes
@@ -18,7 +19,7 @@ public:
            const float radius,
            const double slices_deg = 5.0,
            const double stacks_deg = 2.5 );
-   ~Planet( );
+   virtual ~Planet( );
 
    // renders the planet
    void Render( );
@@ -28,6 +29,9 @@ public:
 
    // obtains the radius of the planet
    float Radius( ) { return mRadius; }
+
+   // temp for now, until all can be moved into the planet class
+   ShaderProgram & GetProgram( ) { return mPlanetPgm; }
 
 protected:
    // protected typedefs
@@ -41,6 +45,9 @@ protected:
    // constructs the vertices and the image coordinates
    void ConstructPlanet( const double slice_deg, const double stack_deg );
 
+   // constructs the shader program
+   virtual bool GenerateProgram( );
+
    // protected member variables
    float       mRadius;
 
@@ -51,7 +58,9 @@ protected:
    VertexBufferObject   mNormalArray;
    VertexBufferObject   mIndexArray;
 
-   GeomHelper::Shape mSphereShape;
+   ShaderProgram        mPlanetPgm;
+
+   GeomHelper::Shape    mSphereShape;
 
 private:
    // prohibit default and copy constructor

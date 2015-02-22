@@ -18,12 +18,16 @@ Planet::Planet( const char * const pSurfaceImg,
                 const float radius,
                 const double slices_deg,
                 const double stacks_deg ) :
-mRadius           ( radius )
+mRadius        ( radius )
 {
    // load the surface image
    LoadSurfaceImage(pSurfaceImg);
    // construct the planet vertices
    ConstructPlanet(slices_deg, stacks_deg);
+   // generate the program
+   // this is a virtual function, but the vtable is not yet setup
+   // a calling class would need to create the program once again
+   GenerateProgram();
 }
 
 Planet::~Planet( )
@@ -32,6 +36,10 @@ Planet::~Planet( )
 
 void Planet::Render( )
 {
+   // enable the program
+   // todo: comes later
+//   mPlanetPgm.Enable();
+
    // enable the texture
    mSurfaceImage.Bind();
 
@@ -72,6 +80,10 @@ void Planet::Render( )
 
    // disable the texture
    mSurfaceImage.Unbind();
+
+   // disable the program
+   // todo: comes later
+//   mPlanetPgm.Disable();
 }
 
 void Planet::Update( const double & rElapsedTime )
@@ -103,27 +115,41 @@ bool Planet::LoadSurfaceImage( const char * pSurfaceImg )
 
 void Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
 {
+   // construct the sphere
    mSphereShape = GeomHelper::ConstructSphere(static_cast< uint32_t >(360.0 / slice_deg),
                                               static_cast< uint32_t >(180.0 / stack_deg),
                                               mRadius);
 
+   // construct the vertex buffer
    mVertexArray.GenBuffer(GL_ARRAY_BUFFER);
    mVertexArray.Bind();
    mVertexArray.BufferData(sizeof(mSphereShape.vertices.front()) * mSphereShape.vertices.size(), &mSphereShape.vertices[0], GL_STATIC_DRAW);
    mVertexArray.Unbind();
 
+   // construct the texture coordinate buffer
    mTexCoordArray.GenBuffer(GL_ARRAY_BUFFER);
    mTexCoordArray.Bind();
    mTexCoordArray.BufferData(sizeof(mSphereShape.tex_coords.front()) * mSphereShape.tex_coords.size(), &mSphereShape.tex_coords[0], GL_STATIC_DRAW);
    mTexCoordArray.Unbind();
 
+   // construct the normal buffer
    mNormalArray.GenBuffer(GL_ARRAY_BUFFER);
    mNormalArray.Bind();
    mNormalArray.BufferData(sizeof(mSphereShape.normals.front()) * mSphereShape.normals.size(), &mSphereShape.normals[0], GL_STATIC_DRAW);
    mNormalArray.Unbind();
 
+   // construct the index buffer
    mIndexArray.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
    mIndexArray.Bind();
    mIndexArray.BufferData(sizeof(mSphereShape.indices.front()) * mSphereShape.indices.size(), &mSphereShape.indices[0], GL_STATIC_DRAW);
    mIndexArray.Unbind();
+}
+
+bool Planet::GenerateProgram( )
+{
+   // compile and link the planet shader
+   mPlanetPgm.AttachFile(GL_VERTEX_SHADER, "planet.vert");
+   mPlanetPgm.AttachFile(GL_FRAGMENT_SHADER, "planet.frag");
+   
+   return mPlanetPgm.Link();
 }

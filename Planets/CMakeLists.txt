@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0.0)
 
 set(PLANETS_SRC
 Main.cpp
+Earth.cpp
+Earth.h
 Planet.cpp
 Planet.h
 PlanetsWindow.cpp
