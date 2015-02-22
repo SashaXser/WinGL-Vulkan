@@ -18,9 +18,7 @@ Planet::Planet( const char * const pSurfaceImg,
                 const float radius,
                 const double slices_deg,
                 const double stacks_deg ) :
-mRadius           ( radius),
-mDisplayList      ( 0 ),
-mSurfaceImage     ( 0 )
+mRadius           ( radius )
 {
    // load the surface image
    LoadSurfaceImage(pSurfaceImg);
@@ -30,58 +28,50 @@ mSurfaceImage     ( 0 )
 
 Planet::~Planet( )
 {
-   // release the image
-   glDeleteTextures(1, &mSurfaceImage);
-
-   // release the display list
-   glDeleteLists(mDisplayList, 1);
 }
 
 void Planet::Render( )
 {
-   if (mDisplayList)
-   {
-      // render the display list
-      glCallList(mDisplayList);
-   }
-   else
-   {
-      // create a new list
-      mDisplayList = glGenLists(1);
+   // enable the texture
+   mSurfaceImage.Bind();
 
-      // start rendering the new list
-      glNewList(mDisplayList, GL_COMPILE_AND_EXECUTE);
+   // enable all the required buffers
+   glEnable(GL_TEXTURE_2D);
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+   glEnableClientState(GL_NORMAL_ARRAY);
 
-      // enable all the required attributes
-      glEnable(GL_TEXTURE_2D);
-      glEnableClientState(GL_VERTEX_ARRAY);
-      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-      glEnableClientState(GL_NORMAL_ARRAY);
+   // setup the pointers
+   mNormalArray.Bind();
+   glNormalPointer(GL_FLOAT, 0, nullptr);
 
-      // bind the texture for the planet
-      glBindTexture(GL_TEXTURE_2D, mSurfaceImage);
+   mVertexArray.Bind();
+   glVertexPointer(3, GL_FLOAT, 0, nullptr);
 
-      // send down the required vetex and text info
-      glNormalPointer(GL_FLOAT, 0, &mSphereShape.normals[0]);
-      glVertexPointer(3, GL_FLOAT, 0, &mSphereShape.vertices[0]);
-      glTexCoordPointer(2, GL_FLOAT, 0, &mSphereShape.tex_coords[0]);
+   mTexCoordArray.Bind();
+   glTexCoordPointer(2, GL_FLOAT, 0, nullptr);
 
-      // begin rendering all the information
-      glDrawElements(mSphereShape.geom_type,
-                     static_cast< GLsizei >(mSphereShape.indices.size()),
-                     //4 * 3 + 4 * 3 * 2,
-                     GL_UNSIGNED_INT,
-                     &mSphereShape.indices[0]);
+   // render with the index array
+   mIndexArray.Bind();
+   glDrawElements(mSphereShape.geom_type,
+                  static_cast< GLsizei >(mSphereShape.indices.size()),
+                  GL_UNSIGNED_INT,
+                  nullptr);
 
-      // disable all the required attributes
-      glDisable(GL_TEXTURE_2D);
-      glDisableClientState(GL_VERTEX_ARRAY);
-      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-      glDisableClientState(GL_NORMAL_ARRAY);
+   // unbind the pointers
+   mIndexArray.Unbind();
+   mVertexArray.Unbind();
+   mNormalArray.Unbind();
+   mTexCoordArray.Unbind();
 
-      // stop rendering the list
-      glEndList();
-   }
+   // disable all the required buffers
+   glDisable(GL_TEXTURE_2D);
+   glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+   glDisableClientState(GL_NORMAL_ARRAY);
+
+   // disable the texture
+   mSurfaceImage.Unbind();
 }
 
 void Planet::Update( const double & rElapsedTime )
@@ -95,21 +85,17 @@ bool Planet::LoadSurfaceImage( const char * pSurfaceImg )
    std::shared_ptr< uint8_t > pImage;
 
    // load the specified image
-   if (ReadTexture(pSurfaceImg, GL_BGRA, width, height, pImage))
+   if (mSurfaceImage.Load2D(pSurfaceImg, GL_RGBA, GL_COMPRESSED_RGBA, TRUE))
    {
       // bind the texture
-      glGenTextures(1, &mSurfaceImage);
-      glBindTexture(GL_TEXTURE_2D, mSurfaceImage);
-      // load the texture onto the card
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pImage.get());
-      // set the texture attributes
-      glGenerateMipmap(GL_TEXTURE_2D);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      mSurfaceImage.Bind();
+
+      // set extra texture attributes
+      mSurfaceImage.SetParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      mSurfaceImage.SetParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
       // no longer modifying this texture
-      glBindTexture(GL_TEXTURE_2D, 0);
+      mSurfaceImage.Unbind();
    }
 
    return mSurfaceImage != 0;
@@ -120,4 +106,24 @@ void Planet::ConstructPlanet( const double slice_deg, const double stack_deg )
    mSphereShape = GeomHelper::ConstructSphere(static_cast< uint32_t >(360.0 / slice_deg),
                                               static_cast< uint32_t >(180.0 / stack_deg),
                                               mRadius);
+
+   mVertexArray.GenBuffer(GL_ARRAY_BUFFER);
+   mVertexArray.Bind();
+   mVertexArray.BufferData(sizeof(mSphereShape.vertices.front()) * mSphereShape.vertices.size(), &mSphereShape.vertices[0], GL_STATIC_DRAW);
+   mVertexArray.Unbind();
+
+   mTexCoordArray.GenBuffer(GL_ARRAY_BUFFER);
+   mTexCoordArray.Bind();
+   mTexCoordArray.BufferData(sizeof(mSphereShape.tex_coords.front()) * mSphereShape.tex_coords.size(), &mSphereShape.tex_coords[0], GL_STATIC_DRAW);
+   mTexCoordArray.Unbind();
+
+   mNormalArray.GenBuffer(GL_ARRAY_BUFFER);
+   mNormalArray.Bind();
+   mNormalArray.BufferData(sizeof(mSphereShape.normals.front()) * mSphereShape.normals.size(), &mSphereShape.normals[0], GL_STATIC_DRAW);
+   mNormalArray.Unbind();
+
+   mIndexArray.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+   mIndexArray.Bind();
+   mIndexArray.BufferData(sizeof(mSphereShape.indices.front()) * mSphereShape.indices.size(), &mSphereShape.indices[0], GL_STATIC_DRAW);
+   mIndexArray.Unbind();
 }

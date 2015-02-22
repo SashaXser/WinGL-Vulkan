@@ -2,7 +2,9 @@
 #define _PLANET_H_
 
 // wingl includes
+#include "Texture.h"
 #include "GeomHelper.h"
+#include "VertexBufferObject.h"
 
 // std includes
 #include <vector>
@@ -41,8 +43,13 @@ protected:
 
    // protected member variables
    float       mRadius;
-   uint32_t    mSurfaceImage;
-   uint32_t    mDisplayList;
+
+   Texture     mSurfaceImage;
+
+   VertexBufferObject   mVertexArray;
+   VertexBufferObject   mTexCoordArray;
+   VertexBufferObject   mNormalArray;
+   VertexBufferObject   mIndexArray;
 
    GeomHelper::Shape mSphereShape;
 
