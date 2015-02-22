@@ -148,9 +148,9 @@ const double PlanetsWindow::PLANETARY_TIME[MAX_PLANETS][2] =
 PlanetsWindow::PlanetsWindow( ) :
 mpMajMinAxes            ( PlanetsWindow::MAJ_MIN_AXES_FALSE ),
 mpOrbitDisplayList      ( PlanetsWindow::mOrbitDispListsFalse ),
-mElapsedTimeMultiplier  ( 1.0 )
+mElapsedTimeMultiplier  ( 1.0 ),
+mCamStepSpeed           ( 0.15f )
 {
-   std::memset(mMousePos, 0x00, sizeof(mMousePos));
    std::memset(mppPlanets, 0x00, sizeof(mppPlanets));
    std::memset(mPlanetaryTime, 0x00, sizeof(mPlanetaryTime));
 }
@@ -218,7 +218,8 @@ bool PlanetsWindow::Create( unsigned int nWidth,
                 << "Controls:" << std::endl
                 << "asdw - move camera" << std::endl
                 << "lbutton down - orientate camera" << std::endl
-                << "+ / - - increase / decrease simulation time";
+                << "+ / - - increase / decrease simulation time" << std::endl
+                << "] / [ - increase / decrease camera step";
       
       return true;
    }
@@ -294,8 +295,8 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
       if (wParam & MK_LBUTTON)
       {
          // get the delta between current and previous positions
-         const int32_t delta_x = current_mouse_x - mMousePos[0];
-         const int32_t delta_y = current_mouse_y - mMousePos[1];
+         const auto delta_x = current_mouse_x - GetPreviousMousePosition().x;
+         const auto delta_y = current_mouse_y - GetPreviousMousePosition().y;
 
          // obtain the current yaw and pitch rotations from the view matrix
          float view_yaw = 0.0f, view_pitch = 0.0f;
@@ -319,10 +320,6 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
                      Matrixf::Rotate(view_pitch, 1.0f, 0.0f, 0.0f)).Inverse();
       }
 
-      // save the current state
-      mMousePos[0] = current_mouse_x;
-      mMousePos[1] = current_mouse_y;
-
       }
 
       break;
@@ -338,7 +335,7 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
          mViewMat.MakeInverse();
 
          // strafe translate based on the current view matrix
-         mViewMat = (mViewMat * Matrixf::Translate(wParam == 'a' ? -0.15f : 0.15f, 0.0f, 0.0f)).Inverse();
+         mViewMat = (mViewMat * Matrixf::Translate(wParam == 'a' ? -mCamStepSpeed : mCamStepSpeed, 0.0f, 0.0f)).Inverse();
 
          break;
 
@@ -348,7 +345,7 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
          mViewMat.MakeInverse();
 
          // view translate based on the current view matrix
-         mViewMat = (mViewMat * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -0.15f : 0.15f)).Inverse();
+         mViewMat = (mViewMat * Matrixf::Translate(0.0f, 0.0f, wParam == 'w' ? -mCamStepSpeed : mCamStepSpeed)).Inverse();
 
          break;
 
@@ -356,6 +353,20 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
       case '-':
          // increase / decrease the multiplier
          mElapsedTimeMultiplier = MathHelper::Clamp(mElapsedTimeMultiplier * (wParam == '=' ? 10.0 : 0.1), 0.01, 100000.0);
+
+         break;
+
+      case '[':
+      case ']':
+         // increase / decrease the camera step speed
+         mCamStepSpeed = MathHelper::Clamp(mCamStepSpeed + (wParam == ']' ? 0.001f : -0.001f), 0.001f, 1.0f);
+
+         break;
+
+      case '{':
+      case '}':
+         // increase / decrease the camera step speed
+         mCamStepSpeed = MathHelper::Clamp(mCamStepSpeed + (wParam == '}' ? 0.01f : -0.01f), 0.001f, 1.0f);
 
          break;
       }

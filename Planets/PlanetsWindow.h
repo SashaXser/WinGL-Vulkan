@@ -97,12 +97,12 @@ private:
    Matrixf mProjMat;
    Matrixf mViewMat;
 
+   // defines the camera step speed
+   float mCamStepSpeed;
+
    // defines the program to render the planets
    // todo: needs to be moved into the planets
    ShaderProgram mPlanetPgm;
-
-   // stores the current mouse x and y pointes
-   int32_t mMousePos[2];
 
    // static helper functions to initialize the major / minor axes arrays
    static void DefineMajorMinorAxes( double & major, double & minor, double & distance, const bool convert_to_gl );
