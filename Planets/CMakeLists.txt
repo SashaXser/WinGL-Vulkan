@@ -11,6 +11,8 @@ PlanetsWindow.h
 )
 
 set(SHADER_SRC
+earth.frag
+earth.vert
 planet.frag
 planet.vert
 )

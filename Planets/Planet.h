@@ -22,10 +22,10 @@ public:
    virtual ~Planet( );
 
    // renders the planet
-   void Render( );
+   virtual void Render( );
 
    // updates the planet
-   void Update( const double & rElapsedTime );
+   virtual void Update( const double & rElapsedTime );
 
    // obtains the radius of the planet
    float Radius( ) { return mRadius; }
@@ -40,7 +40,7 @@ protected:
    typedef std::vector< UIntVec >      IndicesVec;
 
    // loads the image specified
-   bool LoadSurfaceImage( const char * pSurfaceImg );
+   Texture LoadSurfaceImage( const char * pSurfaceImg );
 
    // constructs the vertices and the image coordinates
    void ConstructPlanet( const double slice_deg, const double stack_deg );

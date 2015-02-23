@@ -18,12 +18,12 @@ Planet::Planet( const char * const pSurfaceImg,
                 const float radius,
                 const double slices_deg,
                 const double stacks_deg ) :
-mRadius        ( radius )
+mRadius        ( radius ),
+mSurfaceImage  ( LoadSurfaceImage(pSurfaceImg) )
 {
-   // load the surface image
-   LoadSurfaceImage(pSurfaceImg);
    // construct the planet vertices
    ConstructPlanet(slices_deg, stacks_deg);
+
    // generate the program
    // this is a virtual function, but the vtable is not yet setup
    // a calling class would need to create the program once again
@@ -90,27 +90,25 @@ void Planet::Update( const double & rElapsedTime )
 {
 }
 
-bool Planet::LoadSurfaceImage( const char * pSurfaceImg )
+Texture Planet::LoadSurfaceImage( const char * pSurfaceImg )
 {
-   uint32_t width = 0;
-   uint32_t height = 0;
-   std::shared_ptr< uint8_t > pImage;
+   Texture texture;
 
    // load the specified image
-   if (mSurfaceImage.Load2D(pSurfaceImg, GL_RGBA, GL_COMPRESSED_RGBA, TRUE))
+   if (texture.Load2D(pSurfaceImg, GL_RGBA, GL_COMPRESSED_RGBA, TRUE))
    {
       // bind the texture
-      mSurfaceImage.Bind();
+      texture.Bind();
 
       // set extra texture attributes
-      mSurfaceImage.SetParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      mSurfaceImage.SetParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      texture.SetParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      texture.SetParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
       // no longer modifying this texture
-      mSurfaceImage.Unbind();
+      texture.Unbind();
    }
 
-   return mSurfaceImage != 0;
+   return texture;
 }
 
 void Planet::ConstructPlanet( const double slice_deg, const double stack_deg )

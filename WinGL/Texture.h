@@ -19,6 +19,9 @@ public:
    // static function that gets the active texture for the given texture unit
    static GLuint GetCurrentTexture( const GLenum target, const GLenum texture_unit = GL_TEXTURE0 );
 
+   // static function that sets the active texture unit to the default
+   static void SetActiveTextureUnitToDefault( );
+
    // constructor / destructor
     Texture( );
    ~Texture( );

@@ -3,6 +3,7 @@
 
 // local includes
 #include "Planet.h"
+#include "Texture.h"
 
 class Earth : public Planet
 {
@@ -15,6 +16,12 @@ public:
           const double stacks_deg = 2.5 );
    virtual ~Earth( );
 
+   // renders the planet
+   virtual void Render( ) override;
+
+   // updates the planet
+   virtual void Update( const double & elapsed_time ) override;
+
 protected:
    // constructs the shader program
    virtual bool GenerateProgram( ) override;
@@ -25,6 +32,9 @@ private:
    Earth( const Earth &);
    // prohibit certain operations
    Earth & operator = ( const Earth & );
+
+   // night time surface image
+   Texture mNightSurfaceImage;
 
 };
 

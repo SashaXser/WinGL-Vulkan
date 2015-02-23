@@ -77,6 +77,11 @@ GLuint Texture::GetCurrentTexture( const GLenum target, const GLenum texture_uni
    return texture;
 }
 
+void Texture::SetActiveTextureUnitToDefault( )
+{
+   glActiveTexture(GL_TEXTURE0);
+}
+
 Texture::Texture( ) :
 mTexID            ( 0 ),
 mTexTarget        ( INVALID_TEXTURE_TARGET ),
