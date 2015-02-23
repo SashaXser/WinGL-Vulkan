@@ -443,7 +443,7 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
          shape.normals.push_back(vertex.UnitVector());
 
          // calculate the texture coords
-         shape.tex_coords.push_back(Vec2f(slice_rad / (MathHelper::pi< float >() * 2.0f),
+         shape.tex_coords.push_back(Vec2f(1.0f - slice_rad / (MathHelper::pi< float >() * 2.0f),
                                           1.0f - stack_rad / MathHelper::pi< float >()));
 
          // if on the final set of slice vertices, add the front base set again
@@ -454,7 +454,7 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
             shape.normals.push_back(shape.normals[base_index]);
 
             // calculate the end texture coordinates
-            shape.tex_coords.push_back(Vec2f(1.0f, shape.tex_coords.back().Y()));
+            shape.tex_coords.push_back(Vec2f(0.0f, shape.tex_coords.back().Y()));
          }
 
          // make sure not to create indices for the bottom set
