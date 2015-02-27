@@ -12,7 +12,7 @@ varying vec3 planet_normal_eye_space;
 void main( )
 {
    // defines the amient intensity
-   const float AMBIENT_INTENSITY = 0.2f;
+   const float AMBIENT_INTENSITY = 0.15f;
    const float DUSK_INTENSITY = 0.3f;
 
    // determine how much light to show...
@@ -29,8 +29,16 @@ void main( )
    vec4 night_color_3 = textureOffset(night_planet_texture, gl_TexCoord[0].st, ivec2(0.0f, 1.0f));
    vec4 night_color_4 = textureOffset(night_planet_texture, gl_TexCoord[0].st, ivec2(0.0f, -1.0f));
 
-   // average the night color intensities
-   float night_color_intensity = distance((night_color_1.rgb + night_color_2.rgb + night_color_3.rgb + night_color_4.rgb) / 4.0f, vec3(0.0f, 0.0f, 0.0f));
+   // average the night colors
+   vec3 night_color_average = (night_color.rgb + night_color_1.rgb + night_color_2.rgb + night_color_3.rgb + night_color_4.rgb) / 5.0f;
+
+   // determine the intensity of the night color
+   float night_color_intensity = 0.0f;
+
+   if (all(greaterThanEqual(night_color_average, vec3(0.2f, 0.2f, 0.2f))))
+   {
+      night_color_intensity = 0.5f;
+   }
 
    if (percent_light >= DUSK_INTENSITY)
    {
@@ -42,14 +50,13 @@ void main( )
       // if the values go below the ambient, we clamp back to the ambient
       float percent_light_ambient = clamp(percent_light, AMBIENT_INTENSITY, 1.0f);
 
-// todo: figure out why line shows up with this blend approach...
-//      // if there happens to be some lighting from the night lights
-//      night_color_intensity = min(max(AMBIENT_INTENSITY, night_color_intensity), 0.5);
-//
-//      if (night_color_intensity > AMBIENT_INTENSITY)
-//      {
-//         percent_light_ambient = mix(night_color_intensity, AMBIENT_INTENSITY, percent_light / DUSK_INTENSITY);
-//      }
+      // if there happens to be some lighting from the night lights
+      night_color_intensity = max(AMBIENT_INTENSITY, night_color_intensity);
+
+      if (night_color_intensity > percent_light_ambient)
+      {
+         percent_light_ambient = mix(night_color_intensity, percent_light_ambient, percent_light / DUSK_INTENSITY);
+      }
 
       // entering the phase of dusk / dawn and night / morning
       gl_FragColor = mix(night_color, day_color, percent_light / DUSK_INTENSITY) * percent_light_ambient;
@@ -57,7 +64,6 @@ void main( )
    else
    {
       // there will always be some ambient light
-//      gl_FragColor = night_color * min(max(AMBIENT_INTENSITY, night_color_intensity), 0.5);
-      gl_FragColor = night_color * clamp(percent_light, AMBIENT_INTENSITY, 1.0f);
+      gl_FragColor = night_color * max(AMBIENT_INTENSITY, night_color_intensity);
    }
 }
