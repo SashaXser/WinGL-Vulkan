@@ -4,6 +4,10 @@
 // defines the texture to use for rendering
 uniform sampler2D day_planet_texture;
 uniform sampler2D night_planet_texture;
+uniform sampler2D clouds_planet_texture;
+
+// indicates the amount of offset in the clouds to apply in s
+uniform float clouds_offset_s;
 
 // indicates the light and normal direction
 flat in vec3 light_direction_eye_space;
@@ -12,7 +16,7 @@ varying vec3 planet_normal_eye_space;
 void main( )
 {
    // defines the amient intensity
-   const float AMBIENT_INTENSITY = 0.15f;
+   const float AMBIENT_INTENSITY = 0.125f;
    const float DUSK_INTENSITY = 0.3f;
 
    // determine how much light to show...
@@ -40,10 +44,13 @@ void main( )
       night_color_intensity = 0.5f;
    }
 
+   // determines the final output
+   vec4 frag_color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
    if (percent_light >= DUSK_INTENSITY)
    {
       // use the full color of the day plus the light itensity
-      gl_FragColor = day_color * percent_light;
+      frag_color = day_color;
    }
    else if(percent_light < DUSK_INTENSITY && percent_light >= 0.0f)
    {
@@ -59,11 +66,24 @@ void main( )
       }
 
       // entering the phase of dusk / dawn and night / morning
-      gl_FragColor = mix(night_color, day_color, percent_light / DUSK_INTENSITY) * percent_light_ambient;
+      frag_color = mix(night_color, day_color, percent_light / DUSK_INTENSITY);
+
+      // use the calculated ambient intensity for the light's inensity
+      percent_light = percent_light_ambient;
    }
    else
    {
       // there will always be some ambient light
-      gl_FragColor = night_color * max(AMBIENT_INTENSITY, night_color_intensity);
+      frag_color = night_color;
+
+      // use the calculated ambient intensity for the light's inensity
+      percent_light = max(AMBIENT_INTENSITY, night_color_intensity);
    }
+
+   // obtain the color of the clouds
+   // texture coordinates mapped to the sphere are from 1.0f ---> 0.0f
+   vec4 cloud_color = texture(clouds_planet_texture, vec2(gl_TexCoord[0].s - clouds_offset_s, gl_TexCoord[0].t));
+
+   // look at only the red color component to determine mixing values
+   gl_FragColor = mix(frag_color, vec4(1.0f, 1.0f, 1.0f, 1.0f), cloud_color.r) * percent_light;
 }

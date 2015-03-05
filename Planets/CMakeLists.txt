@@ -15,6 +15,8 @@ earth.frag
 earth.vert
 planet.frag
 planet.vert
+sun.frag
+sun.vert
 )
 
 add_executable(Planets WIN32 ${PLANETS_SRC} ${SHADER_SRC})

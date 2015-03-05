@@ -32,8 +32,12 @@ inline bool Equals( const T & v1, const T & v2, const T & epsilon = std::numeric
 }
 
 template < typename T > T pi( ) { /* empty so as to error out */ }
-template < > inline double pi( ) { return 3.14159265358979323846; }
+template < > inline double pi( ) { return 3.1415926535897932384626433832795; }
 template < > inline float pi( ) { return static_cast< float >(pi< double >()); }
+
+template < typename T > T pi_2( ) { /* empty so as to error out */ }
+template < > inline double pi_2( ) { return 6.283185307179586476925286766559; }
+template < > inline float pi_2( ) { return static_cast< float >(pi_2< double >()); }
 
 } // namespace MathHelper
 

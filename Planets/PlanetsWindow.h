@@ -64,18 +64,10 @@ private:
 
    // generates the scene data
    void GenerateSceneData( );
-   void GeneratePlanetMatrices( );
    void GenerateOrbitalDisplayLists( );
 
    // defines the major / minor axes pointer
    const double (* const mpMajMinAxes)[3];
-
-   // defines the matrices for each of the nine planets
-   // first value indicates the planets ecliptic
-   // second value indicates the planets tilt
-   // third value indicates the planets rotation on axis
-   // forth value indicates the planets position
-   Matrixf mPlanetaryMatrix[MAX_PLANETS][4];
 
    // defines the display lists that will render the orbits
    uint32_t mOrbitDispListsTrue[MAX_PLANETS - 1];
@@ -86,9 +78,6 @@ private:
 
    // defines the elapsed time multiplier
    double mElapsedTimeMultiplier;
-
-   // defines the position of the planets based on time
-   double mPlanetaryTime[MAX_PLANETS];
 
    // defines all the planets that will be rendered
    Planet * mppPlanets[MAX_PLANETS];

@@ -100,10 +100,11 @@ bool ReadTexture( const char * const pFilename,
 
       switch (format)
       {
-      case GL_RGB:   il_format = IL_RGB;  break;
-      case GL_RGBA:  il_format = IL_RGBA; break;
-      case GL_BGR:   il_format = IL_BGR;  break;
-      case GL_BGRA:  il_format = IL_BGRA; break;
+      // case GL_ALPHA: il_format = IL_ALPHA;   break; << this is broken in resil
+      case GL_RGB:   il_format = IL_RGB;     break;
+      case GL_RGBA:  il_format = IL_RGBA;    break;
+      case GL_BGR:   il_format = IL_BGR;     break;
+      case GL_BGRA:  il_format = IL_BGRA;    break;
       default: il_format = IL_FORMAT_NOT_SUPPORTED; break;
       }
 
@@ -133,6 +134,7 @@ bool ReadTexture( const char * const pFilename,
 
             switch (format)
             {
+            case GL_ALPHA: Bpp = 1; break;
             case GL_RGB:   Bpp = 3; break;
             case GL_RGBA:  Bpp = 4; break;
             case GL_BGR:   Bpp = 3; break;

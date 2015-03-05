@@ -8,6 +8,9 @@
 // defines an invalid uniform location
 const GLint INVALID_UNIFORM_LOCATION = -1;
 
+// defines an invalid program id
+const GLuint INVALID_PROGRAM = 0;
+
 // defines an invalid value when obtaining a uniform value
 const GLint ShaderProgram::UniformValueSelector< GLint >::INVALID_VALUE = 134679852;
 const GLuint ShaderProgram::UniformValueSelector< GLuint >::INVALID_VALUE = 134679852;
@@ -265,5 +268,10 @@ void ShaderProgram::Enable( )
 void ShaderProgram::Disable( )
 {
    glUseProgram(0);
+}
+
+bool ShaderProgram::IsEnabled( ) const
+{
+   return ShaderProgram::GetCurrentProgram() == mShaderProg && INVALID_PROGRAM != mShaderProg;
 }
 

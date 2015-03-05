@@ -43,7 +43,7 @@ const double PlanetsWindow::KM_TO_GL_UNIT = 1.0 / GL_UNIT_TO_KM;
 
 const double PlanetsWindow::HOURS_IN_DAY = 24.0;
 const double PlanetsWindow::DAYS_IN_YEAR = 365.20833333;
-const double PlanetsWindow::SECONDS_PER_DAY = 15.0;
+const double PlanetsWindow::SECONDS_PER_DAY = 30.0;
 
 void PlanetsWindow::DefineMajorMinorAxes( double & major, double & minor, double & distance, const bool convert_to_gl )
 {
@@ -155,7 +155,6 @@ mElapsedTimeMultiplier  ( 1.0 ),
 mCamStepSpeed           ( 0.15f )
 {
    std::memset(mppPlanets, 0x00, sizeof(mppPlanets));
-   std::memset(mPlanetaryTime, 0x00, sizeof(mPlanetaryTime));
 }
 
 PlanetsWindow::~PlanetsWindow( )
@@ -199,7 +198,6 @@ bool PlanetsWindow::Create( unsigned int nWidth,
 
       // create the specific data
       GenerateSceneData();
-      GeneratePlanetMatrices();
       GenerateOrbitalDisplayLists();
 
       // enable global states
@@ -395,31 +393,27 @@ void PlanetsWindow::RenderScene( const double elapsed_time_sec )
 void PlanetsWindow::UpdateScene( const double elapsed_time_sec )
 {
    // elapsed time for the frame
-   const double dElapsedTime = elapsed_time_sec * mElapsedTimeMultiplier;
+   const double sim_elapsed_time_secs = elapsed_time_sec * mElapsedTimeMultiplier;
+
+   // the world position of the sun
+   const Vec3f world_pos_sun = mppPlanets[SUN]->GetWorldPosition();
+
+   // the lighting matrix
+   const Matrixf lighting_matrix = mViewMat.Inverse().Transpose();
 
    Planet ** pPlanet = mppPlanets;
-
    for (int i = 0; i < MAX_PLANETS; ++i, ++pPlanet)
    {
-      // update the time position
-      mPlanetaryTime[i] += (dElapsedTime * PLANETARY_TIME[i][1]);
-
-      // construct the translation matrix
-      mPlanetaryMatrix[i][3] =
-         Matrixf::Translate(static_cast< float >(std::cos(mPlanetaryTime[i]) * mpMajMinAxes[i][1]),
-                            0.0f,
-                            static_cast< float >(std::sin(mPlanetaryTime[i]) * -mpMajMinAxes[i][0]));
-
-      // compute a planetary rotation
-      const Matrixf mRotation =
-         Matrixf::Rotate(static_cast< float >(MathHelper::RadToDeg(PLANETARY_TIME[i][0]) * dElapsedTime),
-                         Vec3f(0.0f, 1.0f, 0.0f));
-
-      // update the local rotation
-      mPlanetaryMatrix[i][2] = mPlanetaryMatrix[i][2] * mRotation;
+      if (i != SUN)
+      {
+         // let the planet know the sun's location
+         (*pPlanet)->UpdateSunWorldPosition(world_pos_sun);
+         // update the lighting matrix based on the view matrix
+         (*pPlanet)->UpdateWorldToEyeSpaceLighting(lighting_matrix);
+      }
 
       // update the planet
-      (*pPlanet)->Update(elapsed_time_sec);
+      (*pPlanet)->Update(elapsed_time_sec, sim_elapsed_time_secs);
    }
 }
 
@@ -440,52 +434,8 @@ void PlanetsWindow::DrawScene( const double elapsed_time_sec )
 
    for (uint32_t i = 0; i < MAX_PLANETS; ++i, ++pPlanet)
    {
-      // push the matrix to the stack
-      glPushMatrix();
-
-      // construct the world matrix for the planet
-      const Matrixf mWorld = mPlanetaryMatrix[i][0] * mPlanetaryMatrix[i][3];
-      const Matrixf mTrans = Matrixf::Translate(Vec3f(static_cast< float >(mpMajMinAxes[i][2]), 0.0f, 0.0f));
-      const Matrixf mPlanetPos = mWorld * mTrans;
-
-      // construct the local matrix for the planet
-      const Matrixf mLocal = mPlanetaryMatrix[i][1] * mPlanetaryMatrix[i][2];
-
-      // multiply the current matrix stack by the world then the local
-      glMultMatrixf(mPlanetPos);
-      glMultMatrixf(mLocal);
-
-      if (SUN != i)
-      {
-         // enable the shader
-         (*pPlanet)->GetProgram().Enable();
-
-         // provide the world to eye space matrix for the light
-         (*pPlanet)->GetProgram().SetUniformMatrix< 1, 4, 4 >("light_world_to_eye_space_mat", mViewMat.Inverse().Transpose());
-
-         // update the planet's position
-         (*pPlanet)->GetProgram().SetUniformValue("sun_position_world_space",
-                                                  mPlanetaryMatrix[SUN][0] * mPlanetaryMatrix[SUN][3] *
-                                                  Matrixf::Translate(Vec3f(static_cast< float >(mpMajMinAxes[SUN][2]), 0.0f, 0.0f)) * Vec3f(0.0f, 0.0f, 0.0f));
-         (*pPlanet)->GetProgram().SetUniformValue("planet_position_world_space", mPlanetPos * Vec3f(0.0f, 0.0f, 0.0f));
-      }
-
       // render the planet
       (*pPlanet)->Render();
-
-      if (SUN != i)
-      {
-         // disable the shader
-         (*pPlanet)->GetProgram().Disable();
-      }
-
-      glPointSize(4);
-      glBegin(GL_POINTS);
-      glVertex3f(0,0,0);
-      glEnd();
-
-      // remove the matrix from the stack
-      glPopMatrix();
 
       if (i != SUN)
       {
@@ -493,7 +443,7 @@ void PlanetsWindow::DrawScene( const double elapsed_time_sec )
          glPushMatrix();
          
          // rotate the view by the planetary tilt
-         glMultMatrixf(mPlanetaryMatrix[i][0]);
+         glMultMatrixf((*pPlanet)->GetOrbitalTiltMatrix());
          // translate the orbit by the distance from the sun
          glTranslatef(static_cast< float >(mpMajMinAxes[i][2]), 0.0f, 0.0f);
          
@@ -510,67 +460,78 @@ void PlanetsWindow::GenerateSceneData( )
 {
    // create mercury
    mppPlanets[MERCURY] = new Planet("Textures\\MercuryColor.jpg",
-                                    static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[MERCURY]));
+                                    static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[MERCURY]),
+                                    PlanetsWindow::PLANETARY_TILTS[MERCURY],
+                                    PlanetsWindow::PLANETARY_TIME[MERCURY],
+                                    mpMajMinAxes[MERCURY]);
 
    // create venus
    mppPlanets[VENUS] = new Planet("Textures\\VenusColor.jpg",
-                                  static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[VENUS]));
+                                  static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[VENUS]),
+                                  PlanetsWindow::PLANETARY_TILTS[VENUS],
+                                  PlanetsWindow::PLANETARY_TIME[VENUS],
+                                  mpMajMinAxes[VENUS]);
    
    // create earth
    mppPlanets[EARTH] = new Earth("Textures\\EarthColor.jpg",
                                  "Textures\\EarthLights.jpg",
+                                 "Textures\\EarthClouds.jpg",
                                  static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[EARTH]),
+                                 PlanetsWindow::PLANETARY_TILTS[EARTH],
+                                 PlanetsWindow::PLANETARY_TIME[EARTH],
+                                 mpMajMinAxes[EARTH],
+                                 "earth.vert", "earth.frag",
                                  2.5, 1.0);
    
    // create mars
    mppPlanets[MARS] = new Planet("Textures\\MarsColor.jpg",
-                                 static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[MARS]));
+                                 static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[MARS]),
+                                 PlanetsWindow::PLANETARY_TILTS[MARS],
+                                 PlanetsWindow::PLANETARY_TIME[MARS],
+                                 mpMajMinAxes[MARS]);
 
    // create jupiter
    mppPlanets[JUPITER] = new Planet("Textures\\JupiterColor.jpg",
-                                    static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[JUPITER]));
+                                    static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[JUPITER]),
+                                    PlanetsWindow::PLANETARY_TILTS[JUPITER],
+                                    PlanetsWindow::PLANETARY_TIME[JUPITER],
+                                    mpMajMinAxes[JUPITER]);
 
    // create saturn
    mppPlanets[SATURN] = new Planet("Textures\\SaturnColor.jpg",
-                                   static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[SATURN]));
+                                   static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[SATURN]),
+                                   PlanetsWindow::PLANETARY_TILTS[SATURN],
+                                   PlanetsWindow::PLANETARY_TIME[SATURN],
+                                   mpMajMinAxes[SATURN]);
 
    // create uranus
    mppPlanets[URANUS] = new Planet("Textures\\UranusColor.jpg",
-                                   static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[URANUS]));
+                                   static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[URANUS]),
+                                   PlanetsWindow::PLANETARY_TILTS[URANUS],
+                                   PlanetsWindow::PLANETARY_TIME[URANUS],
+                                   mpMajMinAxes[URANUS]);
 
    // create neptune
    mppPlanets[NEPTUNE] = new Planet("Textures\\NeptuneColor.jpg",
-                                    static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[NEPTUNE]));
+                                    static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[NEPTUNE]),
+                                    PlanetsWindow::PLANETARY_TILTS[NEPTUNE],
+                                    PlanetsWindow::PLANETARY_TIME[NEPTUNE],
+                                    mpMajMinAxes[NEPTUNE]);
 
    // create pluto
    mppPlanets[PLUTO] = new Planet("Textures\\PlutoColor.jpg",
-                                  static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[NEPTUNE]));
+                                  static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[PLUTO]),
+                                  PlanetsWindow::PLANETARY_TILTS[PLUTO],
+                                  PlanetsWindow::PLANETARY_TIME[PLUTO],
+                                  mpMajMinAxes[PLUTO]);
 
    // create the sun
    mppPlanets[SUN] = new Planet("Textures\\SunColor.jpg",
-                                static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[SUN]));
-}
-
-void PlanetsWindow::GeneratePlanetMatrices( )
-{
-   // this data should move into the planet itself
-
-   for (unsigned int i = 0; i < MAX_PLANETS; ++i)
-   {
-      // obtain references to each of the matrices
-      Matrixf & ecliptic = mPlanetaryMatrix[i][0];
-      Matrixf & tilt     = mPlanetaryMatrix[i][1];
-      Matrixf & rotation = mPlanetaryMatrix[i][2];
-      Matrixf & trans    = mPlanetaryMatrix[i][3];
-
-      // setup the ecliptic
-      ecliptic.MakeRotation(static_cast< float >(MathHelper::RadToDeg(PlanetsWindow::PLANETARY_TILTS[i][0])), 0.0f, 0.0f, 1.0f);
-      // setup the planet's tilt
-      tilt.MakeRotation(MathHelper::RadToDeg(static_cast< float >(PlanetsWindow::PLANETARY_TILTS[i][1])), 0.0f, 0.0f, 1.0f);
-      // set the last matrix to the identity
-      rotation.MakeIdentity();
-      trans.MakeIdentity();
-   }
+                                static_cast< float >(PlanetsWindow::PLANETARY_DIAMETERS[SUN]),
+                                PlanetsWindow::PLANETARY_TILTS[SUN],
+                                PlanetsWindow::PLANETARY_TIME[SUN],
+                                mpMajMinAxes[SUN],
+                                "sun.vert", "sun.frag");
 }
 
 void PlanetsWindow::GenerateOrbitalDisplayLists( )

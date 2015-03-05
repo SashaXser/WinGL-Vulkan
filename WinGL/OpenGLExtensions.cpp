@@ -181,4 +181,24 @@ uint32_t GetVersion( )
    return VERSION;
 }
 
+bool IsContextCompatible( )
+{
+   // there should be an active context
+   WGL_ASSERT(wglGetCurrentContext());
+
+   // versions 2.1 or less are compatible by nature
+   bool compatible = VERSION_2_1 >= GetVersion();
+
+   if (!compatible)
+   {
+      // request the context flags
+      GLint flags = 0;
+      glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &flags);
+
+      compatible = (flags & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0;
+   }
+
+   return compatible;
+}
+
 } // namespace gl

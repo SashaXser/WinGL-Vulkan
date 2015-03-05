@@ -22,6 +22,9 @@
 // defines an invalid uniform location
 extern const GLint INVALID_UNIFORM_LOCATION;
 
+// defines an invalid program id
+extern const GLuint INVALID_PROGRAM;
+
 class ShaderProgram
 {
 private:
@@ -84,6 +87,9 @@ public:
    // enables / disables the use of the shader
    void Enable( );
    void Disable( );
+
+   // indicates if the program is active
+   bool IsEnabled( ) const;
 
    // gets a uniforms location
    GLint GetUniformLocation( const std::string & uniform );

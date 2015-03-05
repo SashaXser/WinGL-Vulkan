@@ -35,6 +35,9 @@ extern const uint32_t VERSION_4_4;
 // returns the current version of opengl
 uint32_t GetVersion( );
 
+// determines if the current context is a legacy / compatible one
+bool IsContextCompatible( );
+
 }; // namespace gl
 
 #endif // _OPENGL_EXTENSIONS_H_
