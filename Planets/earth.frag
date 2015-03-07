@@ -16,7 +16,7 @@ varying vec3 planet_normal_eye_space;
 void main( )
 {
    // defines the amient intensity
-   const float AMBIENT_INTENSITY = 0.125f;
+   const float AMBIENT_INTENSITY = 0.05f;
    const float DUSK_INTENSITY = 0.3f;
 
    // determine how much light to show...
