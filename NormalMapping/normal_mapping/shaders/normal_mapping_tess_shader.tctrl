@@ -5,9 +5,9 @@ layout (vertices = 3) out;
 uniform mat4 model_view_mat4;
 uniform mat4 model_view_proj_mat4;
 
-smooth in vec2 tctrl_tex_coords[];
+flat in vec2 tctrl_tex_coords[];
 
-smooth out vec2 teval_tex_coords[];
+flat out vec2 teval_tex_coords[];
 
 float CalculateTessellationLevel( const vec4 clip_space_position )
 {
@@ -20,6 +20,8 @@ float CalculateTessellationLevel( const vec4 clip_space_position )
    float distance = distance(camera_position, vertex_position) / 200.0f;
 
    float level = mix(64.0f, 1.0f, distance / 5.0f);
+
+   level = gl_InvocationID;
 
    return clamp(level, 1.0f, 64.0f);
 }

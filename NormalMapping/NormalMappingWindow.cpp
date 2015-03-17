@@ -42,6 +42,7 @@ mPointLightAmbientIntensity   ( AMBIENT_INTENSITY ),
 mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY ),
 mParallaxBias                 ( 0.03f ),
 mParallaxScale                ( -0.0225f ),
+mPolygonMode                  ( GL_FILL ),
 mInvertNormalY                ( false )
 {
    std::memset(mMousePos, 0x00, sizeof(mMousePos));
@@ -121,6 +122,7 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
                 << "t - Switch to tessellation shading" << std::endl
                 << std::endl
                 << "Shift + s - Turn point light on / off" << std::endl
+                << "Shift + w - Turn wire frame on / off" << std::endl
                 << std::endl
                 << "L-Button Down - Activate camera / directional light rotation" << std::endl
                 << "Mouse X / Y Delta - Manipulate camera / directional light rotation" << std::endl;
@@ -174,8 +176,6 @@ int NormalMappingWindow::Run( )
       {
          // clear the back buffer and the depth buffer
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
          if (mpShader && mpDiffuseTex && mpNormalTex && mpHeightTex && mpWallVAO)
          {
@@ -336,6 +336,19 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          mpShader->SetUniformValue("point_light.base.diffuse_intensity", mPointLightDiffuseIntensity);
 
          mpShader->Disable();
+
+         }
+
+         break;
+
+      case 'W':
+         {
+
+         // update the mode
+         mPolygonMode = mPolygonMode == GL_FILL ? GL_LINE : GL_FILL;
+
+         // set the mode to either fill or wire
+         glPolygonMode(GL_FRONT_AND_BACK, mPolygonMode);
 
          }
 

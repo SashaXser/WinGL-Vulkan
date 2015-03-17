@@ -135,6 +135,9 @@ private:
    float       mParallaxBias;
    float       mParallaxScale;
 
+   // defines the current polygon mode
+   GLint       mPolygonMode;
+
    // indicates if the y component of the normal texture should be inverted
    bool        mInvertNormalY;
 

@@ -4,7 +4,7 @@ layout (triangles, equal_spacing, ccw) in;
 
 uniform sampler2D parallax_texture;
 
-smooth in vec2 teval_tex_coords[];
+flat in vec2 teval_tex_coords[];
 
 smooth out vec2 frag_tex_coords;
 

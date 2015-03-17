@@ -15,7 +15,7 @@ uniform lighting_directional directional_light;
 uniform lighting_point point_light;
 
 // defines the attributes passed along through the shader pipeline
-smooth out vec2 tctrl_tex_coords;
+flat out vec2 tctrl_tex_coords;
 smooth out vec3 frag_normal;
 smooth out vec3 vertex_position_eye_space;
 flat out vec3 directional_light_eye_space;
