@@ -31,6 +31,7 @@ bool Window::Create( unsigned int nWidth,
                      const char * pWndTitle,
                      const void * pInitParams )
 {
+   
    // register the class window
    WNDCLASSEX wndClassEx =
    {
@@ -46,8 +47,15 @@ bool Window::Create( unsigned int nWidth,
       NULL
    };
 
+   // obtain the class information if already registered
+   const ATOM registered_atom =
+      static_cast< ATOM >(GetClassInfoEx(wndClassEx.hInstance, wndClassEx.lpszClassName, &wndClassEx));
+
+   // determine if a new registration is needed
+   const ATOM atom = registered_atom ? registered_atom : RegisterClassEx(&wndClassEx);
+
    // register the class
-   if (ATOM classAtom = RegisterClassEx(&wndClassEx))
+   if (atom)
    {
       // window styles and styles extra
       const DWORD nStyles = WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_OVERLAPPEDWINDOW;
@@ -60,7 +68,7 @@ bool Window::Create( unsigned int nWidth,
       // create the window
       mHWND =
          CreateWindowEx(nStylesEx,
-                        reinterpret_cast< LPCSTR >(classAtom),
+                        reinterpret_cast< LPCSTR >(atom),
                         pWndTitle,
                         nStyles,
                         CW_USEDEFAULT, CW_USEDEFAULT,

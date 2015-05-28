@@ -47,8 +47,15 @@ HWND CreateOpenGLWindow( const HWND wnd, HGLRC & context )
          nullptr
       };
 
+      // obtain the class information if already registered
+      const ATOM registered_atom =
+         static_cast< ATOM >(GetClassInfoEx(wndClassEx.hInstance, wndClassEx.lpszClassName, &wndClassEx));
+
+      // determine if a new registration is needed
+      const ATOM atom = registered_atom ? registered_atom : RegisterClassEx(&wndClassEx);
+
       // get back an atom from the registration process
-      if (const ATOM atom = RegisterClassEx(&wndClassEx))
+      if (atom)
       {
          // window styles and styles extra
          const DWORD nStyles = WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_OVERLAPPEDWINDOW;
