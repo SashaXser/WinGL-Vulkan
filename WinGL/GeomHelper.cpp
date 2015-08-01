@@ -173,8 +173,10 @@ ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
             //t = Matrix< T >::Rotate(T(-90), Vector< T, 3 >(0, 0, 1)) * Vector4< T >(((n0 + n1 + n2) * (T(1) / T(3))), 0);
          }
 
+#ifdef WGL_GEOM_HELPER_REPORT_ZERO_LENGTH_TANGENT_VECTOR
          // issue a message to the console
          WGL_ASSERT_REPORT(false, "Creating tangent vector since tangent calculation produced zero length tangent vector");
+#endif // WGL_GEOM_HELPER_REPORT_ZERO_LENGTH_TANGENT_VECTOR
 
          //const Vector< T, 3 > b(det * (s1 * e2.X() - s2 * e1.X()),
          //                     det * (s1 * e2.Y() - s2 * e1.Y()),
