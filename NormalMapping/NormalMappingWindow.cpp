@@ -486,9 +486,9 @@ void NormalMappingWindow::LoadShader( const Shader shader )
    {
    case NORMAL_SHADER:
       // attach the frag and vert sources
-      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< std::string >
                                              { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_normal_shader.vert" });
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_normal_shader.frag" });
 
       // indicate that we need to render triangles
@@ -498,9 +498,9 @@ void NormalMappingWindow::LoadShader( const Shader shader )
 
    case PARALLAX_SHADER:
       // attach the frag and vert sources
-      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< std::string >
                                              { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.vert" });
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_parallax_shader.frag" });
 
       // indicate that we need to render triangles
@@ -510,9 +510,9 @@ void NormalMappingWindow::LoadShader( const Shader shader )
 
    case TESSELLATION_SHADER:
       // attach the frag, vert, and tess sources
-      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< std::string >
                                              { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_tess_shader.vert" });
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_tess_shader.frag" });
       mpShader->AttachFile(GL_TESS_CONTROL_SHADER, "./normal_mapping/shaders/normal_mapping_tess_shader.tctrl");
       mpShader->AttachFile(GL_TESS_EVALUATION_SHADER, "./normal_mapping/shaders/normal_mapping_tess_shader.teval");
@@ -525,9 +525,9 @@ void NormalMappingWindow::LoadShader( const Shader shader )
    case FLAT_SHADER:
    default: 
       // attach the frag and vert sources
-      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_VERTEX_SHADER, std::vector< std::string >
                                              { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.vert" });
-      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< const std::string >
+      mpShader->AttachFile(GL_FRAGMENT_SHADER, std::vector< std::string >
                                                { "./normal_mapping/shaders/normal_mapping_lighting.glsl", "./normal_mapping/shaders/normal_mapping_flat_shader.frag" });
 
       // indicate that we need to render triangles
@@ -759,7 +759,7 @@ bool NormalMappingWindow::LoadTexture( )
    bool textures_loaded = true;
 
    // all the supported textures
-   std::vector< std::vector< const char * const > > textures =
+   std::vector< std::vector< const char * > > textures =
    {
       // diffuse tex    offset tex     normal tex     scale    offset      invert_y
       { "./normal_mapping/textures/bricks_diffuse.jpg",        "./normal_mapping/textures/bricks_height.png",        "./normal_mapping/textures/bricks_normal.jpg",        "0.03",  "-0.5",  "false" },

@@ -65,9 +65,9 @@ public:
    // attaches the shader to the program
    bool Attach( const GLenum shader, const GLuint shader_obj );
    bool Attach( const GLenum shader, const std::string & src );
-   bool Attach( const GLenum shader, const std::vector< const std::string > & src );
+   bool Attach( const GLenum shader, const std::vector< std::string > & src );
    bool AttachFile( const GLenum shader, const std::string & file );
-   bool AttachFile( const GLenum shader, const std::vector< const std::string > & file );
+   bool AttachFile( const GLenum shader, const std::vector< std::string > & file );
 
    // attaches source to a specified name
    // this allows the shader to use #include "some_file.glsl" for reusable code

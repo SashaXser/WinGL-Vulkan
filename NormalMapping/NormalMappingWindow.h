@@ -123,7 +123,7 @@ private:
    Manipulate  mManipulate;
 
    // indicates the type of draw callback to use for the terrain
-   typedef decltype( std::bind(&glDrawElements, GL_TRIANGLES, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3) ) DrawElementsFunc;
+   using DrawElementsFunc = std::function< void APIENTRY ( GLsizei, GLenum, const GLvoid * ) >;
    DrawElementsFunc  mDrawElements;
 
    // defines lighting parameters

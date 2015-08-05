@@ -76,10 +76,10 @@ bool ShaderProgram::Attach( const GLenum shader, const GLuint shader_obj )
 
 bool ShaderProgram::Attach( const GLenum shader, const std::string & src )
 {
-   return Attach(shader, std::vector< const std::string > { src });
+   return Attach(shader, std::vector< std::string > { src });
 }
 
-bool ShaderProgram::Attach( const GLenum shader, const std::vector< const std::string > & src )
+bool ShaderProgram::Attach( const GLenum shader, const std::vector< std::string > & src )
 {
    bool attached = false;
 
@@ -101,10 +101,10 @@ bool ShaderProgram::Attach( const GLenum shader, const std::vector< const std::s
 
 bool ShaderProgram::AttachFile( const GLenum shader, const std::string & file )
 {
-   return AttachFile(shader, std::vector< const std::string > { file });
+   return AttachFile(shader, std::vector< std::string > { file });
 }
 
-bool ShaderProgram::AttachFile( const GLenum shader, const std::vector< const std::string > & file )
+bool ShaderProgram::AttachFile( const GLenum shader, const std::vector< std::string > & file )
 {
    bool attached = false;
 

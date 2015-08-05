@@ -43,10 +43,10 @@ std::string Read( const std::string & file )
 
 GLuint LoadShaderSrc( const GLenum type, const std::string & src )
 {
-   return LoadShaderSrc(type, std::vector< const std::string > { src });
+   return LoadShaderSrc(type, std::vector< std::string > { src });
 }
 
-GLuint LoadShaderSrc( const GLenum type, const std::vector< const std::string > & sources )
+GLuint LoadShaderSrc( const GLenum type, const std::vector< std::string > & sources )
 {
    // defines the shader object
    GLuint sobj = 0;
@@ -108,13 +108,13 @@ GLuint LoadShaderSrc( const GLenum type, const std::vector< const std::string > 
 
 GLuint LoadShaderFile( const GLenum type, const std::string & file )
 {
-   return LoadShaderFile(type, std::vector< const std::string > { file });
+   return LoadShaderFile(type, std::vector< std::string > { file });
 }
 
-GLuint LoadShaderFile( const GLenum type, const std::vector< const std::string > & file )
+GLuint LoadShaderFile( const GLenum type, const std::vector< std::string > & file )
 {
    // collection of all the source files
-   std::vector< const std::string > sources;
+   std::vector< std::string > sources;
 
    std::for_each(file.cbegin(), file.cend(),
    [ &sources ] ( const std::string & file )

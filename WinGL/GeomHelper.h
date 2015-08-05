@@ -20,18 +20,6 @@ namespace GeomHelper
 // if indices is empty, then glDrawArrays is used.
 struct Shape
 {
-   Shape( ) { }
-   Shape( Shape && shape )
-   {
-      geom_type = shape.geom_type;
-      vertices.swap(shape.vertices);
-      indices.swap(shape.indices);
-      tex_coords.swap(shape.tex_coords);
-      normals.swap(shape.normals);
-      tangents.swap(shape.tangents);
-      bitangents.swap(shape.bitangents);
-   }
-
    GLenum                  geom_type;
    std::vector< Vec3f >    vertices;
    std::vector< GLuint >   indices;
