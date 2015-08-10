@@ -621,8 +621,8 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    mProjTexProg.SetUniformValue("depth_texture", static_cast< GLint >(mDepthTex.GetBoundTexUnit()));
 
    // update shader uniforms for the walls
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat);
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", light_projection * mLightVariables.mMViewMat);
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", Matrixf(mCameraVariables.mProjMat * mCameraVariables.mMViewMat));
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", Matrixf(light_projection * mLightVariables.mMViewMat));
 
    // enable the required pointer information
    // going to use client state compat mode opengl here
@@ -639,8 +639,8 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    glDrawArrays(GL_QUADS, 8, 4);
 
    // update shader uniforms for the box
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
-   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", light_projection * mLightVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0));
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", Matrixf(mCameraVariables.mProjMat * mCameraVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0)));
+   mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", Matrixf(light_projection * mLightVariables.mMViewMat * Matrixd::Translate(0.0, 5.0, 0.0)));
 
    // disable the color array, as the box will not use it
    glDisableClientState(GL_COLOR_ARRAY);
@@ -675,8 +675,8 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
       glColor3ubv(sphere_colors[distance]);
 
       // update shader uniforms for the spheres
-      mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", mCameraVariables.mProjMat * mCameraVariables.mMViewMat * translation);
-      mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", light_projection * mLightVariables.mMViewMat * translation);
+      mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", Matrixf(mCameraVariables.mProjMat * mCameraVariables.mMViewMat * translation));
+      mProjTexProg.SetUniformMatrix< 1, 4, 4 >("light_mvp_mat4", Matrixf(light_projection * mLightVariables.mMViewMat * translation));
 
       // render the sphere
       glDrawElements(sphere_shape.geom_type, static_cast< GLsizei >(sphere_shape.indices.size()), GL_UNSIGNED_INT, &sphere_shape.indices[0]);
