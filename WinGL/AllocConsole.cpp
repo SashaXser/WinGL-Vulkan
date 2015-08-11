@@ -2,13 +2,10 @@
 #include "AllocConsole.h"
 
 // platform includes
-#include <io.h>
-#include <fcntl.h>
-#include <stdio.h>
 #include <windows.h>
 
 // stl includes
-#include <fstream>
+#include <cstdio>
 #include <iostream>
 
 // global static data
