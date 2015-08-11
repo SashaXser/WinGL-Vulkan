@@ -18,7 +18,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project(win-gl LANGUAGES C CXX)
 
-# validate MSVC 14 (1800) or greater
+# validate MSVC 14 (1900) or greater
 if (MSVC_VERSION LESS 1900)
    message(FATAL_ERROR "MSVC 14 (1900) or greater must be used to compile projects!")
 endif ( )
