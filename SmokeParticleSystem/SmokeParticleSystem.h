@@ -7,6 +7,7 @@
 
 // stl includes
 #include <vector>
+#include <cstdint>
 
 class SmokeParticleSystem : public ParticleSystem
 {
@@ -33,10 +34,10 @@ private:
    // defines the particle type
    struct Particle
    {
-      double dPosition[3];
-      double dVelocity[3];
-      double dTextureUnit;
-      double dLifeSpan;
+      float dPosition[3];
+      float dVelocity[3];
+      uint32_t nTextureUnit;
+      float dLifeSpan;
    };
 
    // private typedefs

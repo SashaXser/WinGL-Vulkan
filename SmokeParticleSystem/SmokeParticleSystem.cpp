@@ -91,8 +91,13 @@ void SmokeParticleSystem::Render( const SimFrame & simFrame )
    // this gives a way for the user to see the system in action...
 
    // obtain the current point size
-   const float pointSize = 0.0f;
-   glGetFloatv(GL_POINT_SIZE, const_cast< float * >(&pointSize));
+   const float pointSize = [ ] ( )
+   {
+      float point_size = 0.0f;
+      glGetFloatv(GL_POINT_SIZE, &point_size);
+
+      return point_size;
+   }();
    // set the new point size
    glPointSize(5.0f);
    // render the particle system body
@@ -116,9 +121,9 @@ void SmokeParticleSystem::Render( const SimFrame & simFrame )
 
       // add a particle to the system
       Particle p;
-      p.dPosition[0] = mv.mT[12];
-      p.dPosition[1] = mv.mT[13];
-      p.dPosition[2] = mv.mT[14];
+      p.dPosition[0] = static_cast< float >(mv.mT[12]);
+      p.dPosition[1] = static_cast< float >(mv.mT[13]);
+      p.dPosition[2] = static_cast< float >(mv.mT[14]);
 
       mParticles.push_back(p);
 
@@ -138,7 +143,7 @@ void SmokeParticleSystem::Render( const SimFrame & simFrame )
 
       // setup vertex pointer
       glVertexPointer(3,
-                      GL_DOUBLE,
+                      GL_FLOAT,
                       sizeof(Particle),
                       &(mParticles.front()));
 
