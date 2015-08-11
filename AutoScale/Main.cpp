@@ -18,7 +18,7 @@ int WINAPI WinMain( HINSTANCE hInstance,
 
    // create a new tesselation window
    AutoScaleWindow * const pASW = new AutoScaleWindow();
-   if (pASW->Create(540, 540, "Normal Mapping Window"))
+   if (pASW->Create(540, 540, "Auto Scale Window"))
    {
       // run the program
       error = pASW->Run();

@@ -14,7 +14,7 @@ int WINAPI WinMain( HINSTANCE hInstance,
 
    // create the window
    CubeMapWindow * const pCubeMapWnd = new CubeMapWindow();
-   if (pCubeMapWnd->Create(500, 500, "Planets Window"))
+   if (pCubeMapWnd->Create(500, 500, "Cube Map Window"))
    {
       // begin displaying the window
       error = pCubeMapWnd->Run();
