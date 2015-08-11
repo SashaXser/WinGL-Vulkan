@@ -36,30 +36,10 @@ bool AllocateDebugConsole( )
       conInfo.dwSize.Y = MAX_CONSOLE_LINES;
       SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), conInfo.dwSize);
 
-      // obtain the standard handles...
-      const HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-      const HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
-      const HANDLE hStdErr = GetStdHandle(STD_ERROR_HANDLE);
-
-      // open a crt file descriptor and assign it to the os...
-      const int hConOut = _open_osfhandle(reinterpret_cast< intptr_t >(hStdOut), _O_TEXT);
-      const int hConIn = _open_osfhandle(reinterpret_cast< intptr_t >(hStdIn), _O_TEXT);
-      const int hConErr = _open_osfhandle(reinterpret_cast< intptr_t >(hStdErr), _O_TEXT);
-
-      // open the crt file descriptors for reading and writing...
-      const FILE * const pStdOut = _fdopen(hConOut, "w");
-      const FILE * const pStdIn = _fdopen(hConIn, "r");
-      const FILE * const pStdErr = _fdopen(hConErr, "w");
-
-      // update the standard file streams
-      *stdout = *pStdOut;
-      *stdin = *pStdIn;
-      *stderr = *pStdErr;
-
-      // modify the stream buffer and buffering sizes
-      setvbuf(stdout, NULL, _IONBF, 0);
-      setvbuf(stdin, NULL, _IONBF, 0);
-      setvbuf(stderr, NULL, _IONBF, 0);
+      // redirect the std files to the console
+      freopen("CONOUT$", "w", stdout);
+      freopen("CONIN$", "r", stdin);
+      freopen("CONOUT$", "w", stderr);
 
       // make sure that iostream and crt library operations occur
       // in the order that they appear in source code
