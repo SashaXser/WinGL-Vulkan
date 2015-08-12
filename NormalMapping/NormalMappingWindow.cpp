@@ -50,7 +50,6 @@ mInvertNormalY                ( false )
 
 NormalMappingWindow::~NormalMappingWindow( )
 {
-   
 }
 
 bool NormalMappingWindow::Create( unsigned int nWidth,

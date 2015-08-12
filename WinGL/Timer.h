@@ -4,6 +4,11 @@
 // platform includes
 #include <windows.h>
 
+// std includes
+#include <ratio>
+#include <chrono>
+#include <cstdint>
+
 class Timer
 {
 public:
@@ -12,21 +17,22 @@ public:
    ~Timer( );
 
    // obtains the current tick
-   long long   GetCurrentTick( ) const;
+   int64_t GetCurrentTick( ) const;
 
    // obtains the current time
-   double      GetCurrentTimeSec( ) const;
-   double      GetCurrentTimeMS( ) const;
+   double GetCurrentTimeSec( ) const;
+   double GetCurrentTimeMS( ) const;
 
    // returns the delta time
-   long long   DeltaTick( const long long & rTick ) const;
-   double      DeltaMS( const long long & rTick ) const;
-   double      DeltaSec( const long long & rTick ) const;
+   int64_t DeltaTick( const int64_t rTick ) const;
+   double  DeltaMS( const int64_t rTick ) const;
+   double  DeltaSec( const int64_t rTick ) const;
 
    // waits a set period of time
-   void  Wait( unsigned long nMS ) const;
+   void Wait( const uint32_t nMS ) const;
 
-
+   template < typename T, typename P >
+   void Wait( const std::chrono::duration< T, P > duration ) const;
 
 private:
    // private static member variables
@@ -39,7 +45,7 @@ namespace details
 
 double GetDeltaTimeMSecPerTick( )
 {
-   long long freqCPU = 0;
+   uint64_t freqCPU = 0;
    QueryPerformanceFrequency(reinterpret_cast< LARGE_INTEGER * >(&freqCPU));
 
    return 1000.0 / freqCPU;
@@ -57,10 +63,11 @@ inline Timer::~Timer( )
 {
 }
 
-inline long long Timer::GetCurrentTick( ) const
+inline int64_t Timer::GetCurrentTick( ) const
 {
-   long long curTick = 0;
+   int64_t curTick = 0;
    QueryPerformanceCounter(reinterpret_cast< LARGE_INTEGER * >(&curTick));
+
    return curTick;
 }
 
@@ -74,24 +81,30 @@ inline double Timer::GetCurrentTimeMS( ) const
    return GetCurrentTick() * MSEC_PER_TICK;
 }
 
-inline long long Timer::DeltaTick( const long long & rTick ) const
+inline int64_t Timer::DeltaTick( const int64_t rTick ) const
 {
    return GetCurrentTick() - rTick;
 }
 
-inline double Timer::DeltaMS( const long long & rTick ) const
+inline double Timer::DeltaMS( const int64_t rTick ) const
 {
    return DeltaTick(rTick) * MSEC_PER_TICK;
 }
 
-inline double Timer::DeltaSec( const long long & rTick ) const
+inline double Timer::DeltaSec( const int64_t rTick ) const
 {
    return DeltaMS(rTick) * 0.001;
 }
 
-inline void Timer::Wait( unsigned long nMS ) const
+inline void Timer::Wait( const uint32_t nMS ) const
 {
    Sleep(nMS);
+}
+
+template < typename T, typename P >
+inline void Timer::Wait( const std::chrono::duration< T, P > duration ) const
+{
+   Wait(std::chrono::duration_cast< std::chrono::duration< uint32_t, std::milli > >(duration).count());
 }
 
 #endif // _TIMER_H_
