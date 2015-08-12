@@ -141,8 +141,10 @@ private:
    // indicates if the y component of the normal texture should be inverted
    bool        mInvertNormalY;
 
-   // defines the mouse position in native screen coordinates
-   int32_t     mMousePos[2];
+   // current time and multiplier
+   double      mCurrentSimTimeSec;
+   double      mSimTimeMultiplier;
+   int64_t     mCurrentSimTimeTick;
 
 };
 

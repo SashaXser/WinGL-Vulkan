@@ -101,7 +101,7 @@ vec4 CalculatePointLighting( const in vec3 light_position,
    // determine the light direction to the vertex position
    vec3 light_direction = vertex_position - light_position;
 
-   // determine the distance between the eye and vertex
+   // determine the distance between the light and vertex
    float light_direction_distance = length(light_direction);
 
    // calculate the color of the point light

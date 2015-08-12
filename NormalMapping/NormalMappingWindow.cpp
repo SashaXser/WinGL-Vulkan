@@ -2,13 +2,14 @@
 #include "NormalMappingWindow.h"
 
 // wgl includes
-#include "Texture.h"
-#include "MathHelper.h"
-#include "Quaternion.h"
-#include "MatrixHelper.h"
-#include "ShaderProgram.h"
-#include "VertexArrayObject.h"
-#include "VertexBufferObject.h"
+#include <Timer.h>
+#include <Texture.h>
+#include <MathHelper.h>
+#include <Quaternion.h>
+#include <MatrixHelper.h>
+#include <ShaderProgram.h>
+#include <VertexArrayObject.h>
+#include <VertexBufferObject.h>
 
 // std includes
 #include <cmath>
@@ -43,9 +44,11 @@ mPointLightDiffuseIntensity   ( DIFFUSE_INTENSITY ),
 mParallaxBias                 ( 0.03f ),
 mParallaxScale                ( -0.0225f ),
 mPolygonMode                  ( GL_FILL ),
-mInvertNormalY                ( false )
+mInvertNormalY                ( false ),
+mCurrentSimTimeSec            ( 0.0 ),
+mCurrentSimTimeTick           ( 0 ),
+mSimTimeMultiplier            ( 1.0 )
 {
-   std::memset(mMousePos, 0x00, sizeof(mMousePos));
 }
 
 NormalMappingWindow::~NormalMappingWindow( )
@@ -124,7 +127,10 @@ bool NormalMappingWindow::Create( unsigned int nWidth,
                 << "Shift + w - Turn wire frame on / off" << std::endl
                 << std::endl
                 << "L-Button Down - Activate camera / directional light rotation" << std::endl
-                << "Mouse X / Y Delta - Manipulate camera / directional light rotation" << std::endl;
+                << "Mouse X / Y Delta - Manipulate camera / directional light rotation" << std::endl
+                << std::endl
+                << "> - Increase Sim Time Multiplier" << std::endl
+                << "< - Decrease Sim Time Multiplier" << std::endl << std::ends;
 
       return true;
    }
@@ -160,7 +166,6 @@ void NormalMappingWindow::OnDestroy( )
    OpenGLWindow::OnDestroy();
 }
             
-#include "Timer.h"
 int NormalMappingWindow::Run( )
 {
    // vars for the loop
@@ -226,15 +231,17 @@ int NormalMappingWindow::Run( )
                mpShaderDirLight->Disable();
             }
 
+            // update the current simulation time
+            mCurrentSimTimeSec += Timer().DeltaSec(mCurrentSimTimeTick) * mSimTimeMultiplier;
+            mCurrentSimTimeTick = Timer().GetCurrentTick();
 
-            // todo: fix later
-            double time = Timer().GetCurrentTimeSec();
-            Vec3f position(static_cast< float >(std::cos(time) * 20.0f),
-                           1.0f,
-                           static_cast< float >(std::sin(time) * 20.0f));
+            // determine the x and y location of the light
+            const float x = static_cast< float >(std::cos(mCurrentSimTimeSec) * 20.0f);
+            const float y = static_cast< float >(std::sin(mCurrentSimTimeSec) * 20.0f);
 
+            // update the lights position
             mpShader->Enable();
-            mpShader->SetUniformValue("point_light.position_world_space", position);
+            mpShader->SetUniformValue("point_light.position_world_space", Vec3f(x, 1.0f, y));
             mpShader->Disable();
          }
 
@@ -363,6 +370,9 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       case 't': LoadShader(TESSELLATION_SHADER); update_shader_matrix = true; update_directional_light = true; break;
 
       case 'T': LoadTexture(); break;
+
+      case '>': mSimTimeMultiplier = MathHelper::Clamp(mSimTimeMultiplier - 0.1, 0.0, 2.0); break;
+      case '<': mSimTimeMultiplier = MathHelper::Clamp(mSimTimeMultiplier + 0.1, 0.0, 2.0); break;
       }
 
       break;
@@ -377,8 +387,8 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       if (wParam & MK_LBUTTON)
       {
          // get the delta between current and previous positions
-         const int32_t delta_x = current_mouse_x - mMousePos[0];
-         const int32_t delta_y = current_mouse_y - mMousePos[1];
+         const int32_t delta_x = current_mouse_x - GetPreviousMousePosition().x;
+         const int32_t delta_y = current_mouse_y - GetPreviousMousePosition().y;
 
          if (MANIPULATE_CAMERA == mManipulate)
          {
@@ -435,10 +445,6 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
             update_directional_light = true;
          }
       }
-
-      // save the current state
-      mMousePos[0] = current_mouse_x;
-      mMousePos[1] = current_mouse_y;
 
       }
 
