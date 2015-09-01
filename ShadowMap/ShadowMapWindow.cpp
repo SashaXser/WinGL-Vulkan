@@ -59,6 +59,7 @@ struct ShadowMapWindow::Renderable
    TextureCtr     mDiffuse;
    // shader program
    ShaderProgram  mProgram;
+   ShaderProgram  mProgramNormals;
    // defines the render order by texture
    // unit... group multiple items together...
    RenderBucket   mRenderBuckets;
@@ -113,7 +114,11 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
       // setup the shaders
       if (!mpEnterpriseE->mProgram.AttachFile(GL_VERTEX_SHADER, "enterprise.vert") ||
           !mpEnterpriseE->mProgram.AttachFile(GL_FRAGMENT_SHADER, "enterprise.frag") ||
-          !mpEnterpriseE->mProgram.Link())
+          !mpEnterpriseE->mProgram.Link() ||
+          !mpEnterpriseE->mProgramNormals.AttachFile(GL_VERTEX_SHADER, "enterprise_normal.vert") ||
+          !mpEnterpriseE->mProgramNormals.AttachFile(GL_GEOMETRY_SHADER, "enterprise_normal.geom") ||
+          !mpEnterpriseE->mProgramNormals.AttachFile(GL_FRAGMENT_SHADER, "enterprise_normal.frag") ||
+          !mpEnterpriseE->mProgramNormals.Link())
       {
          return false;
       }
@@ -160,6 +165,7 @@ float yaw = 0;
 float pitch = 0;
 int prev_x, prev_y;
 bool light_per_pixel = true;
+bool display_normals = false;
 
 Matrixf mv = Matrixf::LookAt(0, 40.0f, 100.0f, 0, 40.0f, 0.0f, 0, 1.0f, 0.0f);
 Matrixf mvn = mv.Inverse().Transpose();
@@ -229,6 +235,8 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
    case WM_CHAR:
       if (wParam == 'l' || wParam == 'L')
          light_per_pixel = !light_per_pixel;
+      else if (wParam == 'n' || wParam == 'N')
+         display_normals = !display_normals;
 
       break;
 
@@ -251,6 +259,7 @@ void ShadowMapWindow::RenderScene( )
 
    // temp
    static float light_dir = 0.0f;
+
    mpEnterpriseE->mProgram.Enable();
    mpEnterpriseE->mProgram.SetUniformValue("light_dir", std::cos(light_dir), std::sin(light_dir), 0.0f);
    //mpEnterpriseE->mProgram.SetUniformValue("light_dir", 0.0f, -1.0f, 0.0f);
@@ -309,9 +318,37 @@ void ShadowMapWindow::RenderScene( )
       }
    }
 
-   mpEnterpriseE->mVAO.Unbind();
-
    mpEnterpriseE->mProgram.Disable();
+
+   if (display_normals)
+   {
+      mpEnterpriseE->mProgramNormals.Enable();
+      mpEnterpriseE->mProgramNormals.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", proj * mv);
+
+      rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
+      rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
+
+      while (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
+      {
+         // activate the texture
+         Texture * diffuse_tex = mpEnterpriseE->mDiffuse[rbucketBeg->first].get();
+
+         for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
+         {
+            glDrawElements(GL_TRIANGLES, rbucketBeg->second.second, GL_UNSIGNED_INT, reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
+         }
+
+         if (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
+         {
+            rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(rbucketEnd->first);
+            rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(rbucketEnd->first);
+         }
+      }
+
+      mpEnterpriseE->mProgramNormals.Disable();
+   }
+
+   mpEnterpriseE->mVAO.Unbind();
 
    // swap the front and back
    SwapBuffers(GetHDC());
