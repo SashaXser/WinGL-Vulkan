@@ -7,6 +7,14 @@
 // std includes
 #include <cstdint>
 
+namespace gl {
+namespace debug {
+
+const uint32_t DISPLAY_MESSAGE_BOX_BIT = 0x00010000;
+
+} // namespace debug
+} // namespace gl
+
 class OpenGLWindow : public Window
 {
 public:

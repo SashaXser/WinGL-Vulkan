@@ -451,10 +451,16 @@ void __stdcall OpenGLWindow::DebugContextCallbackAMD( unsigned int id,
    // output to the debug out stream
    std::cout << ssMsg.str();
 
-   // output to the debug output window is debugger present
+   // output to the debug output window if debugger present
    if (IsDebuggerPresent())
    {
       OutputDebugString(ssMsg.str().c_str());
+   }
+
+   // if the message box bit is present, then present the message box
+   if (id & gl::debug::DISPLAY_MESSAGE_BOX_BIT)
+   {
+      WglMsgBox("DebugContextCallbackAMD", ssMsg.str().c_str());
    }
 }
 
@@ -471,7 +477,7 @@ void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
 
    // put the pieces together
    ssMsg << "DebugContextCallbackARB" << std::endl
-         << "ID: " << id << " - SOURCE: ";
+         << "ID: " << (id & 0x0000FFFF) << " - SOURCE: ";
 
    switch (source)
    {
@@ -511,9 +517,15 @@ void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
    // output to the debug out stream
    std::cout << ssMsg.str();
 
-   // output to the debug output window is debugger present
+   // output to the debug output window if debugger present
    if (IsDebuggerPresent())
    {
       OutputDebugString(ssMsg.str().c_str());
+   }
+
+   // if the message box bit is present, then present the message box
+   if (id & gl::debug::DISPLAY_MESSAGE_BOX_BIT)
+   {
+      WglMsgBox("DebugContextCallbackARB", ssMsg.str().c_str());
    }
 }
