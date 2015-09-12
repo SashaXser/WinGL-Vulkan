@@ -33,6 +33,7 @@ void TransformFeedbackWindow::OnDestroy( )
 GLuint transform_buffer = 0;
 #include <GeomHelper.h>
 #include <Matrix.h>
+#include <Timer.h>
 VAO gVAO;
 VBO gVBO;
 VBO gIVBO;
@@ -63,13 +64,15 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       glEnable(GL_DEPTH_TEST);
 
 
+
       mpTrianglesShader->AttachFile(GL_VERTEX_SHADER, "transform_feedback.vert");
       mpTrianglesShader->AttachFile(GL_GEOMETRY_SHADER, "transform_feedback.geom");
+      mpTrianglesShader->AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
 
 
       glGenBuffers(1, &transform_buffer);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, transform_buffer);
-      glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 4 * sizeof(float) * 6, nullptr, GL_DYNAMIC_COPY);
+      glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 4 * sizeof(float) * 100, nullptr, GL_DYNAMIC_COPY);
       //glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
 
       char * varyings[] = { "gl_Position" };
@@ -79,24 +82,25 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
 
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
 
-      const auto plane = GeomHelper::ConstructPlane(5.0f, 5.0f);
+      //const auto plane = GeomHelper::ConstructPlane(5.0f, 5.0f);
       gVAO.GenArray();
       gVAO.Bind();
 
-      gVBO.GenBuffer(GL_ARRAY_BUFFER);
-      gVBO.Bind();
-      gVBO.BufferData(plane.vertices.size() * sizeof(Vec3f), plane.vertices.front(), GL_STATIC_DRAW);
-      gVBO.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-      gVAO.EnableVertexAttribArray(0);
-      gVBO.Unbind();
+      //gVBO.GenBuffer(GL_ARRAY_BUFFER);
+      //gVBO.Bind();
+      //std::vector< Vec3f > points = { Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(0.0f, 10.0f, 0.0f), Vec3f(5.0f, 0.0f, 0.0f) };
+      //gVBO.BufferData(points.size() * sizeof(Vec3f), points.front(), GL_STATIC_DRAW);
+      //gVBO.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+      //gVAO.EnableVertexAttribArray(0);
+      //gVBO.Unbind();
 
-      gIVBO.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
-      gIVBO.Bind();
-      gIVBO.BufferData(plane.indices.size() * sizeof(GLuint), &plane.indices[0], GL_STATIC_DRAW);
+      //gIVBO.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+      //gIVBO.Bind();
+      //gIVBO.BufferData(plane.indices.size() * sizeof(GLuint), &plane.indices[0], GL_STATIC_DRAW);
 
       gVAO.Unbind();
 
-      gIVBO.Unbind();
+      //gIVBO.Unbind();
       
       return true;
    }
@@ -123,11 +127,11 @@ int TransformFeedbackWindow::Run( )
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
          //glMatrixMode(GL_PROJECTION);
-         Matrixd projection = Matrixd::Perspective(45.0f, 1.0, 0.1, 100.0);
+         Matrixd projection = Matrixd::Ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0);
          //glLoadMatrixd(projection);
 
          //glMatrixMode(GL_MODELVIEW);
-         Matrixd mv = Matrixd::LookAt(0.0, 6.0, 6.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+         Matrixd mv = Matrixd::LookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
          //glLoadMatrixd(mv);
 
          //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -138,6 +142,22 @@ int TransformFeedbackWindow::Run( )
          mpTrianglesShader->SetUniformMatrix<1, 4, 4 >("model_view", static_cast< Matrixf >(mv));
          mpTrianglesShader->SetUniformMatrix<1, 4, 4 >("model_view_proj_mat", static_cast< Matrixf >(projection * mv));
 
+         const std::vector< Vec3f > points = [ ] ( )
+         {
+            const double current_time = Timer().GetCurrentTimeSec();
+
+            const double cos = std::cos(current_time);
+            const double sin = std::sin(current_time);
+
+            const Vec3f pt1(0.0f + 10 * cos, 0.0f, 0.0f);
+            const Vec3f pt2(0.0f - 3 * cos, 5.0f - 3 * sin, 0.0f);
+            const Vec3f pt3(5.0f, -2.0f + 8 * cos, 0.0f);
+
+            return std::vector< Vec3f > { pt1, pt2, pt3 };
+            //{ Vec3f(-5.0f, -5.0f, 0.0f), Vec3f(0.0f, 5.0f, 0.0f), Vec3f(5.0f, -2.0f, 0.0f) };
+         }();
+         mpTrianglesShader->SetUniformValue< 3 >("control_points", static_cast< const float * >(points.front()), 3);
+
          glEnable(GL_RASTERIZER_DISCARD);
 
          //glEnableClientState(GL_VERTEX_ARRAY);
@@ -146,12 +166,13 @@ int TransformFeedbackWindow::Run( )
 
          glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, transform_buffer);
          glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
-         glBeginTransformFeedback(GL_TRIANGLES);
+         glBeginTransformFeedback(GL_POINTS);
 
          //gIVBO.Bind();
 
          gVAO.Bind();
-         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+         glDrawArrays(GL_POINTS, 0, 1);
          gVAO.Unbind();
 
          glEndTransformFeedback();
@@ -177,24 +198,13 @@ int TransformFeedbackWindow::Run( )
          glMatrixMode(GL_MODELVIEW);
          glLoadMatrixd(mv);
 
-         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-         glEnableClientState(GL_VERTEX_ARRAY);
-         gVBO.Bind();
-         glVertexPointer(3, GL_FLOAT, 0, nullptr);
-
-         gIVBO.Bind();
-         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-
-         gIVBO.Unbind();
-         gVBO.Unbind();
-         glDisableClientState(GL_VERTEX_ARRAY);
-
-         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
          glEnableClientState(GL_VERTEX_ARRAY);
          glVertexPointer(4, GL_FLOAT, 0, pBuffer);
-         glDrawArrays(GL_POINTS, 0, 6);
+         glDrawArrays(GL_LINE_STRIP, 0, 11);
+         glVertexPointer(3, GL_FLOAT, 0, points.front());
+         glPointSize(5.0f);
+         glDrawArrays(GL_POINTS, 0, 3);
+         glPointSize(1.0f);
          glDisableClientState(GL_VERTEX_ARRAY);
 
          

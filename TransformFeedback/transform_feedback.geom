@@ -4,33 +4,29 @@
 // define the input and output topology
 // the input topology must match the output topology
 // for transform feedback operations to work correctly
-layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
+layout (points) in;
+layout (points, max_vertices = 11) out;
 
 // defines the per geometry attributes
 uniform mat4 model_view;
 uniform mat4 model_view_proj_mat;
+uniform vec3 control_points[3];
+
+vec3 quadratic_bezier_curve( const vec3 pt1, const vec3 pt2, const vec3 pt3, const float t )
+{
+   vec3 pt4 = mix(pt1, pt2, t);
+   vec3 pt5 = mix(pt2, pt3, t);
+
+   return mix(pt4, pt5, t);
+}
 
 void main( )
 {
-   // calculate the direction of the normals
-   vec3 vertex_normal = normalize(cross(gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz,
-                                        gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz));
-
-   // calculate the barycenter of the triangle to place the normal on
-   vec3 triangle_center = (gl_in[0].gl_Position.xyz +
-                           gl_in[1].gl_Position.xyz +
-                           gl_in[2].gl_Position.xyz) / 3.0f;
-
-   // the first point will start at the barycenter
-   gl_Position = vec4(triangle_center, 1.0f);
-   EmitVertex();
-
-   // the second point will extrude from the barycenter along the normal
-   gl_Position = vec4(triangle_center + vertex_normal * 0.25f, 1.0f);
-   EmitVertex();
-
-   EmitVertex();
+   for (float i = 0.0f; i <= 1.0f; i += 0.1f)
+   {
+      gl_Position = vec4(quadratic_bezier_curve(control_points[0], control_points[1], control_points[2], i), 1.0f);
+      EmitVertex();
+   }
 
    // no longer emitting vertices
    EndPrimitive();
