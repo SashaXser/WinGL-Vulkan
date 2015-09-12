@@ -260,6 +260,46 @@ GLint ShaderProgram::GetUniformLocation( const std::string & uniform )
    return uniform_loc;
 }
 
+std::vector< std::string > ShaderProgram::GetActiveUniforms()
+{
+   WGL_ASSERT(mShaderProg);
+
+   // this process could be more efficient in storing the values
+   // but that can be done at a later time...
+   std::vector< std::string > active_uniforms;
+
+   const GLint max_uniforms = [ this ] ( )
+   {
+      GLint max_uniforms = 0;
+      glGetProgramiv(mShaderProg, GL_ACTIVE_UNIFORMS, &max_uniforms);
+   
+      return max_uniforms;
+   }();
+   
+   if (max_uniforms > 0)
+   {
+      const GLint max_uniforms_size = [ this ] ( )
+      {
+         GLint max_uniforms_size = 0;
+         glGetProgramiv(mShaderProg, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniforms_size);
+      
+         return max_uniforms_size;
+      }();
+      
+      std::vector< char > uniform_name(max_uniforms_size, '\0');
+   
+      for (GLint i = 0; i < max_uniforms; ++i)
+      {
+         GLint uniform_size = 0; GLenum uniform_type = 0;
+         glGetActiveUniform(mShaderProg, i, max_uniforms_size, nullptr, &uniform_size, &uniform_type, &uniform_name.front());
+
+         active_uniforms.push_back(&uniform_name.front());
+      }
+   }
+
+   return active_uniforms;
+}
+
 void ShaderProgram::Enable( )
 {
    if (mShaderProg) glUseProgram(mShaderProg);

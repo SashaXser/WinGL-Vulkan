@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <algorithm>
 #include <type_traits>
 
 // defines an invalid uniform location
@@ -93,6 +94,9 @@ public:
 
    // gets a uniforms location
    GLint GetUniformLocation( const std::string & uniform );
+
+   // gets all active uniforms
+   std::vector< std::string > GetActiveUniforms( );
 
    // gets a uniforms value
    template < typename T > bool GetUniformValue( const GLint uniform, T & t ) const;
@@ -350,15 +354,19 @@ inline bool ShaderProgram::GetUniformValue( const std::string & uniform, T & t )
 // defines a macro to do some validatation on the sets
 #define __VALIDATE_SHADER_UNIFORM( uniform ) \
    WGL_ASSERT(mShaderProg && ShaderProgram::GetCurrentProgram() == mShaderProg); \
-   WGL_ASSERT_INIT(GLchar name[128] = { }; GLint size = 0; GLenum type = 0; \
-                   glGetActiveUniform(mShaderProg, uniform, sizeof(name), nullptr, &size, &type, name), \
-                   GetUniformLocation(name) == uniform);
+   WGL_ASSERT_INIT(const auto active_uniforms = GetActiveUniforms(); \
+                   const auto active_uniform = std::find_if(active_uniforms.cbegin(), active_uniforms.cend(), \
+                   [ this, &uniform ] ( const std::string & active_uniform ) \
+                   { \
+                      return GetUniformLocation(active_uniform) == uniform; \
+                   });, \
+                   active_uniform != active_uniforms.cend());
 
 template < typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1,
                                             const typename std::enable_if< !has_floating_point_pointer_operator< T >::value >::type * const unused )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef std::remove_const< std::remove_extent< T >::type >::type Type;
    typedef UniformValueSelector< Type >::array_selector< std::is_array< T >::value, sizeof(t1) > array_selector;
@@ -372,7 +380,7 @@ template < typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1,
                                             const typename std::enable_if< has_floating_point_pointer_operator< T >::value >::type * const unused )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef UniformValueSelector< T::type >::array_selector< true, sizeof(t1) > array_selector;
 
@@ -384,7 +392,7 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1,
 template < typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, const T & t2 )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    UniformValueSelector< T >::SetValue(uniform, t1, t2);
 
@@ -394,7 +402,7 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, c
 template < typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, const T & t2, const T & t3 )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    UniformValueSelector< T >::SetValue(uniform, t1, t2, t3);
 
@@ -404,7 +412,7 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, c
 template < typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, const T & t2, const T & t3, const T & t4 )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    UniformValueSelector< T >::SetValue(uniform, t1, t2, t3, t4);
 
@@ -414,7 +422,7 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, c
 template < GLsizei COUNT, typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1 )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef std::remove_const< std::remove_extent< T >::type >::type Type;
    typedef UniformValueSelector< Type >::array_selector< std::is_array< T >::value, sizeof(T) / COUNT > array_selector;
@@ -427,7 +435,7 @@ inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1 )
 template < GLsizei SIZE, typename T >
 inline bool ShaderProgram::SetUniformValue( const GLint uniform, const T & t1, const GLsizei count )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef std::remove_const< std::remove_pointer< T >::type >::type Type;
    typedef UniformValueSelector< Type >::array_selector< std::is_pointer< T >::value, SIZE * sizeof(Type) > array_selector;
@@ -441,7 +449,7 @@ template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
 inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose,
                                              const typename std::enable_if< has_floating_point_pointer_operator< T >::value >::type * const unused )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef UniformValueSelector< T::type >::array_dims< COL, ROW > array_dims;
 
@@ -454,7 +462,7 @@ template < GLsizei COUNT, size_t COL, size_t ROW, typename T >
 inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T & t1, const GLboolean transpose,
                                              const typename std::enable_if< !has_floating_point_pointer_operator< T >::value >::type * const unused )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef std::remove_const< std::remove_pointer< std::remove_extent< T >::type >::type >::type Type;
    typedef UniformValueSelector< Type >::array_dims< COL, ROW > array_dims;
@@ -467,7 +475,7 @@ inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T & t1, 
 template < typename T, size_t COL, size_t ROW >
 inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T (&t1)[COL][ROW], const GLboolean transpose )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef UniformValueSelector< T >::array_dims< COL, ROW > array_dims;
 
@@ -479,7 +487,7 @@ inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T (&t1)[
 template < typename T, GLsizei COUNT, size_t COL, size_t ROW >
 inline bool ShaderProgram::SetUniformMatrix( const GLint uniform, const T (&t1)[COUNT][COL][ROW], const GLboolean transpose )
 {
-   __VALIDATE_SHADER_UNIFORM((uniform));
+   __VALIDATE_SHADER_UNIFORM(uniform);
 
    typedef UniformValueSelector< T >::array_dims< COL, ROW > array_dims;
 
