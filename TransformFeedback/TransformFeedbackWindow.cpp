@@ -72,7 +72,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
 
       glGenBuffers(1, &transform_buffer);
       glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, transform_buffer);
-      glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 4 * sizeof(float) * 100, nullptr, GL_DYNAMIC_COPY);
+      glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 4 * sizeof(float) * 512, nullptr, GL_DYNAMIC_COPY);
       //glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
 
       char * varyings[] = { "gl_Position" };
@@ -146,11 +146,19 @@ int TransformFeedbackWindow::Run( )
          {
             const double current_time = Timer().GetCurrentTimeSec();
 
-            const double cos = std::cos(current_time);
-            const double sin = std::sin(current_time);
+            double cos = std::cos(current_time);
+            double sin = std::sin(current_time);
 
             const Vec3f pt1(0.0f + 10 * cos, 0.0f, 0.0f);
-            const Vec3f pt2(0.0f - 3 * cos, 5.0f - 3 * sin, 0.0f);
+
+            cos = std::cos(current_time + 1.0);
+            sin = std::sin(current_time + 1.0);
+
+            const Vec3f pt2(cos * 10, cos * -10, 0.0f);
+
+            cos = std::cos(current_time + 2.0);
+            sin = std::sin(current_time + 2.0);
+
             const Vec3f pt3(5.0f, -2.0f + 8 * cos, 0.0f);
 
             return std::vector< Vec3f > { pt1, pt2, pt3 };
@@ -200,7 +208,7 @@ int TransformFeedbackWindow::Run( )
 
          glEnableClientState(GL_VERTEX_ARRAY);
          glVertexPointer(4, GL_FLOAT, 0, pBuffer);
-         glDrawArrays(GL_LINE_STRIP, 0, 11);
+         glDrawArrays(GL_LINE_STRIP, 0, 512);
          glVertexPointer(3, GL_FLOAT, 0, points.front());
          glPointSize(5.0f);
          glDrawArrays(GL_POINTS, 0, 3);

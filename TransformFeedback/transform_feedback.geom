@@ -5,7 +5,7 @@
 // the input topology must match the output topology
 // for transform feedback operations to work correctly
 layout (points) in;
-layout (points, max_vertices = 11) out;
+layout (points, max_vertices = 512) out;
 
 // defines the per geometry attributes
 uniform mat4 model_view;
@@ -22,7 +22,7 @@ vec3 quadratic_bezier_curve( const vec3 pt1, const vec3 pt2, const vec3 pt3, con
 
 void main( )
 {
-   for (float i = 0.0f; i <= 1.0f; i += 0.1f)
+   for (float i = 0.0f; i <= 1.0f; i += (1.0f / 512.0f))
    {
       gl_Position = vec4(quadratic_bezier_curve(control_points[0], control_points[1], control_points[2], i), 1.0f);
       EmitVertex();
