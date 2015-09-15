@@ -109,6 +109,26 @@ void VertexBufferObject::BufferSubData( const GLintptr offset, const GLsizeiptr 
    glBufferSubData(mType, offset, size, pData);
 }
 
+void VertexBufferObject::BufferStorage( const GLsizeiptr size,
+                                        const void * const pData,
+                                        const GLbitfield flags )
+{
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
+
+   glBufferStorage(mType, size, pData, flags);
+
+   mSize = size;
+}
+
+void VertexBufferObject::NamedBufferStorage( const GLsizeiptr size,
+                                             const void * const pData,
+                                             const GLbitfield flags )
+{
+   glNamedBufferStorage(mVBO, size, pData, flags);
+
+   mSize = size;
+}
+
 uint8_t * VertexBufferObject::MapBuffer( const GLenum access )
 {
    WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);

@@ -94,3 +94,30 @@ void VertexArrayObject::DisableVertexAttribArray( const GLuint index )
 
    glDisableVertexAttribArray(index);
 }
+
+void VertexArrayObject::EnableVertexArrayAttrib( const GLuint index )
+{
+   glEnableVertexArrayAttrib(mVAO, index);
+}
+
+void VertexArrayObject::DisableVertexArrayAttrib( const GLuint index )
+{
+   glDisableVertexArrayAttrib(mVAO, index);
+}
+
+void VertexArrayObject::VertexArrayVertexBuffer( const GLuint binding_index,
+                                                 const GLuint buffer,
+                                                 const GLintptr offset,
+                                                 const GLsizei stride)
+{
+   glVertexArrayVertexBuffer(mVAO, binding_index, buffer, offset, stride);
+}
+
+void VertexArrayObject::VertexArrayAttribFormat( const GLuint attrib_index,
+                                                 const GLint size,
+                                                 const GLenum type,
+                                                 const GLboolean normalized,
+                                                 const GLuint relative_offset )
+{
+   glVertexArrayAttribFormat(mVAO, attrib_index, size, type, normalized, relative_offset);
+}

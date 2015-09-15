@@ -47,6 +47,16 @@ public:
    void BufferData( const GLsizeiptr size, const GLvoid * const pData, const GLenum usage );
    void BufferSubData( const GLintptr offset, const GLsizeiptr size, const GLvoid * const pData );
 
+   // allocate a data store (buffer is immutable)
+   // first signature buffer must be bound
+   // second signature buffer does not need to be bound
+   void BufferStorage( const GLsizeiptr size,
+                       const void * const pData,
+                       const GLbitfield flags );
+   void NamedBufferStorage( const GLsizeiptr size,
+                            const void * const pData,
+                            const GLbitfield flags );
+
    // obtain raw pointer to gl memory
    uint8_t * MapBuffer( const GLenum access );
    void UnmapBuffer( );
