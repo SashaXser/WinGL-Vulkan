@@ -98,6 +98,12 @@ public:
    // gets all active uniforms
    std::vector< std::string > GetActiveUniforms( );
 
+   // sets the transform feedback varyings name to allow data
+   // to be written to the transform feeback buffers
+   void TransformFeedbackVaryings( const char * const * const pVaryings, const GLsizei count, const GLenum buffer_mode );
+   void TransformFeedbackVaryings( const std::vector< const char * > & varyings, const GLenum buffer_mode );
+   void TransformFeedbackVaryings( const std::vector< std::string > & varyings, const GLenum buffer_mode );
+
    // gets a uniforms value
    template < typename T > bool GetUniformValue( const GLint uniform, T & t ) const;
    template < typename T > bool GetUniformValue( const GLint uniform, Matrix< T > & t ) const;

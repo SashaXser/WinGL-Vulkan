@@ -300,6 +300,36 @@ std::vector< std::string > ShaderProgram::GetActiveUniforms()
    return active_uniforms;
 }
 
+void ShaderProgram::TransformFeedbackVaryings( const char * const * const pVaryings,
+                                               const GLsizei count,
+                                               const GLenum buffer_mode )
+{
+   WGL_ASSERT(mShaderProg);
+   WGL_ASSERT(pVaryings && count > 0);
+
+   glTransformFeedbackVaryings(mShaderProg, count, pVaryings, buffer_mode);
+}
+
+void ShaderProgram::TransformFeedbackVaryings( const std::vector< const char * > & varyings,
+                                               const GLenum buffer_mode )
+{
+   TransformFeedbackVaryings(&varyings.front(), varyings.size(), buffer_mode);
+}
+
+void ShaderProgram::TransformFeedbackVaryings( const std::vector< std::string > & varyings,
+                                               const GLenum buffer_mode )
+{
+   std::vector< const char * > varyings_cstr;
+
+   std::for_each(varyings.cbegin(), varyings.cend(),
+   [ &varyings_cstr ] ( const std::string & varying )
+   {
+      varyings_cstr.push_back(varying.c_str());
+   });
+
+   TransformFeedbackVaryings(varyings_cstr, buffer_mode);
+}
+
 void ShaderProgram::Enable( )
 {
    if (mShaderProg) glUseProgram(mShaderProg);

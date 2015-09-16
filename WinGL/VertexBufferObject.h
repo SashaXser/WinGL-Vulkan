@@ -40,6 +40,13 @@ public:
    void Bind( );
    void Unbind( );
 
+   // binds a buffer object to an indexed buffer target
+   void BindBufferBase( const GLuint index );
+   void UnbindBufferBase( const GLuint index );
+   void BindBufferRange( const GLuint index,
+                         const GLintptr offset,
+                         const GLsizeiptr size );
+
    // indicates if currently bound
    bool IsBound( ) const { return mBound; }
 

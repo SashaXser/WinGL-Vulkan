@@ -30,13 +30,13 @@ void TransformFeedbackWindow::OnDestroy( )
 }
 
 // temp
-GLuint transform_buffer = 0;
 #include <GeomHelper.h>
 #include <Matrix.h>
 #include <Timer.h>
 VAO gVAO;
 VBO gVBO;
 VBO gIVBO;
+VBO gTFB;
 
 bool TransformFeedbackWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
@@ -70,17 +70,17 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       mpTrianglesShader->AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
 
 
-      glGenBuffers(1, &transform_buffer);
-      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, transform_buffer);
-      glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 4 * sizeof(float) * 512, nullptr, GL_DYNAMIC_COPY);
+      gTFB.GenBuffer(GL_TRANSFORM_FEEDBACK_BUFFER);
+      gTFB.Bind();
+      gTFB.BufferStorage(4 * sizeof(float) * 512, nullptr, GL_MAP_READ_BIT);
       //glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
 
       char * varyings[] = { "gl_Position" };
-      glTransformFeedbackVaryings(*mpTrianglesShader, 1, varyings, GL_INTERLEAVED_ATTRIBS);
+      mpTrianglesShader->TransformFeedbackVaryings(varyings, 1, GL_INTERLEAVED_ATTRIBS);
 
       mpTrianglesShader->Link();
 
-      glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+      gTFB.Unbind();
 
       //const auto plane = GeomHelper::ConstructPlane(5.0f, 5.0f);
       gVAO.GenArray();
@@ -172,8 +172,8 @@ int TransformFeedbackWindow::Run( )
          //gVBO.Bind();
          //glVertexPointer(3, GL_FLOAT, 0, nullptr);
 
-         glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, transform_buffer);
-         glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
+         gTFB.Bind();
+         gTFB.BindBufferBase(0);
          glBeginTransformFeedback(GL_POINTS);
 
          //gIVBO.Bind();
@@ -193,10 +193,10 @@ int TransformFeedbackWindow::Run( )
 
          mpTrianglesShader->Disable();
 
-         const void * const pBuffer = glMapBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, GL_READ_ONLY);
+         const void * const pBuffer = gTFB.MapBuffer(GL_READ_ONLY);
 
-         glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
-         glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
+         gTFB.Unbind();
+         gTFB.UnbindBufferBase(0);
 
 
 
@@ -215,12 +215,12 @@ int TransformFeedbackWindow::Run( )
          glPointSize(1.0f);
          glDisableClientState(GL_VERTEX_ARRAY);
 
-         
-         glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, transform_buffer);
-         glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
-         glUnmapBuffer(GL_TRANSFORM_FEEDBACK_BUFFER);
-         glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
-         glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
+
+         gTFB.Bind();
+         gTFB.BindBufferBase(0);
+         gTFB.UnmapBuffer();
+         gTFB.Unbind();
+         gTFB.UnbindBufferBase(0);
          
 
          SwapBuffers(GetHDC());

@@ -10,8 +10,9 @@ GLuint VertexBufferObject::GetCurrentVBO( const GLenum type )
 
    switch (type)
    {
-   case GL_ARRAY_BUFFER:         glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);         break;
-   case GL_ELEMENT_ARRAY_BUFFER: glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &vbo); break;
+   case GL_ARRAY_BUFFER:              glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);              break;
+   case GL_ELEMENT_ARRAY_BUFFER:      glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &vbo);      break;
+   case GL_TRANSFORM_FEEDBACK_BUFFER: glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING, &vbo); break;
    default: WGL_ASSERT(!"Need To Fill In This VBO Type!!!"); break;
    }
 
@@ -91,6 +92,40 @@ void VertexBufferObject::Bind( )
 void VertexBufferObject::Unbind( )
 {
    glBindBuffer(mType, 0); mBound = false;
+}
+
+void VertexBufferObject::BindBufferBase( const GLuint index )
+{
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
+   WGL_ASSERT(mType == GL_ATOMIC_COUNTER_BUFFER ||
+              mType == GL_TRANSFORM_FEEDBACK_BUFFER ||
+              mType == GL_UNIFORM_BUFFER ||
+              mType == GL_SHADER_STORAGE_BUFFER);
+
+   glBindBufferBase(mType, index, mVBO);
+}
+
+void VertexBufferObject::UnbindBufferBase( const GLuint index )
+{
+   WGL_ASSERT(mType == GL_ATOMIC_COUNTER_BUFFER ||
+              mType == GL_TRANSFORM_FEEDBACK_BUFFER ||
+              mType == GL_UNIFORM_BUFFER ||
+              mType == GL_SHADER_STORAGE_BUFFER);
+
+   glBindBufferBase(mType, index, 0);
+}
+
+void VertexBufferObject::BindBufferRange( const GLuint index,
+                                          const GLintptr offset,
+                                          const GLsizeiptr size )
+{
+   WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
+   WGL_ASSERT(mType == GL_ATOMIC_COUNTER_BUFFER ||
+              mType == GL_TRANSFORM_FEEDBACK_BUFFER ||
+              mType == GL_UNIFORM_BUFFER ||
+              mType == GL_SHADER_STORAGE_BUFFER);
+
+   glBindBufferRange(mType, index, mVBO, offset, size);
 }
 
 void VertexBufferObject::BufferData( const GLsizeiptr size, const GLvoid * const pData, const GLenum usage )
