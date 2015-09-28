@@ -19,6 +19,8 @@ set(WIN_GL_SRC
 ./OpenGLWindow.cpp
 ./OpenGLWindow.h
 ./Quaternion.h
+./QueryObject.cpp
+./QueryObject.h
 ./ReadTexture.cpp
 ./ReadTexture.h
 ./ReuseAllocator.h

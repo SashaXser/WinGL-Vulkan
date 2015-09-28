@@ -33,10 +33,12 @@ void TransformFeedbackWindow::OnDestroy( )
 #include <GeomHelper.h>
 #include <Matrix.h>
 #include <Timer.h>
+#include <QueryObject.h>
 VAO gVAO;
 VBO gVBO;
 VBO gIVBO;
 VBO gTFB;
+QueryObject gQO;
 
 bool TransformFeedbackWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
@@ -101,6 +103,8 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       gVAO.Unbind();
 
       //gIVBO.Unbind();
+
+      gQO.GenQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
       
       return true;
    }
@@ -176,12 +180,16 @@ int TransformFeedbackWindow::Run( )
          gTFB.BindBufferBase(0);
          glBeginTransformFeedback(GL_POINTS);
 
+         gQO.Begin();
+
          //gIVBO.Bind();
 
          gVAO.Bind();
          //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
          glDrawArrays(GL_POINTS, 0, 1);
          gVAO.Unbind();
+
+         gQO.End();
 
          glEndTransformFeedback();
 
@@ -208,7 +216,8 @@ int TransformFeedbackWindow::Run( )
 
          glEnableClientState(GL_VERTEX_ARRAY);
          glVertexPointer(4, GL_FLOAT, 0, pBuffer);
-         glDrawArrays(GL_LINE_STRIP, 0, 512);
+         const auto num_verts_written = gQO.Value< GLuint >();
+         glDrawArrays(GL_LINE_STRIP, 0, num_verts_written);
          glVertexPointer(3, GL_FLOAT, 0, points.front());
          glPointSize(5.0f);
          glDrawArrays(GL_POINTS, 0, 3);
