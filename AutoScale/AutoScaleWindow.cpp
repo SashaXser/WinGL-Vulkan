@@ -243,7 +243,7 @@ LRESULT AutoScaleWindow::MessageHandler( UINT uMsg,
       const float distance = ((eye_dir * -1.0f) * ((eye * -1.0f) * eye_dir)).Length();
 
       // calculate the ratio of a height at distance 1 and the height at the near plane
-      const float ratio = std::tan(MathHelper::DegToRad(mCamera.GetProjectionFOV()) / 2.0f) / (GetSize().height / 2.0f);
+      const float ratio = std::tan(math::DegToRad(mCamera.GetProjectionFOV()) / 2.0f) / (GetSize().height / 2.0f);
 
       // the scale matrix is defined by the distance * ratio
       const Matrixf scale_matrix = Matrixf::Scale(distance * ratio);

@@ -26,7 +26,7 @@
 #define GL_TO_KM( x ) ((x) * PlanetsWindow::GL_UNIT_TO_KM)
 #define KM_TO_GL( x ) ((x) * PlanetsWindow::KM_TO_GL_UNIT)
 
-#define DEG_TO_RAD( x ) MathHelper::DegToRad((x))
+#define DEG_TO_RAD( x ) math::DegToRad((x))
 #define DELTA_ROT_PER_SEC( x ) (2.0 * M_PI / ((x) * PlanetsWindow::SECONDS_PER_DAY))
 
 #define HOURS_TO_DAYS( x ) ((x) / PlanetsWindow::HOURS_IN_DAY)
@@ -305,7 +305,7 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
          view_pitch += delta_y * 0.05f;
 
          // make sure the value for pitch is within [-90, 90]
-         view_pitch = MathHelper::Clamp(view_pitch, -89.9f, 89.9f);
+         view_pitch = math::Clamp(view_pitch, -89.9f, 89.9f);
 
          // obtain the current position of the camera
          const Vec4f camera_pos = mViewMat.Inverse() * Vec4f();
@@ -348,21 +348,21 @@ LRESULT PlanetsWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
       case '=':
       case '-':
          // increase / decrease the multiplier
-         mElapsedTimeMultiplier = MathHelper::Clamp(mElapsedTimeMultiplier * (wParam == '=' ? 10.0 : 0.1), 0.01, 100000.0);
+         mElapsedTimeMultiplier = math::Clamp(mElapsedTimeMultiplier * (wParam == '=' ? 10.0 : 0.1), 0.01, 100000.0);
 
          break;
 
       case '[':
       case ']':
          // increase / decrease the camera step speed
-         mCamStepSpeed = MathHelper::Clamp(mCamStepSpeed + (wParam == ']' ? 0.001f : -0.001f), 0.001f, 1.0f);
+         mCamStepSpeed = math::Clamp(mCamStepSpeed + (wParam == ']' ? 0.001f : -0.001f), 0.001f, 1.0f);
 
          break;
 
       case '{':
       case '}':
          // increase / decrease the camera step speed
-         mCamStepSpeed = MathHelper::Clamp(mCamStepSpeed + (wParam == '}' ? 0.01f : -0.01f), 0.001f, 1.0f);
+         mCamStepSpeed = math::Clamp(mCamStepSpeed + (wParam == '}' ? 0.01f : -0.01f), 0.001f, 1.0f);
 
          break;
       }
@@ -539,8 +539,8 @@ void PlanetsWindow::GenerateOrbitalDisplayLists( )
    // this data should move into its own class
 
    // constants that define the orbit
-   const double delta_rad = MathHelper::DegToRad(0.05);
-   const double two_pi_rad = MathHelper::DegToRad(360.0);
+   const double delta_rad = math::DegToRad(0.05);
+   const double two_pi_rad = math::DegToRad(360.0);
 
    // render each of the orbits
    for (int i = 0; i < 2; ++i)

@@ -34,11 +34,13 @@ void TransformFeedbackWindow::OnDestroy( )
 #include <Matrix.h>
 #include <Timer.h>
 #include <QueryObject.h>
+#include <FrameBufferObject.h>
 VAO gVAO;
 VBO gVBO;
 VBO gIVBO;
 VBO gTFB;
 QueryObject gQO;
+FrameBufferObject gFBO;
 
 bool TransformFeedbackWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
@@ -105,6 +107,11 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       //gIVBO.Unbind();
 
       gQO.GenQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+
+      gFBO.GenBuffer(nWidth, nHeight);
+      gFBO.Bind(GL_FRAMEBUFFER);
+      gFBO.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA8);
+      gFBO.Unbind();
       
       return true;
    }
@@ -214,6 +221,10 @@ int TransformFeedbackWindow::Run( )
          glMatrixMode(GL_MODELVIEW);
          glLoadMatrixd(mv);
 
+         gFBO.Bind(GL_FRAMEBUFFER);
+         glClear(GL_COLOR_BUFFER_BIT);
+         glViewport(0, 0, gFBO.Width(), gFBO.Height());
+
          glEnableClientState(GL_VERTEX_ARRAY);
          glVertexPointer(4, GL_FLOAT, 0, pBuffer);
          const auto num_verts_written = gQO.Value< GLuint >();
@@ -224,13 +235,54 @@ int TransformFeedbackWindow::Run( )
          glPointSize(1.0f);
          glDisableClientState(GL_VERTEX_ARRAY);
 
+         gFBO.Unbind();
+         glViewport(0, 0, GetSize().width, GetSize().height);
+
 
          gTFB.Bind();
          gTFB.BindBufferBase(0);
          gTFB.UnmapBuffer();
          gTFB.Unbind();
          gTFB.UnbindBufferBase(0);
+
          
+         const Vec3f fullscreen[] =
+         {
+            Vec3f(-10.0f, 10.0, 0.0f),
+            Vec3f(-10.0f, -10.0f, 0.0f),
+            Vec3f(10.0f, -10.0f, 0.0f),
+            
+            Vec3f(-10.0f, 10.0, 0.0f),
+            Vec3f(10.0f, -10.0f, 0.0f),
+            Vec3f(10.0f, 10.0f, 0.0f)
+         };
+
+         const Vec2f fullscreen_st[] =
+         {
+            Vec2f(0.0f, 1.0f),
+            Vec2f(0.0f, 0.0f),
+            Vec2f(1.0f, 0.0f),
+            
+            Vec2f(0.0f, 1.0f),
+            Vec2f(1.0f, 0.0f),
+            Vec2f(1.0f, 1.0f)
+         };
+
+         glEnableClientState(GL_VERTEX_ARRAY);
+         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+         glVertexPointer(3, GL_FLOAT, 0, fullscreen);
+         glTexCoordPointer(2, GL_FLOAT, 0, fullscreen_st);
+
+         glEnable(GL_TEXTURE_2D);
+         gFBO.GetAttachment(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
+
+         glDrawArrays(GL_TRIANGLES, 0, sizeof(fullscreen) / sizeof(*fullscreen));
+
+         gFBO.GetAttachment(GL_COLOR_ATTACHMENT0)->Unbind();
+         glDisable(GL_TEXTURE_2D);
+
+         glDisableClientState(GL_VERTEX_ARRAY);
+         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
          SwapBuffers(GetHDC());
       }

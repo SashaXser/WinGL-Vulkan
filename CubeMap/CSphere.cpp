@@ -408,8 +408,8 @@ void CSphere::ConstructSphere( )
    Index * pIndex = m_pIndices;
 
    // determine stack and slice deltas
-   const double slice_delta_rad = MathHelper::DegToRad(360.0 / static_cast< double >(m_nSlices));
-   const double stack_delta_rad = MathHelper::DegToRad(180.0 / static_cast< double >(m_nStacks));
+   const double slice_delta_rad = math::DegToRad(360.0 / static_cast< double >(m_nSlices));
+   const double stack_delta_rad = math::DegToRad(180.0 / static_cast< double >(m_nStacks));
 
    // create the stack starting angle
    double stack_rad = stack_delta_rad;

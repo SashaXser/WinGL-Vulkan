@@ -9,6 +9,8 @@ set(WIN_GL_SRC
 ./AllocConsole.cpp
 ./AllocConsole.h
 ./Camera.h
+./FrameBufferObject.cpp
+./FrameBufferObject.h
 ./GeomHelper.cpp
 ./GeomHelper.h
 ./MathHelper.h

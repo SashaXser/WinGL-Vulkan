@@ -96,7 +96,7 @@ void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::
    vec_type ypr = MatrixHelper::DecomposeYawPitchRollDeg(mViewMatrix);
 
    // make sure the pitch is within bounds
-   ypr.Y() = MathHelper::Clamp(pitch_deg, MIN_PITCH, MAX_PITCH);
+   ypr.Y() = math::Clamp(pitch_deg, MIN_PITCH, MAX_PITCH);
 
    // update the matrix with the new yaw value
    Rotate(ypr.X(), ypr.Y());

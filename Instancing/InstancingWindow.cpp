@@ -241,7 +241,7 @@ LRESULT InstancingWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lPara
 
          // update and clamp the values
          yaw += deltaX * 0.5f;
-         pitch = MathHelper::Clamp(pitch + deltaY * 0.5f, -89.9f, 89.9f);
+         pitch = math::Clamp(pitch + deltaY * 0.5f, -89.9f, 89.9f);
 
          // go from eye space to world space
          // make sure to multiply by -1 as the final matrix translates world to eye

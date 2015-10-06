@@ -41,7 +41,7 @@ void Earth::Render( )
    glEnable(GL_TEXTURE_2D);
 
    // make sure to tell the shader where to get the night texture
-   mPlanetPgm.SetUniformValue("night_planet_texture", static_cast< GLint >(mNightSurfaceImage.GetBoundTexUnit()));
+   mPlanetPgm.SetUniformValue("night_planet_texture", static_cast< GLint >(mNightSurfaceImage.GetBoundSamplerID()));
 
    // enable the clouds image
    // enable textures on the clouds texture unit
@@ -49,7 +49,7 @@ void Earth::Render( )
    glEnable(GL_TEXTURE_2D);
 
    // make sure to tell the shader where to get the clouds texture
-   mPlanetPgm.SetUniformValue("clouds_planet_texture", static_cast< GLint >(mCloudsImage.GetBoundTexUnit()));
+   mPlanetPgm.SetUniformValue("clouds_planet_texture", static_cast< GLint >(mCloudsImage.GetBoundSamplerID()));
 
    // update the clouds offset value
    mPlanetPgm.SetUniformValue("clouds_offset_s", static_cast< float >(mCloudOffsetS));
@@ -83,7 +83,7 @@ void Earth::Update( const double & true_elapsed_time_secs,
    // which the texture appears to be moving.  without the scaled value below,
    // the texture would make a full revolution in half the time than the planet
    // earth.
-   mCloudOffsetS += (PLANETARY_TIME[0] * sim_elapsed_time_secs * 0.25) / MathHelper::pi_2< double >();
+   mCloudOffsetS += (PLANETARY_TIME[0] * sim_elapsed_time_secs * 0.25) / math::pi_2< double >();
 
    // need to renormalize the offset value if it gets too large
    static const double MAX_S_OFFSET = 10.0;

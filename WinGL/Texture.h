@@ -37,12 +37,16 @@ public:
    // obtains the texture type
    GLenum GetType( ) const { WGL_ASSERT(mTexID); return mTexTarget; }
 
+   // obtains the textures internal type
+   GLenum GetInternalType( ) const { WGL_ASSERT(mTexID); return mTexIFormat; }
+
    // obtains the width and height
    GLuint GetWidth( ) const { WGL_ASSERT(mTexID); return mTexWidth; }
    GLuint GetHeight( ) const { WGL_ASSERT(mTexID); return mTexHeight; }
 
-   // obtains the currently bound texture unit for this texture
-   GLuint GetBoundTexUnit( ) const { WGL_ASSERT(mTexID); return mBoundTexUnit - GL_TEXTURE0; }
+   // obtains the sampler id associated to the assigned texture unit id
+   // this value is used by a sampler to indicate in the shader which texture to use
+   GLuint GetBoundSamplerID( ) const { WGL_ASSERT(mTexID); return mBoundTexUnit - GL_TEXTURE0; }
 
    // obtains the currently bound texture unit opengl id for this texture
    GLuint GetBoundTexUnitID( ) const { WGL_ASSERT(mTexID); return mBoundTexUnit; }
@@ -53,12 +57,20 @@ public:
    // obtains the mipmap status of the texture
    bool IsMipMapped( ) const { WGL_ASSERT(mTexID); return mTexIsMipMapped; }
 
+   // obtains the immutable status of the texture
+   bool IsImmutable( ) const { WGL_ASSERT(mTexID); return mTexIsImmutable; }
+
    // generates a texture of a specific type
    bool GenerateTexture( const GLenum target, const GLenum internal_format,
                          const GLuint width, const GLuint height,
                          const GLenum format, const GLenum type,
                          const void * const pData,
                          const bool generate_mipmap = false );
+   bool GenerateTextureImmutable( const GLenum target, const GLenum internal_format,
+                                  const GLuint width, const GLuint height,
+                                  const GLenum format, const GLenum type,
+                                  const void * const pData,
+                                  const bool generate_mipmap = false );
 
    // loads a texture
    bool Load2D( const char * const pFilename,
@@ -103,6 +115,9 @@ private:
 
    // determines if mipmapping was requested
    bool        mTexIsMipMapped;
+
+   // determines if immutable was requested
+   bool        mTexIsImmutable;
 
 };
 

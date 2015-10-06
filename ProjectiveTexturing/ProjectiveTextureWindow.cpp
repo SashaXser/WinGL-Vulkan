@@ -614,11 +614,11 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
 
    // bind the texture
    mLogoTex.Bind(GL_TEXTURE0);
-   mProjTexProg.SetUniformValue("logo_texture", static_cast< GLint >(mLogoTex.GetBoundTexUnit()));
+   mProjTexProg.SetUniformValue("logo_texture", static_cast< GLint >(mLogoTex.GetBoundSamplerID()));
 
    // bind the depth texture
    mDepthTex.Bind(GL_TEXTURE1);
-   mProjTexProg.SetUniformValue("depth_texture", static_cast< GLint >(mDepthTex.GetBoundTexUnit()));
+   mProjTexProg.SetUniformValue("depth_texture", static_cast< GLint >(mDepthTex.GetBoundSamplerID()));
 
    // update shader uniforms for the walls
    mProjTexProg.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", Matrixf(mCameraVariables.mProjMat * mCameraVariables.mMViewMat));

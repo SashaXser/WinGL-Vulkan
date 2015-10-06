@@ -219,7 +219,7 @@ ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
       const Vector< T, 3 > & n = normals[index_n];
 
       // the normal should already be normalized
-      WGL_ASSERT(MathHelper::Equals< T >(n.Length(), 1));
+      WGL_ASSERT(math::Equals< T >(n.Length(), 1));
 
       // perform grahm-schmidt on the normal and tangent,
       // as the tangent may not be orthogonal to the normal
@@ -227,13 +227,13 @@ ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
       *tangent_beg = (*tangent_beg - n * (n * *tangent_beg)).UnitVector();
 
       // the tangent should already be normalized
-      WGL_ASSERT(MathHelper::Equals< T >(tangent_beg->Length(), 1, 2 * std::numeric_limits< T >::epsilon()));
+      WGL_ASSERT(math::Equals< T >(tangent_beg->Length(), 1, 2 * std::numeric_limits< T >::epsilon()));
 
       // bitangent is just n cross t
       tangents_bitangents.second[index_n] = (n ^ *tangent_beg).UnitVector();
 
       // the bitangent should be a unit vector
-      WGL_ASSERT(MathHelper::Equals< T >(tangents_bitangents.second[index_n].Length(), 1));
+      WGL_ASSERT(math::Equals< T >(tangents_bitangents.second[index_n].Length(), 1));
    }
 
    return tangents_bitangents;
@@ -415,8 +415,8 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
    }
 
    // calculate the offset deltas
-   const float slice_rad_delta = MathHelper::DegToRad(360.0f / slices);
-   const float stack_rad_delta = MathHelper::DegToRad(180.0f / stacks);
+   const float slice_rad_delta = math::DegToRad(360.0f / slices);
+   const float stack_rad_delta = math::DegToRad(180.0f / stacks);
 
    // loop across all the stacks
    for (uint32_t stack = 1; stacks > stack; ++stack)
@@ -445,8 +445,8 @@ Shape ConstructSphere( const uint32_t slices, const uint32_t stacks, const float
          shape.normals.push_back(vertex.UnitVector());
 
          // calculate the texture coords
-         shape.tex_coords.push_back(Vec2f(1.0f - slice_rad / (MathHelper::pi< float >() * 2.0f),
-                                          1.0f - stack_rad / MathHelper::pi< float >()));
+         shape.tex_coords.push_back(Vec2f(1.0f - slice_rad / (math::pi< float >() * 2.0f),
+                                          1.0f - stack_rad / math::pi< float >()));
 
          // if on the final set of slice vertices, add the front base set again
          if (slices == slice + 1)

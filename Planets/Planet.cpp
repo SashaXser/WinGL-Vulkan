@@ -48,9 +48,9 @@ MAJ_MIN_AXES      ( { planet_major_minor_axes[0], planet_major_minor_axes[1], pl
    Matrixf & trans    = mPlanetaryMatrix[3];
 
    // setup the ecliptic
-   ecliptic.MakeRotation(static_cast< float >(MathHelper::RadToDeg(PLANETARY_TILTS[0])), 0.0f, 0.0f, 1.0f);
+   ecliptic.MakeRotation(static_cast< float >(math::RadToDeg(PLANETARY_TILTS[0])), 0.0f, 0.0f, 1.0f);
    // setup the planet's tilt
-   tilt.MakeRotation(MathHelper::RadToDeg(static_cast< float >(PLANETARY_TILTS[1])), 0.0f, 0.0f, 1.0f);
+   tilt.MakeRotation(math::RadToDeg(static_cast< float >(PLANETARY_TILTS[1])), 0.0f, 0.0f, 1.0f);
    // set the last matrix to the identity
    rotation.MakeIdentity();
    trans.MakeIdentity();
@@ -172,7 +172,7 @@ void Planet::Update( const double & true_elapsed_time_secs,
 
    // compute a planetary rotation
    const Matrixf mRotation =
-      Matrixf::Rotate(static_cast< float >(MathHelper::RadToDeg(PLANETARY_TIME[0] * sim_elapsed_time_secs)),
+      Matrixf::Rotate(static_cast< float >(math::RadToDeg(PLANETARY_TIME[0] * sim_elapsed_time_secs)),
                       Vec3f(0.0f, 1.0f, 0.0f));
 
    // update the local rotation

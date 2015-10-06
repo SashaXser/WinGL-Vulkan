@@ -4,7 +4,7 @@
 #include <cmath>
 #include <limits>
 
-namespace MathHelper
+namespace math
 {
 
 template < typename T >
@@ -39,6 +39,6 @@ template < typename T > T pi_2( ) { /* empty so as to error out */ }
 template < > inline double pi_2( ) { return 6.283185307179586476925286766559; }
 template < > inline float pi_2( ) { return static_cast< float >(pi_2< double >()); }
 
-} // namespace MathHelper
+} // namespace math
 
 #endif // _MATH_HELPER_H_

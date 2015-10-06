@@ -670,7 +670,7 @@ Quaternion< T > Quaternion< T >::Rotation( const T & degrees, const Vector< T, 3
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= axis.Length() &&
               axis.Length() <= 1 + std::numeric_limits< T >::epsilon());
 
-   const T radians = MathHelper::DegToRad(degrees);
+   const T radians = math::DegToRad(degrees);
    const T sin = std::sin(radians * static_cast< T >(0.5));
 
    return Quaternion< T >(axis.mT[0] * sin,
@@ -716,7 +716,7 @@ Quaternion< T > Quaternion< T >::Rotation( const Vector< T, 3 > & origin, const 
          rotation_axis = Vector< T, 3 >(T(1), T(0), T(0)) ^ origin;
       }
 
-      return Quaternion< T >::Rotation(MathHelper::pi< T >(), rotation_axis.UnitVector());
+      return Quaternion< T >::Rotation(math::pi< T >(), rotation_axis.UnitVector());
    }
 
    rotation_axis = origin ^ destination;

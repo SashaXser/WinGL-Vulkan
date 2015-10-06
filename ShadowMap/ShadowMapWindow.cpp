@@ -298,7 +298,7 @@ void ShadowMapWindow::RenderScene( )
       if (diffuse_tex && *diffuse_tex)
       {
          diffuse_tex->Bind(GL_TEXTURE0);
-         mpEnterpriseE->mProgram.SetUniformValue("diffuse_texture", static_cast< GLint >(diffuse_tex->GetBoundTexUnit()));
+         mpEnterpriseE->mProgram.SetUniformValue("diffuse_texture", static_cast< GLint >(diffuse_tex->GetBoundSamplerID()));
       }
 
       for (; rbucketBeg != rbucketEnd; ++rbucketBeg)

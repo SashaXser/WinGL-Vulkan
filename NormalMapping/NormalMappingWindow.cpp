@@ -187,9 +187,9 @@ int NormalMappingWindow::Run( )
             mpShader->Enable();
 
             // setup the textures to use
-            mpDiffuseTex->Bind(GL_TEXTURE0); mpShader->SetUniformValue("diffuse_texture", static_cast< GLint >(mpDiffuseTex->GetBoundTexUnit()));
-            mpNormalTex->Bind(GL_TEXTURE1); mpShader->SetUniformValue("normal_texture", static_cast< GLint >(mpNormalTex->GetBoundTexUnit()));
-            mpHeightTex->Bind(GL_TEXTURE2); mpShader->SetUniformValue("parallax_texture", static_cast< GLint >(mpHeightTex->GetBoundTexUnit()));
+            mpDiffuseTex->Bind(GL_TEXTURE0); mpShader->SetUniformValue("diffuse_texture", static_cast< GLint >(mpDiffuseTex->GetBoundSamplerID()));
+            mpNormalTex->Bind(GL_TEXTURE1); mpShader->SetUniformValue("normal_texture", static_cast< GLint >(mpNormalTex->GetBoundSamplerID()));
+            mpHeightTex->Bind(GL_TEXTURE2); mpShader->SetUniformValue("parallax_texture", static_cast< GLint >(mpHeightTex->GetBoundSamplerID()));
 
             // bind the object to render
             mpWallVAO->Bind();
@@ -325,7 +325,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
          {
 
          // if the intensity is zero, then turn it on; otherwise turn it off
-         if (MathHelper::Equals(mPointLightAmbientIntensity, 0.0f))
+         if (math::Equals(mPointLightAmbientIntensity, 0.0f))
          {
             mPointLightAmbientIntensity = AMBIENT_INTENSITY;
             mPointLightDiffuseIntensity = DIFFUSE_INTENSITY;
@@ -371,8 +371,8 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
 
       case 'T': LoadTexture(); break;
 
-      case '>': mSimTimeMultiplier = MathHelper::Clamp(mSimTimeMultiplier - 0.1, 0.0, 2.0); break;
-      case '<': mSimTimeMultiplier = MathHelper::Clamp(mSimTimeMultiplier + 0.1, 0.0, 2.0); break;
+      case '>': mSimTimeMultiplier = math::Clamp(mSimTimeMultiplier - 0.1, 0.0, 2.0); break;
+      case '<': mSimTimeMultiplier = math::Clamp(mSimTimeMultiplier + 0.1, 0.0, 2.0); break;
       }
 
       break;
@@ -403,7 +403,7 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
             view_pitch += delta_y * 0.05f;
 
             // make sure the value for pitch is within [-90, 90]
-            view_pitch = MathHelper::Clamp(view_pitch, -89.9f, 89.9f);
+            view_pitch = math::Clamp(view_pitch, -89.9f, 89.9f);
 
             // obtain the current position of the camera
             const Vec4f camera_pos = mCamera.Inverse() * Vec4f();
