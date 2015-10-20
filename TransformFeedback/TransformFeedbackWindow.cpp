@@ -71,7 +71,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
 
       mpTrianglesShader->AttachFile(GL_VERTEX_SHADER, "transform_feedback.vert");
       mpTrianglesShader->AttachFile(GL_GEOMETRY_SHADER, "transform_feedback.geom");
-      mpTrianglesShader->AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
+      //mpTrianglesShader->AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
 
 
       gTFB.GenBuffer(GL_TRANSFORM_FEEDBACK_BUFFER);
@@ -111,6 +111,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       gFBO.GenBuffer(nWidth, nHeight);
       gFBO.Bind(GL_FRAMEBUFFER);
       gFBO.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA8);
+      gFBO.Attach(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, GL_R32UI);
       gFBO.Unbind();
       
       return true;
@@ -214,6 +215,18 @@ int TransformFeedbackWindow::Run( )
          gTFB.UnbindBufferBase(0);
 
 
+         // temp... move later
+         ShaderProgram temp_shader;
+         const char * const vert_source =
+            "#version 400 compatibility\n"
+            "void main( ) {\n"
+            "gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n"
+            "}";
+         temp_shader.Attach(GL_VERTEX_SHADER, vert_source);
+         temp_shader.AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
+         temp_shader.Link();
+         temp_shader.Enable();
+
 
          glMatrixMode(GL_PROJECTION);
          glLoadMatrixd(projection);
@@ -222,8 +235,22 @@ int TransformFeedbackWindow::Run( )
          glLoadMatrixd(mv);
 
          gFBO.Bind(GL_FRAMEBUFFER);
-         glClear(GL_COLOR_BUFFER_BIT);
-         glViewport(0, 0, gFBO.Width(), gFBO.Height());
+
+         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+         glDrawBuffers(2, buffers);
+
+         if (gFBO.Width() != GetSize().width ||
+             gFBO.Height() != GetSize().height)
+         {
+            gFBO.Resize(GetSize().width, GetSize().height);
+         }
+
+         //glClear(GL_COLOR_BUFFER_BIT);
+         GLfloat black[] = {0, 0, 0, 1};
+         glClearBufferfv(GL_COLOR, 0, black);
+         GLuint zero = 0;
+         glClearBufferuiv(GL_COLOR, 1, &zero);
+
 
          glEnableClientState(GL_VERTEX_ARRAY);
          glVertexPointer(4, GL_FLOAT, 0, pBuffer);
@@ -236,7 +263,11 @@ int TransformFeedbackWindow::Run( )
          glDisableClientState(GL_VERTEX_ARRAY);
 
          gFBO.Unbind();
-         glViewport(0, 0, GetSize().width, GetSize().height);
+
+         temp_shader.Disable();
+
+         // more than likely not needed
+         //glDrawBuffer(GL_BACK);
 
 
          gTFB.Bind();
@@ -285,6 +316,56 @@ int TransformFeedbackWindow::Run( )
          glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
          SwapBuffers(GetHDC());
+
+         //glEnable(GL_TEXTURE_2D);
+         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE0);
+         int iformat, rtype, rsize;
+         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &iformat);
+         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &rtype);
+         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_SIZE, &rsize);
+         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
+         //glDisable(GL_TEXTURE_2D);
+
+         gFBO.Bind(GL_READ_FRAMEBUFFER);
+         gFBO.IsComplete();
+         gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
+         glReadBuffer(GL_COLOR_ATTACHMENT1);
+         std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
+         glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
+         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind();
+         //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
+         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
+         gFBO.Unbind();
+         glReadBuffer(GL_BACK);
+
+         static int i = 1000;
+
+         if (--i == 0)
+         {
+            const auto width = gFBO.Width();
+            const auto height = gFBO.Height();
+
+            for (int h = gFBO.Height() - 1; h >= 0; --h)
+            {
+               const auto row = width * h;
+
+               for (int w = 0; w < gFBO.Width(); ++w)
+               {
+                  std::cout << (test_collect[row + w] == 1 ? "1" : test_collect[row + w] ? "X" : ".");
+                  if (test_collect[row + w])
+                  {
+                     uint32_t blah = test_collect[row + w];
+                     blah *= 2;
+                  }
+               }
+               std::cout << std::endl;
+            }
+
+            std::cout << std::endl;
+            std::cout << std::endl;
+
+            i = 1000;
+         }
       }
    }
 

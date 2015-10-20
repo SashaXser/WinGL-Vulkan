@@ -216,3 +216,37 @@ bool FrameBufferObject::IsBound( const GLenum target ) const
 
    return bound;
 }
+
+bool FrameBufferObject::IsComplete( ) const
+{
+   // must be created and bound...
+   WGL_ASSERT(mFBO && IsBound(mTarget));
+
+   const GLenum status = CompleteStatus();
+
+   // todo: come back here and determine if a message to the console is needed...
+   switch (status)
+   {
+   case GL_FRAMEBUFFER_UNDEFINED: break;
+   case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: break;
+   case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: break;
+   case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: break;
+   case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: break;
+   case GL_FRAMEBUFFER_UNSUPPORTED: break;
+   case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: break;
+   case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: break;
+   default: /* GL_FRAMEBUFFER_COMPLETE */ break;
+   }
+
+   WGL_ASSERT(status == GL_FRAMEBUFFER_COMPLETE);
+
+   return status == GL_FRAMEBUFFER_COMPLETE;
+}
+
+GLenum FrameBufferObject::CompleteStatus( ) const
+{
+   // must be created and bound...
+   WGL_ASSERT(mFBO && IsBound(mTarget));
+
+   return glCheckFramebufferStatus(mTarget);
+}

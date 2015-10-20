@@ -14,7 +14,7 @@ int WINAPI WinMain( HINSTANCE hInstance,
 
    // create the window
    TransformFeedbackWindow * const pTFW = new TransformFeedbackWindow();
-   if (pTFW->Create(500, 500, "Transform Feedback Window"))
+   if (pTFW->Create(100, 100, "Transform Feedback Window"))
    {
       // begin displaying the window
       error = pTFW->Run();

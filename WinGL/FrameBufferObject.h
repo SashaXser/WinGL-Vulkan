@@ -68,6 +68,10 @@ public:
    bool IsReadingBound( ) const { return mTarget == GL_FRAMEBUFFER || mTarget == GL_READ_FRAMEBUFFER; }
    bool IsWritingBound( ) const { return mTarget == GL_FRAMEBUFFER || mTarget == GL_DRAW_FRAMEBUFFER; }
 
+   // indicates if the fbo is complete
+   bool IsComplete( ) const;
+   GLenum CompleteStatus( ) const;
+
 private:
    // prohibit certain actions
    FrameBufferObject( const FrameBufferObject & );
