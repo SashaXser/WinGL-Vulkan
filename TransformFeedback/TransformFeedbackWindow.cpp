@@ -42,6 +42,10 @@ VBO gTFB;
 QueryObject gQO;
 FrameBufferObject gFBO;
 
+std::vector< Vec3f > points = { Vec3f(-9.0f, -9.0f, 0.0f), Vec3f(-5.0f, 9.0f, 0.0f), Vec3f(5.0f, 9.0f, 0.0f), Vec3f(9.0f, -9.0f, 0.0f) };
+
+Vec3f * pActivePoint = nullptr;
+
 bool TransformFeedbackWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
                                       const char * pWndTitle,
@@ -154,29 +158,29 @@ int TransformFeedbackWindow::Run( )
          mpTrianglesShader->SetUniformMatrix<1, 4, 4 >("model_view", static_cast< Matrixf >(mv));
          mpTrianglesShader->SetUniformMatrix<1, 4, 4 >("model_view_proj_mat", static_cast< Matrixf >(projection * mv));
 
-         const std::vector< Vec3f > points = [ ] ( )
-         {
-            const double current_time = Timer().GetCurrentTimeSec();
+         //const std::vector< Vec3f > points = [ ] ( )
+         //{
+         //   const double current_time = Timer().GetCurrentTimeSec();
 
-            double cos = std::cos(current_time);
-            double sin = std::sin(current_time);
+         //   double cos = std::cos(current_time);
+         //   double sin = std::sin(current_time);
 
-            const Vec3f pt1(0.0f + 10 * cos, 0.0f, 0.0f);
+         //   const Vec3f pt1(0.0f + 10 * cos, 0.0f, 0.0f);
 
-            cos = std::cos(current_time + 1.0);
-            sin = std::sin(current_time + 1.0);
+         //   cos = std::cos(current_time + 1.0);
+         //   sin = std::sin(current_time + 1.0);
 
-            const Vec3f pt2(cos * 10, cos * -10, 0.0f);
+         //   const Vec3f pt2(cos * 10, cos * -10, 0.0f);
 
-            cos = std::cos(current_time + 2.0);
-            sin = std::sin(current_time + 2.0);
+         //   cos = std::cos(current_time + 2.0);
+         //   sin = std::sin(current_time + 2.0);
 
-            const Vec3f pt3(5.0f, -2.0f + 8 * cos, 0.0f);
+         //   const Vec3f pt3(5.0f, -2.0f + 8 * cos, 0.0f);
 
-            return std::vector< Vec3f > { pt1, pt2, pt3 };
-            //{ Vec3f(-5.0f, -5.0f, 0.0f), Vec3f(0.0f, 5.0f, 0.0f), Vec3f(5.0f, -2.0f, 0.0f) };
-         }();
-         mpTrianglesShader->SetUniformValue< 3 >("control_points", static_cast< const float * >(points.front()), 3);
+         //   return std::vector< Vec3f > { pt1, pt2, pt3 };
+         //   //{ Vec3f(-5.0f, -5.0f, 0.0f), Vec3f(0.0f, 5.0f, 0.0f), Vec3f(5.0f, -2.0f, 0.0f) };
+         //}();
+         mpTrianglesShader->SetUniformValue< 3 >("control_points", static_cast< const float * >(points.front()), points.size());
 
          glEnable(GL_RASTERIZER_DISCARD);
 
@@ -219,7 +223,9 @@ int TransformFeedbackWindow::Run( )
          ShaderProgram temp_shader;
          const char * const vert_source =
             "#version 400 compatibility\n"
+            "flat out uint control_point_id;\n"
             "void main( ) {\n"
+            "control_point_id = gl_VertexID;\n"
             "gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n"
             "}";
          temp_shader.Attach(GL_VERTEX_SHADER, vert_source);
@@ -236,7 +242,7 @@ int TransformFeedbackWindow::Run( )
 
          gFBO.Bind(GL_FRAMEBUFFER);
 
-         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_NONE };
          glDrawBuffers(2, buffers);
 
          if (gFBO.Width() != GetSize().width ||
@@ -248,17 +254,24 @@ int TransformFeedbackWindow::Run( )
          //glClear(GL_COLOR_BUFFER_BIT);
          GLfloat black[] = {0, 0, 0, 1};
          glClearBufferfv(GL_COLOR, 0, black);
-         GLuint zero = 0;
-         glClearBufferuiv(GL_COLOR, 1, &zero);
 
 
          glEnableClientState(GL_VERTEX_ARRAY);
          glVertexPointer(4, GL_FLOAT, 0, pBuffer);
          const auto num_verts_written = gQO.Value< GLuint >();
          glDrawArrays(GL_LINE_STRIP, 0, num_verts_written);
+
+         const GLenum buffers2[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+         glDrawBuffers(2, buffers2);
+         GLuint max_uint = std::numeric_limits< GLuint >::max();
+         glClearBufferuiv(GL_COLOR, 1, &max_uint);
+
+
          glVertexPointer(3, GL_FLOAT, 0, points.front());
          glPointSize(5.0f);
-         glDrawArrays(GL_POINTS, 0, 3);
+         //glDrawArrays(GL_POINTS, 0, 3);
+         const uint32_t indices[] = { 0, 1, 2, 3 };
+         glDrawElements(GL_POINTS, sizeof(indices) / sizeof(*indices), GL_UNSIGNED_INT, indices);
          glPointSize(1.0f);
          glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -338,34 +351,42 @@ int TransformFeedbackWindow::Run( )
          gFBO.Unbind();
          glReadBuffer(GL_BACK);
 
-         static int i = 1000;
+         //static int i = 1000;
 
-         if (--i == 0)
-         {
-            const auto width = gFBO.Width();
-            const auto height = gFBO.Height();
+         //if (--i == 0)
+         //{
+         //   const auto width = gFBO.Width();
+         //   const auto height = gFBO.Height();
 
-            for (int h = gFBO.Height() - 1; h >= 0; --h)
-            {
-               const auto row = width * h;
+         //   for (int h = gFBO.Height() - 1; h >= 0; --h)
+         //   {
+         //      const auto row = width * h;
 
-               for (int w = 0; w < gFBO.Width(); ++w)
-               {
-                  std::cout << (test_collect[row + w] == 1 ? "1" : test_collect[row + w] ? "X" : ".");
-                  if (test_collect[row + w])
-                  {
-                     uint32_t blah = test_collect[row + w];
-                     blah *= 2;
-                  }
-               }
-               std::cout << std::endl;
-            }
+         //      for (int w = 0; w < gFBO.Width(); ++w)
+         //      {
+         //         if (test_collect[row + w] == std::numeric_limits< GLuint >::max())
+         //         {
+         //            std::cout << ".";
+         //         }
+         //         else
+         //         {
+         //            std::cout << test_collect[row + w];
+         //         }
 
-            std::cout << std::endl;
-            std::cout << std::endl;
+         //         if (test_collect[row + w])
+         //         {
+         //            uint32_t blah = test_collect[row + w];
+         //            blah *= 2;
+         //         }
+         //      }
+         //      std::cout << std::endl;
+         //   }
 
-            i = 1000;
-         }
+         //   std::cout << std::endl;
+         //   std::cout << std::endl;
+
+         //   i = 1000;
+         //}
       }
    }
 
@@ -388,6 +409,43 @@ LRESULT TransformFeedbackWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARA
       break;
 
    case WM_MOUSEMOVE:
+      if (pActivePoint)
+      {
+         const auto x_screen = static_cast< intptr_t >(lParam & 0xFFFF);
+         const auto y_screen = GetSize().height - static_cast< intptr_t >(lParam >> 16);
+
+         const auto x_world = 10.0 * ((2.0 * x_screen / GetSize().width) - 1.0);
+         const auto y_world = 10.0 * ((2.0 * y_screen / GetSize().height) - 1.0);
+
+         pActivePoint->Set(x_world, y_world, 0.0f);
+      }
+
+      break;
+
+   case WM_LBUTTONDOWN:
+   {
+      gFBO.Bind(GL_READ_FRAMEBUFFER);
+      gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
+      glReadBuffer(GL_COLOR_ATTACHMENT1);
+      std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
+      glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
+
+      const auto x = static_cast< intptr_t >(lParam & 0xFFFF);
+      const auto y = static_cast< intptr_t >(lParam >> 16);
+
+      const auto selection = test_collect[(GetSize().height - y) * GetSize().width + x];
+
+      if (selection != std::numeric_limits< GLuint >::max())
+      {
+         pActivePoint = &points[selection];
+      }
+   }
+
+      break;
+
+   case WM_LBUTTONUP:
+      // release the active point...
+      pActivePoint = nullptr;
 
       break;
 
