@@ -19,6 +19,9 @@ public:
    static GLuint GetCurrentFrameBuffer( const GLenum binding );
    static GLuint GetCurrentRenderBuffer( );
 
+   // static functions that defines the maximum number of color attachemtns
+   static GLuint GetMaxNumberOfColorAttachments( );
+
    // constructor / destructor
     FrameBufferObject( );
    ~FrameBufferObject( );
@@ -68,6 +71,11 @@ public:
    bool IsReadingBound( ) const { return mTarget == GL_FRAMEBUFFER || mTarget == GL_READ_FRAMEBUFFER; }
    bool IsWritingBound( ) const { return mTarget == GL_FRAMEBUFFER || mTarget == GL_DRAW_FRAMEBUFFER; }
 
+   // performs a blit operation
+   void Blit( const size_t sx0, const size_t sy0, const size_t sx1, const size_t sy1,
+              const size_t dx0, const size_t dy0, const size_t dx1, const size_t dy1,
+              const GLenum buffer, const GLbitfield mask, const GLenum filter ) const;
+
    // indicates if the fbo is complete
    bool IsComplete( ) const;
    GLenum CompleteStatus( ) const;
@@ -95,5 +103,7 @@ private:
    AttachmentContainer  mAttachments;
 
 };
+
+typedef FrameBufferObject FBO;
 
 #endif // _FRAME_BUFFER_OBJECT_H_

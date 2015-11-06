@@ -2,14 +2,18 @@
 #include "TransformFeedbackWindow.h"
 
 // wingl includes
+#include <Pipeline.h>
 #include <WglAssert.h>
 
 // gl includes
 #include <GL/glew.h>
 #include <GL/GL.h>
 
+// std includes
+#include <limits>
+
 TransformFeedbackWindow::TransformFeedbackWindow( ) :
-mpTrianglesShader    ( new ShaderProgram )
+mpActiveControlPoint    ( nullptr )
 {
 }
 
@@ -22,29 +26,17 @@ void TransformFeedbackWindow::OnDestroy( )
    // should still have a valid context
    WGL_ASSERT(ContextIsCurrent());
 
-   // cleanup the resources
-   mpTrianglesShader = nullptr;
+   // clean up resources
+   mGenCurveShader = ShaderProgram();
+   mVisCurveShader = ShaderProgram();
+
+   mFBOCanvas = FrameBufferObject();
+
+   mTFBGenCurve = VBO();
 
    // call the base class to clean things up
    OpenGLWindow::OnDestroy();
 }
-
-// temp
-#include <GeomHelper.h>
-#include <Matrix.h>
-#include <Timer.h>
-#include <QueryObject.h>
-#include <FrameBufferObject.h>
-VAO gVAO;
-VBO gVBO;
-VBO gIVBO;
-VBO gTFB;
-QueryObject gQO;
-FrameBufferObject gFBO;
-
-std::vector< Vec3f > points = { Vec3f(-9.0f, -9.0f, 0.0f), Vec3f(-5.0f, 9.0f, 0.0f), Vec3f(5.0f, 9.0f, 0.0f), Vec3f(9.0f, -9.0f, 0.0f) };
-
-Vec3f * pActivePoint = nullptr;
 
 bool TransformFeedbackWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
@@ -68,55 +60,99 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       AttachToDebugContext();
 
       // enable specific state
-      glEnable(GL_CULL_FACE);
-      glEnable(GL_DEPTH_TEST);
+      mPipeline.EnableCullFace(true);
+      mPipeline.EnableDepthTesting(true);
 
+      // attach the visualization shaders for the curve
+      mVisCurveShader.AttachFile(GL_VERTEX_SHADER, "transform_feedback_vis.vert");
+      mVisCurveShader.AttachFile(GL_FRAGMENT_SHADER, "transform_feedback_vis.frag");
 
+      // make sure the operation is complete
+      if (!mVisCurveShader.Link())
+      {
+         // issue an error from the application that it could not link the files
+         PostDebugMessage(GL_DEBUG_TYPE_ERROR, 1 | gl::debug::DISPLAY_MESSAGE_BOX_BIT, GL_DEBUG_SEVERITY_HIGH, "Unable to link shaders to visualize curve!!!");
 
-      mpTrianglesShader->AttachFile(GL_VERTEX_SHADER, "transform_feedback.vert");
-      mpTrianglesShader->AttachFile(GL_GEOMETRY_SHADER, "transform_feedback.geom");
-      //mpTrianglesShader->AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
+         return false;
+      }
 
+      // generate the transform feedback object to capture state
+      mTFOGenCurve.GenBuffer();
+      mTFOGenCurve.Bind();
 
-      gTFB.GenBuffer(GL_TRANSFORM_FEEDBACK_BUFFER);
-      gTFB.Bind();
-      gTFB.BufferStorage(4 * sizeof(float) * 512, nullptr, GL_MAP_READ_BIT);
-      //glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transform_buffer);
+      // generate the buffer to hold the newly created data
+      // let gl know that this is dynamic and will be used only in drawing
+      mTFBGenCurve.GenBuffer(GL_TRANSFORM_FEEDBACK_BUFFER);
+      mTFBGenCurve.Bind();
+      mTFBGenCurve.BufferStorage(4 * sizeof(float) * 512, nullptr, 0);
+      mTFBGenCurve.BindBufferBase(0);
 
-      char * varyings[] = { "gl_Position" };
-      mpTrianglesShader->TransformFeedbackVaryings(varyings, 1, GL_INTERLEAVED_ATTRIBS);
+      // no longer need to capture the feedback state
+      mTFOGenCurve.Unbind();
 
-      mpTrianglesShader->Link();
+      // attach the generation transform feedback shaders
+      mGenCurveShader.AttachFile(GL_VERTEX_SHADER, "transform_feedback_gen.vert");
+      mGenCurveShader.AttachFile(GL_GEOMETRY_SHADER, "transform_feedback_gen.geom");
 
-      gTFB.Unbind();
+      // indicate the type of attributes to record into the buffer
+      // only need to use the geometry shaders gl_Position value
+      const char * const varyings[] = { "gl_Position" };
+      mGenCurveShader.TransformFeedbackVaryings(varyings, 1, GL_INTERLEAVED_ATTRIBS);
 
-      //const auto plane = GeomHelper::ConstructPlane(5.0f, 5.0f);
-      gVAO.GenArray();
-      gVAO.Bind();
+      // make sure the operation is complete
+      if (!mGenCurveShader.Link())
+      {
+         // issue an error from the application that it could not link the files
+         PostDebugMessage(GL_DEBUG_TYPE_ERROR, 1 | gl::debug::DISPLAY_MESSAGE_BOX_BIT, GL_DEBUG_SEVERITY_HIGH, "Unable to link shaders to generate curve!!!");
 
-      //gVBO.GenBuffer(GL_ARRAY_BUFFER);
-      //gVBO.Bind();
-      //std::vector< Vec3f > points = { Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(0.0f, 10.0f, 0.0f), Vec3f(5.0f, 0.0f, 0.0f) };
-      //gVBO.BufferData(points.size() * sizeof(Vec3f), points.front(), GL_STATIC_DRAW);
-      //gVBO.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-      //gVAO.EnableVertexAttribArray(0);
-      //gVBO.Unbind();
+         return false;
+      }
 
-      //gIVBO.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
-      //gIVBO.Bind();
-      //gIVBO.BufferData(plane.indices.size() * sizeof(GLuint), &plane.indices[0], GL_STATIC_DRAW);
+      // define the initial location of the control points
+      mControlPoints = { Vec4f(-9.0f, -9.0f, 0.0f, 1.0f),
+                         Vec4f(-5.0f, 9.0f, 0.0f, 1.0f),
+                         Vec4f(5.0f, 9.0f, 0.0f, 1.0f),
+                         Vec4f(9.0f, -9.0f, 0.0f, 1.0f) };
 
-      gVAO.Unbind();
+      // let the shader have the initial location
+      mGenCurveShader.Enable();
+      mGenCurveShader.SetUniformValue< 3 >("control_points",
+                                           static_cast< const float * >(mControlPoints.front()),
+                                           mControlPoints.size());
+      mGenCurveShader.Disable();
 
-      //gIVBO.Unbind();
+      // add the control point locations to the vbo
+      mVBOControlPoints.GenBuffer(GL_ARRAY_BUFFER);
+      mVBOControlPoints.Bind();
+      mVBOControlPoints.BufferStorage(mControlPoints.size() * sizeof(decltype(mControlPoints)::value_type),
+                                      mControlPoints.front(),
+                                      GL_DYNAMIC_STORAGE_BIT);
+      mVBOControlPoints.Unbind();
 
-      gQO.GenQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+      // add the indices for the four points
+      mVBOControlPointsIndices.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+      mVBOControlPointsIndices.Bind();
+      const uint32_t indices[] = { 0, 1, 2, 3 };
+      mVBOControlPointsIndices.BufferStorage(sizeof(indices), indices, 0);
+      mVBOControlPointsIndices.Unbind();
 
-      gFBO.GenBuffer(nWidth, nHeight);
-      gFBO.Bind(GL_FRAMEBUFFER);
-      gFBO.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA8);
-      gFBO.Attach(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, GL_R32UI);
-      gFBO.Unbind();
+      // unbind the transform feedback
+      mTFBGenCurve.Unbind();
+
+      // generate the simple vao
+      mTFAGenCurve.GenArray();
+
+      // generate the canvas to render into
+      mFBOCanvas.GenBuffer(nWidth, nHeight);
+      mFBOCanvas.Bind(GL_FRAMEBUFFER);
+      // attach two color buffers, one a true color buffer and
+      // the other a selection buffer of integers...
+      mFBOCanvas.Attach(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA8);
+      mFBOCanvas.Attach(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, GL_R32UI);
+      mFBOCanvas.Unbind();
+
+      // post a message to load the correct settings of the shaders
+      SendMessage(GetHWND(), WM_SIZE, 0, nHeight << 16 | nWidth);
       
       return true;
    }
@@ -140,216 +176,129 @@ int TransformFeedbackWindow::Run( )
       // process all the app messages and then render the scene
       if (!(bQuit = PeekAppMessages(appQuitVal)))
       {
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         // clear the main color buffer...
+         const GLfloat BLACK[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+         mPipeline.DrawBuffers({ GL_BACK_LEFT });
+         mPipeline.ClearBuffer(GL_COLOR, 0, BLACK);
 
-         //glMatrixMode(GL_PROJECTION);
-         Matrixd projection = Matrixd::Ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0);
-         //glLoadMatrixd(projection);
+         // indicate that fragment operations are not to be performed...
+         mPipeline.EnableRasterDiscard(true);
 
-         //glMatrixMode(GL_MODELVIEW);
-         Matrixd mv = Matrixd::LookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-         //glLoadMatrixd(mv);
+         // setup the transform feedback operation
+         // this object will setup all the state associated for the operation
+         mTFOGenCurve.Bind();
 
-         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+         // eanble the line generation
+         mGenCurveShader.Enable();
 
-         glColor3f(1,1,1);
+         // begin the transform feedback
+         mPipeline.EnableTransformFeedback(true, GL_POINTS);
 
-         mpTrianglesShader->Enable();
-         mpTrianglesShader->SetUniformMatrix<1, 4, 4 >("model_view", static_cast< Matrixf >(mv));
-         mpTrianglesShader->SetUniformMatrix<1, 4, 4 >("model_view_proj_mat", static_cast< Matrixf >(projection * mv));
+         // draw a single point...
+         // there are currently no bound buffers other than the feedback buffer...
+         // the vertex shader passes a single point along and the remaining operations
+         // will generate the line in the geometry shader upon executing the emit...
+         mTFAGenCurve.Bind();
+         mPipeline.DrawArrays(GL_POINTS, 0, 1);
+         mTFAGenCurve.Unbind();
 
-         //const std::vector< Vec3f > points = [ ] ( )
-         //{
-         //   const double current_time = Timer().GetCurrentTimeSec();
+         // no longer need transform feedback operations
+         mPipeline.EnableTransformFeedback(false);
 
-         //   double cos = std::cos(current_time);
-         //   double sin = std::sin(current_time);
+         // disable collecting transform feedback data into the specified buffer
+         mTFOGenCurve.Unbind();
 
-         //   const Vec3f pt1(0.0f + 10 * cos, 0.0f, 0.0f);
+         // disable the line generating shader
+         mGenCurveShader.Disable();
 
-         //   cos = std::cos(current_time + 1.0);
-         //   sin = std::sin(current_time + 1.0);
+         // allow fragment operations to continue like normal
+         mPipeline.EnableRasterDiscard(false);
 
-         //   const Vec3f pt2(cos * 10, cos * -10, 0.0f);
+         // enable the color output destination buffers
+         mFBOCanvas.Bind(GL_FRAMEBUFFER);
 
-         //   cos = std::cos(current_time + 2.0);
-         //   sin = std::sin(current_time + 2.0);
+         // enable writing into the first buffer, disable the second
+         mPipeline.DrawBuffers({ GL_COLOR_ATTACHMENT0, GL_NONE });
 
-         //   const Vec3f pt3(5.0f, -2.0f + 8 * cos, 0.0f);
+         // clear the main color attachment
+         mPipeline.ClearBuffer(GL_COLOR, 0, BLACK);
 
-         //   return std::vector< Vec3f > { pt1, pt2, pt3 };
-         //   //{ Vec3f(-5.0f, -5.0f, 0.0f), Vec3f(0.0f, 5.0f, 0.0f), Vec3f(5.0f, -2.0f, 0.0f) };
-         //}();
-         mpTrianglesShader->SetUniformValue< 3 >("control_points", static_cast< const float * >(points.front()), points.size());
+         // enable the color buffer writing shader
+         mVisCurveShader.Enable();
 
-         glEnable(GL_RASTERIZER_DISCARD);
+         // enable vertex stream processing for attribute 0
+         mPipeline.EnableVertexAttribArray(true, 0);
 
-         //glEnableClientState(GL_VERTEX_ARRAY);
-         //gVBO.Bind();
-         //glVertexPointer(3, GL_FLOAT, 0, nullptr);
+         // bind the feedback buffer as an array buffer for rendering
+         mTFBGenCurve.Bind(GL_ARRAY_BUFFER);
+         mTFBGenCurve.VertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-         gTFB.Bind();
-         gTFB.BindBufferBase(0);
-         glBeginTransformFeedback(GL_POINTS);
+         // begin rendering back the content of the transform feedback
+         mPipeline.DrawTransformFeedback(GL_LINE_STRIP, mTFOGenCurve);
 
-         gQO.Begin();
+         // no longer need the feedback buffer
+         mTFBGenCurve.Unbind();
 
-         //gIVBO.Bind();
+         // enable writing into both buffers
+         mPipeline.DrawBuffers({ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 });
 
-         gVAO.Bind();
-         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-         glDrawArrays(GL_POINTS, 0, 1);
-         gVAO.Unbind();
+         // clear the selection color attachment
+         const GLuint MAX_GL_UINT = std::numeric_limits< GLuint >::max();
+         mPipeline.ClearBuffer(GL_COLOR, 1, &MAX_GL_UINT);
 
-         gQO.End();
+         // bind the control points for rendering
+         mVBOControlPoints.Bind();
+         mVBOControlPointsIndices.Bind();
+         mVBOControlPoints.VertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+         // render the control points
+         mPipeline.DrawElements(GL_POINTS, mVBOControlPointsIndices.Size< uint32_t >(), GL_UNSIGNED_INT, nullptr);
 
-         glEndTransformFeedback();
+         // enable vertex stream processing for attribute 0
+         mPipeline.EnableVertexAttribArray(false, 0);
 
-         //gIVBO.Unbind();
-         //gVBO.Unbind();
-         //glDisableClientState(GL_VERTEX_ARRAY);
+         // no longer rendering the control points
+         mVBOControlPointsIndices.Unbind();
+         mVBOControlPoints.Unbind();
 
-         glDisable(GL_RASTERIZER_DISCARD);
+         // disable the visualization shader
+         mVisCurveShader.Disable();
 
-         mpTrianglesShader->Disable();
+         // disable the color output destination buffers
+         mFBOCanvas.Unbind();
 
-         const void * const pBuffer = gTFB.MapBuffer(GL_READ_ONLY);
+         // blit the contents of the first buffer to the default frame buffer
+         mFBOCanvas.Bind(GL_READ_FRAMEBUFFER);
+         uint8_t pixels[100*100*4] = {};
+         glReadBuffer(GL_COLOR_ATTACHMENT0);
+         glReadPixels(0, 0, 100, 100, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+         mFBOCanvas.Blit(0, 0, mFBOCanvas.Width(), mFBOCanvas.Height(),
+                         0, 0, mFBOCanvas.Width(), mFBOCanvas.Height(),
+                         GL_COLOR_ATTACHMENT0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+         mFBOCanvas.Unbind();
 
-         gTFB.Unbind();
-         gTFB.UnbindBufferBase(0);
-
-
-         // temp... move later
-         ShaderProgram temp_shader;
-         const char * const vert_source =
-            "#version 400 compatibility\n"
-            "flat out uint control_point_id;\n"
-            "void main( ) {\n"
-            "control_point_id = gl_VertexID;\n"
-            "gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n"
-            "}";
-         temp_shader.Attach(GL_VERTEX_SHADER, vert_source);
-         temp_shader.AttachFile(GL_FRAGMENT_SHADER, "transform_feedback.frag");
-         temp_shader.Link();
-         temp_shader.Enable();
-
-
-         glMatrixMode(GL_PROJECTION);
-         glLoadMatrixd(projection);
-
-         glMatrixMode(GL_MODELVIEW);
-         glLoadMatrixd(mv);
-
-         gFBO.Bind(GL_FRAMEBUFFER);
-
-         const GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_NONE };
-         glDrawBuffers(2, buffers);
-
-         if (gFBO.Width() != GetSize().width ||
-             gFBO.Height() != GetSize().height)
-         {
-            gFBO.Resize(GetSize().width, GetSize().height);
-         }
-
-         //glClear(GL_COLOR_BUFFER_BIT);
-         GLfloat black[] = {0, 0, 0, 1};
-         glClearBufferfv(GL_COLOR, 0, black);
-
-
-         glEnableClientState(GL_VERTEX_ARRAY);
-         glVertexPointer(4, GL_FLOAT, 0, pBuffer);
-         const auto num_verts_written = gQO.Value< GLuint >();
-         glDrawArrays(GL_LINE_STRIP, 0, num_verts_written);
-
-         const GLenum buffers2[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-         glDrawBuffers(2, buffers2);
-         GLuint max_uint = std::numeric_limits< GLuint >::max();
-         glClearBufferuiv(GL_COLOR, 1, &max_uint);
-
-
-         glVertexPointer(3, GL_FLOAT, 0, points.front());
-         glPointSize(5.0f);
-         //glDrawArrays(GL_POINTS, 0, 3);
-         const uint32_t indices[] = { 0, 1, 2, 3 };
-         glDrawElements(GL_POINTS, sizeof(indices) / sizeof(*indices), GL_UNSIGNED_INT, indices);
-         glPointSize(1.0f);
-         glDisableClientState(GL_VERTEX_ARRAY);
-
-         gFBO.Unbind();
-
-         temp_shader.Disable();
-
-         // more than likely not needed
-         //glDrawBuffer(GL_BACK);
-
-
-         gTFB.Bind();
-         gTFB.BindBufferBase(0);
-         gTFB.UnmapBuffer();
-         gTFB.Unbind();
-         gTFB.UnbindBufferBase(0);
-
-         
-         const Vec3f fullscreen[] =
-         {
-            Vec3f(-10.0f, 10.0, 0.0f),
-            Vec3f(-10.0f, -10.0f, 0.0f),
-            Vec3f(10.0f, -10.0f, 0.0f),
-            
-            Vec3f(-10.0f, 10.0, 0.0f),
-            Vec3f(10.0f, -10.0f, 0.0f),
-            Vec3f(10.0f, 10.0f, 0.0f)
-         };
-
-         const Vec2f fullscreen_st[] =
-         {
-            Vec2f(0.0f, 1.0f),
-            Vec2f(0.0f, 0.0f),
-            Vec2f(1.0f, 0.0f),
-            
-            Vec2f(0.0f, 1.0f),
-            Vec2f(1.0f, 0.0f),
-            Vec2f(1.0f, 1.0f)
-         };
-
-         glEnableClientState(GL_VERTEX_ARRAY);
-         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-         glVertexPointer(3, GL_FLOAT, 0, fullscreen);
-         glTexCoordPointer(2, GL_FLOAT, 0, fullscreen_st);
-
-         glEnable(GL_TEXTURE_2D);
-         gFBO.GetAttachment(GL_COLOR_ATTACHMENT0)->Bind(GL_TEXTURE0);
-
-         glDrawArrays(GL_TRIANGLES, 0, sizeof(fullscreen) / sizeof(*fullscreen));
-
-         gFBO.GetAttachment(GL_COLOR_ATTACHMENT0)->Unbind();
-         glDisable(GL_TEXTURE_2D);
-
-         glDisableClientState(GL_VERTEX_ARRAY);
-         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
          SwapBuffers(GetHDC());
 
-         //glEnable(GL_TEXTURE_2D);
-         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE0);
-         int iformat, rtype, rsize;
-         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &iformat);
-         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &rtype);
-         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_SIZE, &rsize);
-         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
-         //glDisable(GL_TEXTURE_2D);
-
-         gFBO.Bind(GL_READ_FRAMEBUFFER);
-         gFBO.IsComplete();
-         gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
-         glReadBuffer(GL_COLOR_ATTACHMENT1);
-         std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
-         glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
-         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind();
-         //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
-         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
-         gFBO.Unbind();
-         glReadBuffer(GL_BACK);
+//         //glEnable(GL_TEXTURE_2D);
+//         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE0);
+//         int iformat, rtype, rsize;
+//         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &iformat);
+//         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &rtype);
+//         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_SIZE, &rsize);
+//         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
+//         //glDisable(GL_TEXTURE_2D);
+//
+//         gFBO.Bind(GL_READ_FRAMEBUFFER);
+//         gFBO.IsComplete();
+//         gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
+//         glReadBuffer(GL_COLOR_ATTACHMENT1);
+//         std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
+//         glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
+//         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind();
+//         //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
+//         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
+//         gFBO.Unbind();
+//         glReadBuffer(GL_BACK);
 
          //static int i = 1000;
 
@@ -401,51 +350,83 @@ LRESULT TransformFeedbackWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARA
    switch (uMsg)
    {
    case WM_SIZE:
+   {
+      // obtain the width and height
+      const uint32_t width = lParam & 0xFFFF;
+      const uint32_t height = lParam >> 16;
+
       // update the viewport
       glViewport(0, 0,
-                 static_cast< GLsizei >(lParam & 0xFFFF),
-                 static_cast< GLsizei >(lParam >> 16));
+                 static_cast< GLsizei >(width),
+                 static_cast< GLsizei >(height));
 
-      break;
-
-   case WM_MOUSEMOVE:
-      if (pActivePoint)
+      if (mVisCurveShader)
       {
-         const auto x_screen = static_cast< intptr_t >(lParam & 0xFFFF);
-         const auto y_screen = GetSize().height - static_cast< intptr_t >(lParam >> 16);
+         // update the information in the shaders
+         // the application will have a fixed sized view
+         const Matrixf projection = Matrixd::Ortho(-10.0f, 10.0f, -10.0f, 10.0f, -10.0f, 10.0f);
+         const Matrixf mv = Matrixd::LookAt(0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 
-         const auto x_world = 10.0 * ((2.0 * x_screen / GetSize().width) - 1.0);
-         const auto y_world = 10.0 * ((2.0 * y_screen / GetSize().height) - 1.0);
-
-         pActivePoint->Set(x_world, y_world, 0.0f);
+         // update the internal matrix for proper projection
+         mVisCurveShader.Enable();
+         mVisCurveShader.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", projection * mv);
+         mVisCurveShader.Disable();
       }
 
-      break;
-
-   case WM_LBUTTONDOWN:
-   {
-      gFBO.Bind(GL_READ_FRAMEBUFFER);
-      gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
-      glReadBuffer(GL_COLOR_ATTACHMENT1);
-      std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
-      glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
-
-      const auto x = static_cast< intptr_t >(lParam & 0xFFFF);
-      const auto y = static_cast< intptr_t >(lParam >> 16);
-
-      const auto selection = test_collect[(GetSize().height - y) * GetSize().width + x];
-
-      if (selection != std::numeric_limits< GLuint >::max())
+      // resize the canvas to match the new dims
+      if (mFBOCanvas &&
+         (mFBOCanvas.Width() != width ||
+          mFBOCanvas.Height() != height))
       {
-         pActivePoint = &points[selection];
+         mFBOCanvas.Bind(GL_FRAMEBUFFER);
+         mFBOCanvas.Resize(GetSize().width, GetSize().height);
+         mFBOCanvas.Unbind();
       }
    }
+
+   break;
+
+//   case WM_MOUSEMOVE:
+//      if (pActivePoint)
+//      {
+//         const auto x_screen = static_cast< intptr_t >(lParam & 0xFFFF);
+//         const auto y_screen = GetSize().height - static_cast< intptr_t >(lParam >> 16);
+//
+//         const auto x_world = 10.0 * ((2.0 * x_screen / GetSize().width) - 1.0);
+//         const auto y_world = 10.0 * ((2.0 * y_screen / GetSize().height) - 1.0);
+//
+//         pActivePoint->Set(x_world, y_world, 0.0f);
+//      }
+//
+//      break;
+//
+//   case WM_LBUTTONDOWN:
+//   {
+//      gFBO.Bind(GL_READ_FRAMEBUFFER);
+//      gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
+//      glReadBuffer(GL_COLOR_ATTACHMENT1);
+//      std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
+//      glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
+//
+//      const auto x = static_cast< intptr_t >(lParam & 0xFFFF);
+//      const auto y = static_cast< intptr_t >(lParam >> 16);
+//
+//      const auto selection = test_collect[(GetSize().height - y) * GetSize().width + x];
+//
+//      if (selection != std::numeric_limits< GLuint >::max())
+//      {
+//         pActivePoint = &mControlPoints[selection];
+//         mGenCurveShader.Enable();
+//         mGenCurveShader.SetUniformValue< 3 >("control_points", static_cast< const float * >(points.front()), points.size());
+//         mGenCurveShader.Disable();
+//      }
+//   }
 
       break;
 
    case WM_LBUTTONUP:
       // release the active point...
-      pActivePoint = nullptr;
+//      pActivePoint = nullptr;
 
       break;
 

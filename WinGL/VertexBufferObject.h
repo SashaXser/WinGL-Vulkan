@@ -12,6 +12,7 @@
 #include <GL/GL.h>
 
 // std includes
+#include <stack>
 #include <cstdint>
 
 class VertexBufferObject
@@ -38,6 +39,7 @@ public:
 
    // bind / unbind the vbo
    void Bind( );
+   void Bind( const GLenum type );
    void Unbind( );
 
    // binds a buffer object to an indexed buffer target
@@ -90,6 +92,13 @@ private:
 
    // indicates the type of buffer target
    GLenum      mType;
+
+   // indicates stored previous types from when
+   // a bind operation needs to temporarily convert
+   // to a different type for use... as an example,
+   // transform feedback to an ordinary array buffer...
+   typedef std::stack< GLenum > TypesStack;
+   TypesStack  mPreviousTypes;
 
    // indicates the size of the buffer data in bytes
    size_t      mSize;

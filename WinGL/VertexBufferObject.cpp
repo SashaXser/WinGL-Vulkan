@@ -78,6 +78,9 @@ void VertexBufferObject::DeleteBuffer( )
 
       // release the vertex buffer...
       glDeleteBuffers(1, &mVBO);
+
+      // clear the contents of previous types
+      mPreviousTypes = TypesStack();
    }
 
    mVBO = 0;
@@ -86,12 +89,42 @@ void VertexBufferObject::DeleteBuffer( )
 
 void VertexBufferObject::Bind( )
 {
+   WGL_ASSERT(mVBO);
+   WGL_ASSERT(mType);
+   WGL_ASSERT(!mBound);
+
    glBindBuffer(mType, mVBO); mBound = true;
+}
+
+void VertexBufferObject::Bind( const GLenum type )
+{
+   WGL_ASSERT(mVBO);
+   WGL_ASSERT(mType);
+   WGL_ASSERT(mPreviousTypes.size() != 10);
+
+   // save the previous type
+   mPreviousTypes.push(mType);
+
+   // save the new type for binding
+   mType = type;
+
+   // perform the bind
+   Bind();
 }
 
 void VertexBufferObject::Unbind( )
 {
+   WGL_ASSERT(mVBO);
+   WGL_ASSERT(mType);
+   WGL_ASSERT(mBound);
+
    glBindBuffer(mType, 0); mBound = false;
+
+   // restore the previous type if not empty
+   if (!mPreviousTypes.empty())
+   {
+      mType = mPreviousTypes.top(); mPreviousTypes.pop();
+   }
 }
 
 void VertexBufferObject::BindBufferBase( const GLuint index )

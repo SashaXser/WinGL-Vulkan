@@ -10,7 +10,11 @@ layout (points, max_vertices = 512) out;
 // defines the per geometry attributes
 uniform mat4 model_view;
 uniform mat4 model_view_proj_mat;
+
+// todo: redo this as uniform block
 uniform vec3 control_points[4];
+
+// todo: add 5 and 6 point processing...
 
 vec3 quadratic_bezier_curve( const vec3 pt1, const vec3 pt2, const vec3 pt3, const float t )
 {

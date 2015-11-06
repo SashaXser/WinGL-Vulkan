@@ -20,6 +20,8 @@ set(WIN_GL_SRC
 ./OpenGLExtensions.h
 ./OpenGLWindow.cpp
 ./OpenGLWindow.h
+./Pipeline.cpp
+./Pipeline.h
 ./Quaternion.h
 ./QueryObject.cpp
 ./QueryObject.h
@@ -33,6 +35,8 @@ set(WIN_GL_SRC
 ./Singleton.h
 ./Texture.cpp
 ./Texture.h
+./TransformFeedbackObject.cpp
+./TransformFeedbackObject.h
 ./Timer.h
 ./Vector.h
 ./VertexArrayObject.cpp

@@ -2,13 +2,18 @@
 #define _TRANSFORM_FEEDBACK_WINDOW_H_
 
 // wingl includes
+#include <Vector.h>
+#include <Pipeline.h>
 #include <OpenGLWindow.h>
 #include <ShaderProgram.h>
+#include <FrameBufferObject.h>
 #include <VertexArrayObject.h>
 #include <VertexBufferObject.h>
+#include <TransformFeedbackObject.h>
 
 // std includes
-#include <memory>
+#include <vector>
+#include <cstdint>
 
 class TransformFeedbackWindow : public OpenGLWindow
 {
@@ -42,13 +47,30 @@ protected:
                                    LPARAM lParam ) override;
 
 private:
-   // shader program that defines the triangles
-   std::shared_ptr< ShaderProgram > mpTrianglesShader;
-   // shader program that renders the vertex normals
-   std::shared_ptr< ShaderProgram > mpNormalsShader;
+   // shader programs that generates and displays the curve
+   ShaderProgram  mGenCurveShader;
+   ShaderProgram  mVisCurveShader;
 
-   // holds the state for the triangles
-   std::shared_ptr< VertexArrayObject > mpTrianglesVAO;
+   // the transform feedback buffer holding the generated curve
+   // the transform feedback object holding the state for the buffer
+   VAO   mTFAGenCurve;
+   VBO   mTFBGenCurve;
+   TFO   mTFOGenCurve;
+
+   // defines the locations of the control points
+   Vec4f * mpActiveControlPoint;
+   std::vector< Vec4f > mControlPoints;
+
+   // vertex buffer object holding the actual vertices
+   // should be replaced with a uniform buffer object
+   VBO   mVBOControlPoints;
+   VBO   mVBOControlPointsIndices;
+
+   // the fbo where rendering takes place (color and integer)
+   FBO   mFBOCanvas;
+
+   // pipeline object for certain state of the application
+   Pipeline mPipeline;
 
 };
 

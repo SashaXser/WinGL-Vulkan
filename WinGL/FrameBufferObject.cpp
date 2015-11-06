@@ -18,6 +18,13 @@ GLuint FrameBufferObject::GetCurrentFrameBuffer( const GLenum binding )
    {
    case GL_DRAW_FRAMEBUFFER: glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &frame_buffer); break;
    case GL_READ_FRAMEBUFFER: glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &frame_buffer); break;
+   case GL_FRAMEBUFFER:
+      // get the draw buffer binding here...
+      glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &frame_buffer);
+      // the read buffer binding should be the same as teh draw buffer binding...
+      WGL_ASSERT(FrameBufferObject::GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER) == frame_buffer);
+      
+      break;
    default: WGL_ASSERT(false); break;
    }
 
@@ -31,6 +38,20 @@ GLuint FrameBufferObject::GetCurrentRenderBuffer( )
    glGetIntegerv(GL_RENDERBUFFER_BINDING, &render_buffer);
 
    return static_cast< GLuint >(render_buffer);
+}
+
+GLuint FrameBufferObject::GetMaxNumberOfColorAttachments( )
+{
+   static GLuint maximum =
+   [ ] ( ) -> GLuint
+   {
+      GLint maximum = 0;
+      glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maximum);
+
+      return static_cast< GLuint >(maximum);
+   }();
+
+   return maximum;
 }
 
 FrameBufferObject::FrameBufferObject( ) :
@@ -186,9 +207,7 @@ void FrameBufferObject::Resize( const uint32_t width, const uint32_t height )
    mWidth = width;
    mHeight = height;
 
-   // container of the new attachments
-//   AttachmentContainer resized_attachments;
-
+   // resize all the attachments
    std::for_each(mAttachments.cbegin(), mAttachments.cend(),
    [ this ] ( const AttachmentContainer::value_type & attachment )
    {
@@ -197,9 +216,6 @@ void FrameBufferObject::Resize( const uint32_t width, const uint32_t height )
              attachment.second.GetInternalType(),
              attachment.second.IsMipMapped());
    });
-
-   // swap the new and the old
-//   mAttachments.swap(resized_attachments);
 }
 
 bool FrameBufferObject::IsBound( const GLenum target ) const
@@ -215,6 +231,19 @@ bool FrameBufferObject::IsBound( const GLenum target ) const
    }
 
    return bound;
+}
+
+void FrameBufferObject::Blit( const size_t sx0, const size_t sy0, const size_t sx1, const size_t sy1,
+                              const size_t dx0, const size_t dy0, const size_t dx1, const size_t dy1,
+                              const GLenum buffer, const GLbitfield mask, const GLenum filter) const
+{
+   // this target must be setup for reading
+   WGL_ASSERT(mFBO && IsBound(GL_READ_FRAMEBUFFER));
+   WGL_ASSERT(GL_COLOR_ATTACHMENT0 <= buffer && buffer < GL_COLOR_ATTACHMENT0 + FrameBufferObject::GetMaxNumberOfColorAttachments());
+
+   // perform the blit
+   glReadBuffer(buffer);
+   glBlitFramebuffer(sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1, mask, filter);
 }
 
 bool FrameBufferObject::IsComplete( ) const
