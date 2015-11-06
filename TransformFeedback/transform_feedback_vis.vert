@@ -1,5 +1,5 @@
 // defines the glsl version to be used
-#version 400 compatibility
+#version 400 core
 
 // defines the per vertex attributes
 layout (location = 0) in vec4 vertex_position;

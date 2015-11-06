@@ -31,10 +31,18 @@ public:
    void EnableDepthTesting( const bool enable );
    bool IsDepthTestingEnabled( ) const { return mDepthTestingEnabled; }
 
+   // enables / disables shader point size control
+   void EnableProgramPointSize( const bool enable );
+   bool IsProgramPointSizeEnabled( ) const { return mProgramPointSizeEnabled; }
+
    // enables buffers to be drawn into
    void DrawBuffers( const std::vector< GLenum > & buffers );
    void DrawBuffers( const GLenum * const pBuffers, const size_t count );
    const std::vector< GLenum > & EnabledDrawBuffers( ) const { return mEnabledDrawBuffers; }
+
+   // enables buffer to be read from
+   void ReadBuffer( const GLenum buffer );
+   GLenum EnabledReadBuffer( ) const { return mEnabledReadBuffer; }
 
    // clear a specified buffer
    template < typename T >
@@ -64,9 +72,11 @@ private:
    bool mRasterDiscardEnabled;
    bool mCullFaceEnabled;
    bool mDepthTestingEnabled;
+   bool mProgramPointSizeEnabled;
 
    std::vector< bool > mEnabledVertAttribArray;
 
+   GLenum   mEnabledReadBuffer;
    std::vector< GLenum > mEnabledDrawBuffers;
 
    bool mTransformFeedbackEnabled;

@@ -246,6 +246,21 @@ void FrameBufferObject::Blit( const size_t sx0, const size_t sy0, const size_t s
    glBlitFramebuffer(sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1, mask, filter);
 }
 
+void FrameBufferObject::Read( const size_t x, const size_t y,
+                              const size_t width, const size_t height,
+                              const GLenum buffer,
+                              const GLenum format, const GLenum type,
+                              void * const pData ) const
+{
+   // this target must be setup for reading
+   WGL_ASSERT(mFBO && IsBound(GL_READ_FRAMEBUFFER));
+   WGL_ASSERT(GL_COLOR_ATTACHMENT0 <= buffer && buffer < GL_COLOR_ATTACHMENT0 + FrameBufferObject::GetMaxNumberOfColorAttachments());
+
+   // perform the read
+   glReadBuffer(buffer);
+   glReadPixels(x, y, width, height, format, type, pData);
+}
+
 bool FrameBufferObject::IsComplete( ) const
 {
    // must be created and bound...

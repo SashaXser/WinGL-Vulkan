@@ -12,7 +12,7 @@ uniform mat4 model_view;
 uniform mat4 model_view_proj_mat;
 
 // todo: redo this as uniform block
-uniform vec3 control_points[4];
+uniform vec4 control_points[4];
 
 // todo: add 5 and 6 point processing...
 
@@ -37,7 +37,7 @@ void main( )
 {
    for (float i = 0.0f; i <= 1.0f; i += (1.0f / 512.0f))
    {
-      gl_Position = vec4(cubic_bezier_curve(control_points[0], control_points[1], control_points[2], control_points[3], i), 1.0f);
+      gl_Position = vec4(cubic_bezier_curve(control_points[0].xyz, control_points[1].xyz, control_points[2].xyz, control_points[3].xyz, i), 1.0f);
       EmitVertex();
    }
 

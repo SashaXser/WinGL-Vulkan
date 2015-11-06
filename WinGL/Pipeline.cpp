@@ -7,6 +7,8 @@ Pipeline::Pipeline( ) :
 mRasterDiscardEnabled      ( false ),
 mCullFaceEnabled           ( false ),
 mDepthTestingEnabled       ( false ),
+mProgramPointSizeEnabled   ( false ),
+mEnabledReadBuffer         ( GL_BACK_LEFT ),
 mEnabledDrawBuffers        ( { GL_BACK_LEFT } ),
 mTransformFeedbackEnabled  ( false ),
 mTransformFeedbackMode     ( GL_POINTS )
@@ -59,6 +61,20 @@ void Pipeline::EnableDepthTesting( const bool enable )
    mDepthTestingEnabled = enable;
 }
 
+void Pipeline::EnableProgramPointSize( const bool enable )
+{
+   if (enable)
+   {
+      glEnable(GL_PROGRAM_POINT_SIZE);
+   }
+   else
+   {
+      glDisable(GL_PROGRAM_POINT_SIZE);
+   }
+
+   mProgramPointSizeEnabled = enable;
+}
+
 void Pipeline::DrawBuffers( const std::vector< GLenum > & buffers )
 {
    glDrawBuffers(buffers.size(), &buffers.front());
@@ -69,6 +85,13 @@ void Pipeline::DrawBuffers( const std::vector< GLenum > & buffers )
 void Pipeline::DrawBuffers( const GLenum * const pBuffers, const size_t count )
 {
    DrawBuffers(std::vector< GLenum >(pBuffers, pBuffers + count));
+}
+
+void Pipeline::ReadBuffer( const GLenum buffer )
+{
+   glReadBuffer(buffer);
+
+   mEnabledReadBuffer = buffer;
 }
 
 template < typename T > struct clear_buffer_selector;

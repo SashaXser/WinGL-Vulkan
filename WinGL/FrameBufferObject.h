@@ -76,6 +76,13 @@ public:
               const size_t dx0, const size_t dy0, const size_t dx1, const size_t dy1,
               const GLenum buffer, const GLbitfield mask, const GLenum filter ) const;
 
+   // reads pixels from the framebuffer
+   void Read( const size_t x, const size_t y,
+              const size_t width, const size_t height,
+              const GLenum buffer,
+              const GLenum format, const GLenum type,
+              void * const pData ) const;
+
    // indicates if the fbo is complete
    bool IsComplete( ) const;
    GLenum CompleteStatus( ) const;

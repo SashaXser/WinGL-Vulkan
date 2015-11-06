@@ -62,6 +62,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       // enable specific state
       mPipeline.EnableCullFace(true);
       mPipeline.EnableDepthTesting(true);
+      mPipeline.EnableProgramPointSize(true);
 
       // attach the visualization shaders for the curve
       mVisCurveShader.AttachFile(GL_VERTEX_SHADER, "transform_feedback_vis.vert");
@@ -116,7 +117,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
 
       // let the shader have the initial location
       mGenCurveShader.Enable();
-      mGenCurveShader.SetUniformValue< 3 >("control_points",
+      mGenCurveShader.SetUniformValue< 4 >("control_points",
                                            static_cast< const float * >(mControlPoints.front()),
                                            mControlPoints.size());
       mGenCurveShader.Disable();
@@ -268,74 +269,13 @@ int TransformFeedbackWindow::Run( )
 
          // blit the contents of the first buffer to the default frame buffer
          mFBOCanvas.Bind(GL_READ_FRAMEBUFFER);
-         uint8_t pixels[100*100*4] = {};
-         glReadBuffer(GL_COLOR_ATTACHMENT0);
-         glReadPixels(0, 0, 100, 100, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
          mFBOCanvas.Blit(0, 0, mFBOCanvas.Width(), mFBOCanvas.Height(),
                          0, 0, mFBOCanvas.Width(), mFBOCanvas.Height(),
                          GL_COLOR_ATTACHMENT0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
          mFBOCanvas.Unbind();
 
-
+         // swap back with the front
          SwapBuffers(GetHDC());
-
-//         //glEnable(GL_TEXTURE_2D);
-//         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind(GL_TEXTURE0);
-//         int iformat, rtype, rsize;
-//         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &iformat);
-//         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &rtype);
-//         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_SIZE, &rsize);
-//         gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
-//         //glDisable(GL_TEXTURE_2D);
-//
-//         gFBO.Bind(GL_READ_FRAMEBUFFER);
-//         gFBO.IsComplete();
-//         gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
-//         glReadBuffer(GL_COLOR_ATTACHMENT1);
-//         std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
-//         glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
-//         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Bind();
-//         //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
-//         //gFBO.GetAttachment(GL_COLOR_ATTACHMENT1)->Unbind();
-//         gFBO.Unbind();
-//         glReadBuffer(GL_BACK);
-
-         //static int i = 1000;
-
-         //if (--i == 0)
-         //{
-         //   const auto width = gFBO.Width();
-         //   const auto height = gFBO.Height();
-
-         //   for (int h = gFBO.Height() - 1; h >= 0; --h)
-         //   {
-         //      const auto row = width * h;
-
-         //      for (int w = 0; w < gFBO.Width(); ++w)
-         //      {
-         //         if (test_collect[row + w] == std::numeric_limits< GLuint >::max())
-         //         {
-         //            std::cout << ".";
-         //         }
-         //         else
-         //         {
-         //            std::cout << test_collect[row + w];
-         //         }
-
-         //         if (test_collect[row + w])
-         //         {
-         //            uint32_t blah = test_collect[row + w];
-         //            blah *= 2;
-         //         }
-         //      }
-         //      std::cout << std::endl;
-         //   }
-
-         //   std::cout << std::endl;
-         //   std::cout << std::endl;
-
-         //   i = 1000;
-         //}
       }
    }
 
@@ -386,55 +326,61 @@ LRESULT TransformFeedbackWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARA
 
    break;
 
-//   case WM_MOUSEMOVE:
-//      if (pActivePoint)
-//      {
-//         const auto x_screen = static_cast< intptr_t >(lParam & 0xFFFF);
-//         const auto y_screen = GetSize().height - static_cast< intptr_t >(lParam >> 16);
-//
-//         const auto x_world = 10.0 * ((2.0 * x_screen / GetSize().width) - 1.0);
-//         const auto y_world = 10.0 * ((2.0 * y_screen / GetSize().height) - 1.0);
-//
-//         pActivePoint->Set(x_world, y_world, 0.0f);
-//      }
-//
-//      break;
-//
-//   case WM_LBUTTONDOWN:
-//   {
-//      gFBO.Bind(GL_READ_FRAMEBUFFER);
-//      gFBO.GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER);
-//      glReadBuffer(GL_COLOR_ATTACHMENT1);
-//      std::vector< uint32_t > test_collect(gFBO.Width() * gFBO.Height(), 0);
-//      glReadPixels(0, 0, gFBO.Width(), gFBO.Height(), GL_RED_INTEGER, GL_UNSIGNED_INT, &test_collect.at(0));
-//
-//      const auto x = static_cast< intptr_t >(lParam & 0xFFFF);
-//      const auto y = static_cast< intptr_t >(lParam >> 16);
-//
-//      const auto selection = test_collect[(GetSize().height - y) * GetSize().width + x];
-//
-//      if (selection != std::numeric_limits< GLuint >::max())
-//      {
-//         pActivePoint = &mControlPoints[selection];
-//         mGenCurveShader.Enable();
-//         mGenCurveShader.SetUniformValue< 3 >("control_points", static_cast< const float * >(points.front()), points.size());
-//         mGenCurveShader.Disable();
-//      }
-//   }
+   case WM_MOUSEMOVE:
+      // move the point around the screen if one is selected
+      if (mpActiveControlPoint)
+      {
+         // get the current x and y screen space location
+         const auto x_screen = static_cast< intptr_t >(lParam & 0xFFFF);
+         const auto y_screen = GetSize().height - static_cast< intptr_t >(lParam >> 16);
+
+         // convert the screen space to the world space...
+         const auto x_world = 10.0f * ((2.0f * x_screen / GetSize().width) - 1.0f);
+         const auto y_world = 10.0f * ((2.0f * y_screen / GetSize().height) - 1.0f);
+
+         // set the new location...
+         mpActiveControlPoint->Set(x_world, y_world, 0.0f, 1.0f);
+
+         // update the shader's view of the control points
+         mGenCurveShader.Enable();
+         mGenCurveShader.SetUniformValue< 4 >("control_points", static_cast< const float * >(mControlPoints.front()), mControlPoints.size());
+         mGenCurveShader.Disable();
+
+         // update the buffer for the visual shader
+         mVBOControlPoints.Bind();
+         mVBOControlPoints.BufferSubData(sizeof(*mpActiveControlPoint) * (mpActiveControlPoint - &mControlPoints.front()),
+                                         sizeof(*mpActiveControlPoint),
+                                         *mpActiveControlPoint);
+         mVBOControlPoints.Unbind();
+      }
 
       break;
+
+   case WM_LBUTTONDOWN:
+   {
+      // get the current screen x and y location
+      const auto x = static_cast< size_t >(lParam & 0xFFFF);
+      const auto y = GetSize().height - static_cast< size_t >(lParam >> 16);
+
+      // read the contents of the selection buffer...
+      uint32_t selection = 0;
+      mFBOCanvas.Bind(GL_READ_FRAMEBUFFER);
+      mFBOCanvas.Read(x, y, 1, 1, GL_COLOR_ATTACHMENT1, GL_RED_INTEGER, GL_UNSIGNED_INT, &selection);
+      mFBOCanvas.Unbind();
+
+      // if the selection is not equal to the max, then a point was hit
+      if (selection != std::numeric_limits< GLuint >::max())
+      {
+         // obtain the new hit location
+         mpActiveControlPoint = &mControlPoints[selection];
+      }
+   }
+
+   break;
 
    case WM_LBUTTONUP:
       // release the active point...
-//      pActivePoint = nullptr;
-
-      break;
-
-   case WM_MOUSEWHEEL:
-
-      break;
-
-   case WM_CHAR:
+      mpActiveControlPoint = nullptr;
 
       break;
 
