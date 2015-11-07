@@ -11,6 +11,8 @@
 
 // std includes
 #include <limits>
+#include <string>
+#include <iostream>
 
 TransformFeedbackWindow::TransformFeedbackWindow( ) :
 mpActiveControlPoint    ( nullptr )
@@ -58,6 +60,16 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
 
       // attach to the debug context
       AttachToDebugContext();
+
+      // spit out the informational message
+      std::cout << std::endl
+                << "Keyboard Actions" << std::endl
+                << "'3' - Activate three control points." << std::endl
+                << "'4' - Activate four control points." << std::endl
+                << "'5' - Activate five control points." << std::endl
+                << "'6' - Activate six control points." << std::endl
+                << "Mouse Actions" << std::endl
+                << "Left Mouse Button Drag - Move a control point mouse is over." << std::endl;
 
       // enable specific state
       mPipeline.EnableCullFace(true);
@@ -113,13 +125,16 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       mControlPoints = { Vec4f(-9.0f, -9.0f, 0.0f, 1.0f),
                          Vec4f(-5.0f, 9.0f, 0.0f, 1.0f),
                          Vec4f(5.0f, 9.0f, 0.0f, 1.0f),
-                         Vec4f(9.0f, -9.0f, 0.0f, 1.0f) };
+                         Vec4f(9.0f, -9.0f, 0.0f, 1.0f),
+                         Vec4f(0.0f, 0.0f, 0.0f, 1.0f),
+                         Vec4f(0.0f, 0.0f, 0.0f, 1.0f) };
 
       // let the shader have the initial location
       mGenCurveShader.Enable();
       mGenCurveShader.SetUniformValue< 4 >("control_points",
                                            static_cast< const float * >(mControlPoints.front()),
                                            mControlPoints.size());
+      mGenCurveShader.SetUniformValue("number_of_control_points", uint32_t(3));
       mGenCurveShader.Disable();
 
       // add the control point locations to the vbo
@@ -133,7 +148,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       // add the indices for the four points
       mVBOControlPointsIndices.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
       mVBOControlPointsIndices.Bind();
-      const uint32_t indices[] = { 0, 1, 2, 3 };
+      const uint32_t indices[] = { 0, 1, 2 };
       mVBOControlPointsIndices.BufferStorage(sizeof(indices), indices, 0);
       mVBOControlPointsIndices.Unbind();
 
@@ -381,6 +396,40 @@ LRESULT TransformFeedbackWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARA
    case WM_LBUTTONUP:
       // release the active point...
       mpActiveControlPoint = nullptr;
+
+      break;
+
+   case WM_CHAR:
+      // evalutate the character being pressed...
+      switch (wParam)
+      {
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      {
+         // determine the number of control points to see
+         const uint32_t number_of_control_points = std::stoul(std::string(1, static_cast< char >(wParam)));
+
+         // update the number of points based on the pressed key
+         mVBOControlPointsIndices.DeleteBuffer();
+         mVBOControlPointsIndices.GenBuffer(GL_ELEMENT_ARRAY_BUFFER);
+         mVBOControlPointsIndices.Bind();
+         const uint32_t indices[] = { 0, 1, 2, 3, 4, 5 };
+         mVBOControlPointsIndices.BufferStorage(sizeof(*indices) * number_of_control_points, indices, 0);
+         mVBOControlPointsIndices.Unbind();
+
+         // let the shader have the initial location
+         mGenCurveShader.Enable();
+         mGenCurveShader.SetUniformValue("number_of_control_points", number_of_control_points);
+         mGenCurveShader.Disable();
+
+
+         break;
+      }
+
+      default: result = OpenGLWindow::MessageHandler(uMsg, wParam, lParam); break;
+      }
 
       break;
 
