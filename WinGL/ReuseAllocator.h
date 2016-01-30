@@ -3,7 +3,7 @@
 
 #ifdef _DEBUG
 #define VALIDATE_EQUAL_TO_ONE( val ) \
-   if ((val) != 1) *((int *)(0xDEADBEEF)) = 0;
+   if ((val) != 1) *((int *)(0x0)) = 0;
 #else
 #define VALIDATE_EQUAL_TO_ONE( val )
 #endif
@@ -87,7 +87,7 @@ ReuseAllocator< T >::~ReuseAllocator( )
    while (_front)
    {
       void * next =  reinterpret_cast< void * >(
-                    *reinterpret_cast< unsigned * >(_front));
+                    *reinterpret_cast< uintptr_t * >(_front));
 
       ::operator delete(_front);
 
@@ -118,16 +118,16 @@ ReuseAllocator< T >::allocate( size_type count, const void * hint )
 
    if (!mem)
    {
-      const unsigned int size =
-         sizeof(T) >= sizeof(unsigned *) ?
-         sizeof(T) : sizeof(unsigned *);
+      const size_t size =
+         sizeof(T) >= sizeof(uintptr_t *) ?
+         sizeof(T) : sizeof(uintptr_t *);
 
       mem = ::operator new(size);
    }
    else
    {
       _front =  reinterpret_cast< void * >(
-               *reinterpret_cast< unsigned * >(_front));
+               *reinterpret_cast< uintptr_t * >(_front));
    }
 
    return reinterpret_cast< pointer >(mem);
@@ -152,12 +152,12 @@ void ReuseAllocator< T >::deallocate( pointer ptr, size_type count )
    {
       _front = reinterpret_cast< void * >(ptr);
 
-      *reinterpret_cast< unsigned * >(ptr) = 0;
+      *reinterpret_cast< uintptr_t * >(ptr) = 0;
    }
    else
    {
-      *reinterpret_cast< unsigned * >(ptr) =
-         reinterpret_cast< unsigned >(_front);
+      *reinterpret_cast< uintptr_t * >(ptr) =
+         reinterpret_cast< uintptr_t >(_front);
 
       _front = reinterpret_cast< void * >(ptr);
    }
@@ -166,7 +166,11 @@ void ReuseAllocator< T >::deallocate( pointer ptr, size_type count )
 template < typename T >
 typename ReuseAllocator< T >::size_type ReuseAllocator< T >::max_size( ) const
 {
+#if _WIN64
+   return 0x8000000000000000 / sizeof(T);
+#elif _WIN32
    return 0x80000000 / sizeof(T);
+#endif
 }
 
 #endif // _REUSE_ALLOCATOR_H_

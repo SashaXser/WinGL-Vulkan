@@ -18,7 +18,7 @@
 // global defines
 #ifdef _DEBUG
 #define VALIDATE_OPENGL_FRAME( ) \
-   if (glGetError() != GL_NO_ERROR) *((int *)0xDEADBEEF) = 0;
+   if (glGetError() != GL_NO_ERROR) *((int *)0x0) = 0;
 #else
 #define VALIDATE_OPENGL_FRAME( )
 #endif
