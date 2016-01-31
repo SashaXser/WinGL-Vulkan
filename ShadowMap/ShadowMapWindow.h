@@ -2,7 +2,9 @@
 #define _SHADOW_MAP_WINDOW_H_
 
 // wingl includes
-#include "OpenGLWindow.h"
+#include <OpenGLWindow.h>
+#include <Camera.h>
+#include <CameraPolicies/RoamNoRollRestrictPitch.h>
 
 class ShadowMapWindow : public OpenGLWindow
 {
@@ -46,8 +48,17 @@ private:
    void GenerateSceneData( );
    void GenerateEnterpriseE( );
 
+   // updates shader camera parameters
+   void UpdateShaderCameraValues( );
+
    // renderable objects
    Renderable *   mpEnterpriseE;
+
+   // defines the camera to use for traversing the space
+   Camera< camera_policy::RoamNoRollRestrictPitch< > > mCamera;
+
+   // displays the model's normals
+   bool mDisplayNormals;
 
 };
 

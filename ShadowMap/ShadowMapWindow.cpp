@@ -66,7 +66,9 @@ struct ShadowMapWindow::Renderable
 };
 
 ShadowMapWindow::ShadowMapWindow( ) :
-mpEnterpriseE     ( new Renderable )
+mpEnterpriseE     ( new Renderable ),
+mCamera           ( Vec3f(0.0f, 40.0f, 100.0f), Vec3f(0.0f, 40.0f, 0.0f) ),
+mDisplayNormals   ( false )
 {
 }
 
@@ -126,6 +128,21 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
       // enable specific state
       glEnable(GL_CULL_FACE);
       glEnable(GL_DEPTH_TEST);
+
+      // set the initial view parameters
+      mpEnterpriseE->mProgram.Enable();
+      mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_mat", mCamera.GetViewMatrix());
+      mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mCamera.GetViewMatrix().Inverse());
+      mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat", mCamera.GetViewMatrix().Inverse().Transpose());
+
+      // set some basic lighting parameters
+      mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
+      mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.ambient_intensity", 0.05f);
+      mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.diffuse_intensity", 1.0f);
+      mpEnterpriseE->mProgram.Disable();
+
+      // force the view to resize again...
+      SendMessage(GetHWND(), WM_SIZE, 0, nHeight << 16 | nWidth);
       
       return true;
    }
@@ -160,18 +177,6 @@ int ShadowMapWindow::Run( )
    return appQuitVal;
 }
 
-// temp
-float yaw = 0;
-float pitch = 0;
-int prev_x, prev_y;
-bool light_per_pixel = true;
-bool display_normals = false;
-
-Matrixf mv = Matrixf::LookAt(0, 40.0f, 100.0f, 0, 40.0f, 0.0f, 0, 1.0f, 0.0f);
-Matrixf mvn = mv.Inverse().Transpose();
-const Matrixf proj = Matrixf::Perspective(45.0f, 4.f/3.f, 0.01f, 3000.f);
-
-
 LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
    LRESULT result = 0;
@@ -179,66 +184,96 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
    switch (uMsg)
    {
    case WM_SIZE:
+   {
+      // obtain the x, y sizes of the view
+      const uintptr_t x = lParam & 0xFFFF;
+      const uintptr_t y = lParam >> 16;
+
       // update the viewport
       glViewport(0, 0,
-                 static_cast< GLsizei >(lParam & 0xFFFF),
-                 static_cast< GLsizei >(lParam >> 16));
+                 static_cast< GLsizei >(x),
+                 static_cast< GLsizei >(y));
 
-      break;
+      // define the cameras projection information
+      mCamera.SetPerspective(45.0f,
+                             static_cast< float >(x) / static_cast< float >(y),
+                             0.01f,
+                             3000.f);
+
+      // apply the new params if created...
+      if (mpEnterpriseE->mProgram && mpEnterpriseE->mProgramNormals)
+      {
+         const auto mvp = mCamera.GetProjectionMatrix() * mCamera.GetViewMatrix();
+
+         mpEnterpriseE->mProgram.Enable();
+         mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("projection", mCamera.GetProjectionMatrix());
+         mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp);
+         mpEnterpriseE->mProgram.Disable();
+
+         mpEnterpriseE->mProgramNormals.Enable();
+         mpEnterpriseE->mProgramNormals.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp);
+         mpEnterpriseE->mProgramNormals.Disable();
+      }
+   }
+   
+   break;
 
    case WM_MOUSEMOVE:
-
-      // temp
-      {
-      int cur_x = static_cast< int >(lParam & 0xFFFF);
-      int cur_y = static_cast< int >(lParam >> 16);
+   {
+      const int cur_x = static_cast< int >(lParam & 0xFFFF);
+      const int cur_y = static_cast< int >(lParam >> 16);
 
       if (wParam & MK_LBUTTON)
       {
-         int dx = cur_x - prev_x;
-         int dy = cur_y - prev_y;
+         const int dx = static_cast< int >(cur_x - GetPreviousMousePosition().x);
+         const int dy = static_cast< int >(cur_y - GetPreviousMousePosition().y);
 
-         yaw += dx;
-         pitch += dy;
+         const float yaw = mCamera.GetYaw() + dx * 0.25f;
+         const float pitch = mCamera.GetPitch() + dy * 0.25f;
 
-         mv.MakeInverse();
+         mCamera.SetYaw(yaw);
+         mCamera.SetPitch(pitch);
 
-         const Vec3f eye(mv.mT + 12);
-         mv = (Matrixf::Translate(eye) /** Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f)*/ *
-               Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
-         mvn = mv.Inverse().Transpose();
+         UpdateShaderCameraValues();
       }
+   }
 
-      prev_x = cur_x;
-      prev_y = cur_y;
-      }
-
-      break;
-
-   case WM_MOUSEWHEEL:
-      {
-      const float multiplier = wParam & MK_CONTROL ? 50.0f : wParam & MK_SHIFT ? 100.0f : 1.0f;
-      const float delta = static_cast< int16_t >((wParam & 0xFFFF0000) >> 16) / static_cast< float >(WHEEL_DELTA) * 0.005f * multiplier;
-
-      const Vec3f view_dir = MatrixHelper::GetViewVector(mv);
-      mv.MakeInverse();
-
-      const Vec3f eye(Vec3f(mv.mT + 12) + view_dir.UnitVector() * delta);
-      mv = (Matrixf::Translate(eye) /** Matrixf::Rotate(90.0f, 1.0f, 0.0f, 0.0f)*/ *
-            Matrixf::Rotate(yaw, 0.0f, -1.0f, 0.0f) * Matrixf::Rotate(pitch, -1.0f, 0.0f, 0.0f)).Inverse();
-      mvn = mv.Inverse().Transpose();
-
-      }
-
-      break;
+   break;
 
    case WM_CHAR:
-      if (wParam == 'l' || wParam == 'L')
-         light_per_pixel = !light_per_pixel;
-      else if (wParam == 'n' || wParam == 'N')
-         display_normals = !display_normals;
+   {
+      bool update_mv = false;
 
-      break;
+      const float multiplier = GetAsyncKeyState(VK_SHIFT) & 0x8000 ? 0.5f : 1.0f;
+
+      if (wParam == 'n' || wParam == 'N')
+      {
+         mDisplayNormals = !mDisplayNormals;
+      }
+      else if (wParam == 'a' || wParam == 'A')
+      {
+         mCamera.TranslateRight(-multiplier); update_mv = true;
+      }
+      else if (wParam == 'd' || wParam == 'D')
+      {
+         mCamera.TranslateRight(multiplier); update_mv = true;
+      }
+      else if (wParam == 'w' || wParam == 'W')
+      {
+         mCamera.TranslateForward(-multiplier); update_mv = true;
+      }
+      else if (wParam == 's' || wParam == 'S')
+      {
+         mCamera.TranslateForward(multiplier); update_mv = true;
+      }
+
+      if (update_mv)
+      {
+         UpdateShaderCameraValues();
+      }
+   }
+
+   break;
 
    default:
       // default handle the messages
@@ -263,19 +298,8 @@ void ShadowMapWindow::RenderScene( )
    mpEnterpriseE->mProgram.Enable();
    mpEnterpriseE->mProgram.SetUniformValue("light_dir", std::cos(light_dir), std::sin(light_dir), 0.0f);
    //mpEnterpriseE->mProgram.SetUniformValue("light_dir", 0.0f, -1.0f, 0.0f);
-   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("projection", proj);
-   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view", mv);
-   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mvn);
-   mpEnterpriseE->mProgram.SetUniformValue("light_per_pixel", light_per_pixel ? 1 : 0);
-   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", proj * mv);
-   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_mat", mv);
-   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat", mv.Inverse().Transpose());
-   mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.color", Vec3f(1.0f, 1.0f, 1.0f));
-   mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.ambient_intensity", 0.05f);
-   mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.diffuse_intensity", 1.0f);
+   
    mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", std::cos(light_dir), std::sin(light_dir), 0.0f);
-
-   Vec4f en = mvn * Vec4f(0.0f, 0.0f, 1.0f, 0.0f);
 
    light_dir += 0.0005f;
 
@@ -320,10 +344,9 @@ void ShadowMapWindow::RenderScene( )
 
    mpEnterpriseE->mProgram.Disable();
 
-   if (display_normals)
+   if (mDisplayNormals)
    {
       mpEnterpriseE->mProgramNormals.Enable();
-      mpEnterpriseE->mProgramNormals.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", proj * mv);
 
       rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
       rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
@@ -335,7 +358,10 @@ void ShadowMapWindow::RenderScene( )
 
          for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
          {
-            glDrawElements(GL_TRIANGLES, rbucketBeg->second.second, GL_UNSIGNED_INT, reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
+            glDrawElements(GL_TRIANGLES,
+                           rbucketBeg->second.second,
+                           GL_UNSIGNED_INT,
+                           reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
          }
 
          if (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
@@ -754,4 +780,28 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    mpEnterpriseE->mIdxBuf.Unbind();
 }
 
+void ShadowMapWindow::UpdateShaderCameraValues()
+{
+   WGL_ASSERT(mpEnterpriseE->mProgram);
+   WGL_ASSERT(mpEnterpriseE->mProgramNormals);
 
+   mpEnterpriseE->mProgram.Enable();
+
+   auto mv = mCamera.GetViewMatrix();
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_mat", mv);
+
+   const auto mvp = mCamera.GetProjectionMatrix() * mv;
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp);
+
+   mv.MakeInverse();
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_normal", mv);
+
+   mv.Transpose();
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("model_view_tinv_mat", mv);
+
+   mpEnterpriseE->mProgram.Disable();
+
+   mpEnterpriseE->mProgramNormals.Enable();
+   mpEnterpriseE->mProgramNormals.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp);
+   mpEnterpriseE->mProgramNormals.Disable();
+}
