@@ -122,12 +122,14 @@ vec4 CalculatePointLighting( const in vec3 light_position,
 // defines the per geometry attributes
 uniform sampler2D diffuse_texture;
 uniform sampler2D normal_texture;
+uniform sampler2D shadow_texture;
 uniform lighting_directional directional_light;
 
 // defines the attributes passed along through the shader pipeline
 smooth in vec2 frag_tex_coords;
 smooth in vec3 frag_normal_eye_space;
 smooth in mat3 frag_tangent_to_eye_space_mat;
+smooth in vec4 frag_shadow_tex_coord;
 flat in vec3 directional_light_eye_space;
 
 // defines the location of where the color should go
@@ -135,6 +137,15 @@ layout (location = 0) out vec4 frag_color_dest_0;
 
 void main( )
 {
+   // convert from homogeneous coordinates to real texture coordinates
+   vec2 frag_shadow_tex_coord_real = frag_shadow_tex_coord.st / frag_shadow_tex_coord.q;
+
+   // obtain the shadow depth value as seen by the light
+   vec4 shadow = texture(shadow_texture, frag_shadow_tex_coord_real);
+
+   // obtain the depth value of the homogenous vertex position
+   float frag_depth = frag_shadow_tex_coord.p / frag_shadow_tex_coord.q;
+
    // obtain the normal from the texture
    // wonder if a floating point texture would be better here?
    //vec3 sampled_normal_tangent_space = texture(normal_texture, frag_tex_coords).rgb;
@@ -145,13 +156,30 @@ void main( )
    // convert the tangent space normal to eye space
    //vec3 sampled_normal_eye_space = normalize(frag_tangent_to_eye_space_mat * sampled_normal_tangent_space);
 
-   // determine the amount of directional light for this fragment
-   vec4 total_light_frag_color =
-      CalculateDirectionalLighting(directional_light_eye_space,
-                                   frag_normal_eye_space,
-                                   directional_light.base.color,
-                                   directional_light.base.ambient_intensity,
-                                   directional_light.base.diffuse_intensity);
+   // determines the amount of colored light to apply
+   vec4 total_light_frag_color;
+
+   // make sure the coordinate is clamped to [0, 1]
+   // a q component less than 0 means that the projection is behind the camera
+   // also make sure that this fragment is not being occluded by something
+   if (frag_shadow_tex_coord_real.s < 0.0f || frag_shadow_tex_coord_real.s > 1.0f ||
+       frag_shadow_tex_coord_real.t < 0.0f || frag_shadow_tex_coord_real.t > 1.0f ||
+       frag_shadow_tex_coord.q < 0.0f ||
+       shadow.z < frag_depth - 0.0003f)
+   {
+      // this pixel location is in shadow
+      total_light_frag_color = vec4(directional_light.base.color * directional_light.base.ambient_intensity, 1.0f);
+   }
+   else
+   {
+      // determine the amount of directional light for this fragment
+      total_light_frag_color =
+         CalculateDirectionalLighting(directional_light_eye_space,
+                                      frag_normal_eye_space,
+                                      directional_light.base.color,
+                                      directional_light.base.ambient_intensity,
+                                      directional_light.base.diffuse_intensity);
+   }
 
    // calculate the final output
    frag_color_dest_0 = texture(diffuse_texture, frag_tex_coords) * total_light_frag_color;

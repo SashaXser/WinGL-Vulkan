@@ -40,6 +40,10 @@ public:
    void DrawBuffers( const GLenum * const pBuffers, const size_t count );
    const std::vector< GLenum > & EnabledDrawBuffers( ) const { return mEnabledDrawBuffers; }
 
+   // enables buffer to be drawn into
+   void DrawBuffer( const GLenum buffer );
+   GLenum EnabledDrawBuffer( ) const { return mEnabledDrawBuffer; }
+
    // enables buffer to be read from
    void ReadBuffer( const GLenum buffer );
    GLenum EnabledReadBuffer( ) const { return mEnabledReadBuffer; }
@@ -67,6 +71,13 @@ public:
    // renders a set of vertices from a transform feedback object
    void DrawTransformFeedback( const GLenum mode, const TransformFeedbackObject & tfo ) const;
 
+   // pushes / pops a viewport onto / off of the stack
+   void SetViewport( const GLint x, const GLint y,
+                     const GLint width, const GLint height );
+   void PushViewport( const GLint x, const GLint y,
+                      const GLint width, const GLint height );
+   void PopViewport( );
+
 private:
    // private member variables
    bool mRasterDiscardEnabled;
@@ -77,10 +88,15 @@ private:
    std::vector< bool > mEnabledVertAttribArray;
 
    GLenum   mEnabledReadBuffer;
+   GLenum   mEnabledDrawBuffer;
    std::vector< GLenum > mEnabledDrawBuffers;
 
    bool mTransformFeedbackEnabled;
    GLenum mTransformFeedbackMode;
+
+   // defines the viewport parameters
+   struct Viewport { GLint x, y, width, height; };
+   std::vector< Viewport > mViewportStack;
 
 };
 

@@ -11,6 +11,7 @@
 #include "MatrixHelper.h"
 #include "ShaderProgram.h"
 #include "OpenGLExtensions.h"
+#include "FrameBufferObject.h"
 #include "VertexArrayObject.h"
 #include "VertexBufferObject.h"
 
@@ -49,6 +50,7 @@ struct ShadowMapWindow::Renderable
 
    // vao id
    VAO      mVAO;
+   VAO      mVAOEmpty;
    // vbo ids
    VBO      mVertBuf;
    VBO      mIdxBuf;
@@ -60,6 +62,8 @@ struct ShadowMapWindow::Renderable
    // shader program
    ShaderProgram  mProgram;
    ShaderProgram  mProgramNormals;
+   ShaderProgram  mProgramShadow;
+   ShaderProgram  mProgramDisplayShadow;
    // defines the render order by texture
    // unit... group multiple items together...
    RenderBucket   mRenderBuckets;
@@ -68,7 +72,8 @@ struct ShadowMapWindow::Renderable
 ShadowMapWindow::ShadowMapWindow( ) :
 mpEnterpriseE     ( new Renderable ),
 mCamera           ( Vec3f(0.0f, 40.0f, 100.0f), Vec3f(0.0f, 40.0f, 0.0f) ),
-mDisplayNormals   ( false )
+mDisplayNormals   ( false ),
+mpShadowMap       ( new FrameBufferObject )
 {
 }
 
@@ -84,6 +89,9 @@ void ShadowMapWindow::OnDestroy( )
 
    // clean up the enterprise model
    delete mpEnterpriseE; mpEnterpriseE = nullptr;
+
+   // cleanup the shadow map
+   mpShadowMap = nullptr;
 
    // call the base class to clean things up
    OpenGLWindow::OnDestroy();
@@ -120,14 +128,19 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
           !mpEnterpriseE->mProgramNormals.AttachFile(GL_VERTEX_SHADER, "enterprise_normal.vert") ||
           !mpEnterpriseE->mProgramNormals.AttachFile(GL_GEOMETRY_SHADER, "enterprise_normal.geom") ||
           !mpEnterpriseE->mProgramNormals.AttachFile(GL_FRAGMENT_SHADER, "enterprise_normal.frag") ||
-          !mpEnterpriseE->mProgramNormals.Link())
+          !mpEnterpriseE->mProgramNormals.Link() ||
+          !mpEnterpriseE->mProgramShadow.AttachFile(GL_VERTEX_SHADER, "enterprise_shadow.vert") ||
+          !mpEnterpriseE->mProgramShadow.Link() ||
+          !mpEnterpriseE->mProgramDisplayShadow.AttachFile(GL_VERTEX_SHADER, "enterprise_display_shadow.vert") ||
+          !mpEnterpriseE->mProgramDisplayShadow.AttachFile(GL_FRAGMENT_SHADER, "enterprise_display_shadow.frag") ||
+          !mpEnterpriseE->mProgramDisplayShadow.Link())
       {
          return false;
       }
 
       // enable specific state
-      glEnable(GL_CULL_FACE);
-      glEnable(GL_DEPTH_TEST);
+      mPipeline.EnableCullFace(true);
+      mPipeline.EnableDepthTesting(true);
 
       // set the initial view parameters
       mpEnterpriseE->mProgram.Enable();
@@ -140,6 +153,38 @@ bool ShadowMapWindow::Create( unsigned int nWidth,
       mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.ambient_intensity", 0.05f);
       mpEnterpriseE->mProgram.SetUniformValue("directional_light.base.diffuse_intensity", 1.0f);
       mpEnterpriseE->mProgram.Disable();
+
+      // set some initial parameters for the shadow overlay
+      mpEnterpriseE->mProgramDisplayShadow.Enable();
+      mpEnterpriseE->mProgramDisplayShadow.SetUniformValue("shadow_texture", 0);
+      mpEnterpriseE->mProgramDisplayShadow.Disable();
+
+      // disable reading and drawing operations to
+      // allow the attachment of the shadow map to take...
+      mPipeline.ReadBuffer(GL_NONE);
+      mPipeline.DrawBuffer(GL_NONE);
+
+      // generate the shadow map to render the light from
+      mpShadowMap->GenBuffer(2048*2, 2048*2);
+      mpShadowMap->Bind(GL_FRAMEBUFFER);
+      // attach a depth buffer texture
+      mpShadowMap->Attach(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F);
+
+      // validate completeness of the attachment
+      const bool frame_complete = mpShadowMap->IsComplete();
+      mpShadowMap->Unbind();
+
+      if (!frame_complete)
+      {
+         // issue an error from the application that it could not be created
+         PostDebugMessage(GL_DEBUG_TYPE_ERROR, 2, GL_DEBUG_SEVERITY_HIGH, "Unable To Create Frame Buffer Depth Attachment");
+
+         return false;
+      }
+
+      // restore the reading and drawing operations
+      mPipeline.ReadBuffer(GL_BACK);
+      mPipeline.DrawBuffer(GL_BACK);
 
       // force the view to resize again...
       SendMessage(GetHWND(), WM_SIZE, 0, nHeight << 16 | nWidth);
@@ -190,9 +235,9 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
       const uintptr_t y = lParam >> 16;
 
       // update the viewport
-      glViewport(0, 0,
-                 static_cast< GLsizei >(x),
-                 static_cast< GLsizei >(y));
+      mPipeline.SetViewport(0, 0,
+                            static_cast< GLsizei >(x),
+                            static_cast< GLsizei >(y));
 
       // define the cameras projection information
       mCamera.SetPerspective(45.0f,
@@ -213,6 +258,14 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
          mpEnterpriseE->mProgramNormals.Enable();
          mpEnterpriseE->mProgramNormals.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp);
          mpEnterpriseE->mProgramNormals.Disable();
+      }
+
+      if (mpEnterpriseE->mProgramDisplayShadow)
+      {
+         mpEnterpriseE->mProgramDisplayShadow.Enable();
+         mpEnterpriseE->mProgramDisplayShadow.SetUniformValue("window_width", static_cast< uint32_t >(x));
+         mpEnterpriseE->mProgramDisplayShadow.SetUniformValue("window_height", static_cast< uint32_t >(y));
+         mpEnterpriseE->mProgramDisplayShadow.Disable();
       }
    }
    
@@ -296,23 +349,98 @@ void ShadowMapWindow::RenderScene( )
    static float light_dir = 0.0f;
 
    mpEnterpriseE->mProgram.Enable();
-   mpEnterpriseE->mProgram.SetUniformValue("light_dir", std::cos(light_dir), std::sin(light_dir), 0.0f);
+   const float light_dir_cos = std::cos(light_dir);
+   const float light_dir_sin = std::sin(light_dir);
+   mpEnterpriseE->mProgram.SetUniformValue("light_dir", light_dir_cos, light_dir_sin, 0.0f);
    //mpEnterpriseE->mProgram.SetUniformValue("light_dir", 0.0f, -1.0f, 0.0f);
    
-   mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", std::cos(light_dir), std::sin(light_dir), 0.0f);
+   mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", light_dir_cos, light_dir_sin, 0.0f);
+   //mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", 0.0f, -1.0f, 0.0f);
+   mpEnterpriseE->mProgram.Disable();
 
    light_dir += 0.0005f;
 
-   mpEnterpriseE->mVAO.Bind();
-
-   //glDrawArrays(GL_TRIANGLES, 0, static_cast< GLsizei >(mpEnterpriseE->mVertBuf.Size< float >() / 3));
-   //glDrawElements(GL_TRIANGLES, static_cast< GLsizei >(mpEnterpriseE->mIdxBuf.Size< uint32_t >()), GL_UNSIGNED_INT, nullptr);
-
    WGL_ASSERT(!mpEnterpriseE->mRenderBuckets.empty());
 
+   // enable the shadow program
+   mpEnterpriseE->mProgramShadow.Enable();
+
+   // bind the data to the program
+   mpEnterpriseE->mVAO.Bind();
+
+   // construct the model view matrix from the lights perspective
+   const Matrixf mvp_light =
+      Matrixf::Ortho(-80.0f, 80.0f, -80.0f, 80.0f, -50.0f, 50.0f) *
+      Matrixf::Rotate(math::RadToDeg(light_dir - 0.0005f), Vec3f(0.0f, -1.0f, 0.0f)) *
+      Matrixf::LookAt(Vec3f(0.0f, 1.0f, 10.0f), Vec3f(0.0f, 0.0f, 10.0f), Vec3f(0.0f, 0.0f, 1.0f));
+
+   // update the matrix for the lighting
+   mpEnterpriseE->mProgramShadow.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp_light);
+
+   // enable writing into the depth texture
+   mpShadowMap->Bind(GL_FRAMEBUFFER);
+
+   // update the viewport parameters to match the texture
+   mPipeline.PushViewport(0, 0,
+                          static_cast< GLint >(mpShadowMap->Width()),
+                          static_cast< GLint >(mpShadowMap->Height()));
+
+   // clear the depth texture
+   glClear(GL_DEPTH_BUFFER_BIT);
+
+   // disable reading and writing to the color buffers
+   mPipeline.ReadBuffer(GL_NONE);
+   mPipeline.DrawBuffers({ GL_NONE });
+
+   // render to the shadow map buffer the scene
    typedef decltype( Renderable::mRenderBuckets ) RenderBucketType;
    RenderBucketType::const_iterator rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
    RenderBucketType::const_iterator rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
+
+   while (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
+   {
+      for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
+      {
+         glDrawElements(GL_TRIANGLES,
+                        rbucketBeg->second.second,
+                        GL_UNSIGNED_INT,
+                        reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
+      }
+
+      if (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
+      {
+         rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(rbucketEnd->first);
+         rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(rbucketEnd->first);
+      }
+   }
+
+   // restore the viewport
+   mPipeline.PopViewport();
+
+   // disable writing into the depth texture
+   mpShadowMap->Unbind();
+
+   // restore reading and writing to the default color buffers.
+   mPipeline.ReadBuffer(GL_BACK);
+   mPipeline.DrawBuffer(GL_BACK);
+
+   // disable the shadow program
+   mpEnterpriseE->mProgramShadow.Disable();
+
+   // enable rendering to the main frame buffer
+   mpEnterpriseE->mProgram.Enable();
+
+   // bind the shadow texture
+   mpShadowMap->GetAttachment(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE1);
+   mpEnterpriseE->mProgram.SetUniformValue("shadow_texture",
+                                           static_cast< GLint >(mpShadowMap->GetAttachment(GL_DEPTH_ATTACHMENT)->GetBoundSamplerID()));
+
+   // update the shadow mvp matrix
+   mpEnterpriseE->mProgram.SetUniformMatrix< 1, 4, 4 >("shadow_mvp_mat", mvp_light);
+
+   // render to the default view the actual scene
+   rbucketBeg = mpEnterpriseE->mRenderBuckets.lower_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
+   rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(mpEnterpriseE->mRenderBuckets.cbegin()->first);
 
    while (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
    {
@@ -327,7 +455,10 @@ void ShadowMapWindow::RenderScene( )
 
       for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
       {
-         glDrawElements(GL_TRIANGLES, rbucketBeg->second.second, GL_UNSIGNED_INT, reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
+         glDrawElements(GL_TRIANGLES,
+                        rbucketBeg->second.second,
+                        GL_UNSIGNED_INT,
+                        reinterpret_cast< void * >(rbucketBeg->second.first * sizeof(rbucketBeg->second.first)));
       }
 
       if (diffuse_tex && *diffuse_tex)
@@ -341,6 +472,9 @@ void ShadowMapWindow::RenderScene( )
          rbucketEnd = mpEnterpriseE->mRenderBuckets.upper_bound(rbucketEnd->first);
       }
    }
+
+   // unbind the shadow map
+   mpShadowMap->GetAttachment(GL_DEPTH_ATTACHMENT)->Unbind();
 
    mpEnterpriseE->mProgram.Disable();
 
@@ -376,6 +510,26 @@ void ShadowMapWindow::RenderScene( )
 
    mpEnterpriseE->mVAO.Unbind();
 
+   // render the shadow map to the lower left corner
+   mpEnterpriseE->mProgramDisplayShadow.Enable();
+   mpEnterpriseE->mVAOEmpty.Bind();
+
+   // construct the mvp
+   const Matrixf mvp = Matrixf::Ortho(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
+   mpEnterpriseE->mProgramDisplayShadow.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp);
+
+   // bind the shadow map
+   mpShadowMap->GetAttachment(GL_DEPTH_ATTACHMENT)->Bind(GL_TEXTURE0);
+   
+   // the shader does all the calculation work
+   mPipeline.DrawArrays(GL_TRIANGLES, 0, 6);
+
+   // unbind the shadow map
+   mpShadowMap->GetAttachment(GL_DEPTH_ATTACHMENT)->Unbind();
+   
+   mpEnterpriseE->mVAOEmpty.Unbind();
+   mpEnterpriseE->mProgramDisplayShadow.Disable();
+
    // swap the front and back
    SwapBuffers(GetHDC());
 }
@@ -383,6 +537,10 @@ void ShadowMapWindow::RenderScene( )
 void ShadowMapWindow::GenerateSceneData( )
 {
    GenerateEnterpriseE();
+
+   // required by a core context to have at least a single
+   // vao present even if there are no bound arrays...
+   mpEnterpriseE->mVAOEmpty.GenArray();
 }
 
 void ShadowMapWindow::GenerateEnterpriseE( )

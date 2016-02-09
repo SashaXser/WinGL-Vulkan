@@ -45,6 +45,7 @@ layout (location = 5) in vec3 vertex_bitangent;
 uniform mat4 model_view_proj_mat;
 uniform mat4 model_view_mat;
 uniform mat4 model_view_tinv_mat;
+uniform mat4 shadow_mvp_mat;
 uniform lighting_directional directional_light;
 
 // defines the attributes passed along through the shader pipeline
@@ -52,6 +53,7 @@ smooth out vec2 frag_tex_coords;
 smooth out vec3 frag_normal_eye_space;
 smooth out mat3 frag_tangent_to_eye_space_mat;
 smooth out vec3 frag_vertex_position_eye_space;
+smooth out vec4 frag_shadow_tex_coord;
 flat out vec3 directional_light_eye_space;
 
 void main( )
@@ -72,6 +74,13 @@ void main( )
 
    // calculate the eye space direction for the light
    directional_light_eye_space = normalize((model_view_tinv_mat * vec4(directional_light.direction_world_space, 0.0f)).xyz);
+
+   // calculate the clip space vertex coord (homogenous space)
+   // for the texture lookup of the shadow map
+   frag_shadow_tex_coord = mat4(0.5f, 0.0f, 0.0f, 0.0f,
+                                0.0f, 0.5f, 0.0f, 0.0f,
+                                0.0f, 0.0f, 0.5f, 0.0f,
+                                0.5f, 0.5f, 0.5f, 1.0f) * shadow_mvp_mat * vec4(vertex_position, 1.0f);
 
    // project the vertex position
    gl_Position = model_view_proj_mat * vec4(vertex_position, 1.0f);

@@ -3,12 +3,16 @@
 #include "WglAssert.h"
 #include "TransformFeedbackObject.h"
 
+// std includes
+#include <cassert>
+
 Pipeline::Pipeline( ) :
 mRasterDiscardEnabled      ( false ),
 mCullFaceEnabled           ( false ),
 mDepthTestingEnabled       ( false ),
 mProgramPointSizeEnabled   ( false ),
 mEnabledReadBuffer         ( GL_BACK_LEFT ),
+mEnabledDrawBuffer         ( GL_BACK_LEFT ),
 mEnabledDrawBuffers        ( { GL_BACK_LEFT } ),
 mTransformFeedbackEnabled  ( false ),
 mTransformFeedbackMode     ( GL_POINTS )
@@ -85,6 +89,13 @@ void Pipeline::DrawBuffers( const std::vector< GLenum > & buffers )
 void Pipeline::DrawBuffers( const GLenum * const pBuffers, const size_t count )
 {
    DrawBuffers(std::vector< GLenum >(pBuffers, pBuffers + count));
+}
+
+void Pipeline::DrawBuffer( const GLenum buffer )
+{
+   glDrawBuffer(buffer);
+
+   mEnabledDrawBuffer = buffer;
 }
 
 void Pipeline::ReadBuffer( const GLenum buffer )
@@ -165,5 +176,39 @@ void Pipeline::DrawTransformFeedback( const GLenum mode, const TransformFeedback
    WGL_ASSERT(tfo);
 
    glDrawTransformFeedback(mode, tfo);
+}
+
+void Pipeline::SetViewport( const GLint x, const GLint y,
+                            const GLint width, const GLint height )
+{
+   if (mViewportStack.empty())
+   {
+      PushViewport(x, y, width, height);
+   }
+   else
+   {
+      mViewportStack.back() = { x, y, width, height };
+
+      glViewport(x, y, width, height);
+   }
+}
+
+void Pipeline::PushViewport( const GLint x, const GLint y,
+                             const GLint width, const GLint height )
+{
+   mViewportStack.emplace_back(Viewport { x, y, width, height });
+
+   glViewport(x, y, width, height);
+}
+
+void Pipeline::PopViewport( )
+{
+   assert(mViewportStack.size() > 1);
+
+   mViewportStack.pop_back();
+
+   const Viewport & vp = mViewportStack.back();
+
+   glViewport(vp.x, vp.y, vp.width, vp.height);
 }
 

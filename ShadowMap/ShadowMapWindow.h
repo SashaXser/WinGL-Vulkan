@@ -2,9 +2,16 @@
 #define _SHADOW_MAP_WINDOW_H_
 
 // wingl includes
-#include <OpenGLWindow.h>
 #include <Camera.h>
+#include <Pipeline.h>
+#include <OpenGLWindow.h>
 #include <CameraPolicies/RoamNoRollRestrictPitch.h>
+
+// std includes
+#include <memory>
+
+// forward declarations
+class FrameBufferObject;
 
 class ShadowMapWindow : public OpenGLWindow
 {
@@ -59,6 +66,12 @@ private:
 
    // displays the model's normals
    bool mDisplayNormals;
+
+   // off-screen buffer to render from the lights perspective
+   std::unique_ptr< FrameBufferObject > mpShadowMap;
+
+   // graphics pipeline
+   Pipeline mPipeline;
 
 };
 
