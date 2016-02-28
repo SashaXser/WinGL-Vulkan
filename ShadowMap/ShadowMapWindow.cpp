@@ -222,6 +222,7 @@ int ShadowMapWindow::Run( )
    return appQuitVal;
 }
 
+static float light_dir = 0.0f;
 LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
    LRESULT result = 0;
@@ -289,6 +290,12 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
 
          UpdateShaderCameraValues();
       }
+      else if (wParam & MK_RBUTTON)
+      {
+         const int dx = static_cast< int >(cur_x - GetPreviousMousePosition().x);
+
+         light_dir += 0.0005f * dx;
+      }
    }
 
    break;
@@ -346,19 +353,23 @@ void ShadowMapWindow::RenderScene( )
    
 
    // temp
-   static float light_dir = 0.0f;
+   //static float light_dir = 0.0f;
 
    mpEnterpriseE->mProgram.Enable();
-   const float light_dir_cos = std::cos(light_dir);
-   const float light_dir_sin = std::sin(light_dir);
-   mpEnterpriseE->mProgram.SetUniformValue("light_dir", light_dir_cos, light_dir_sin, 0.0f);
+   //const float light_dir_cos = std::cos(light_dir);
+   //const float light_dir_sin = std::sin(light_dir);
+   const auto light_rotation = Matrixf::Rotate(math::RadToDeg(light_dir), Vec3f(0.0f, 0.0f, 1.0f));
+   const auto light_dir_vec = light_rotation * Vec3f(0.0f, -1.0f, 0.0f);
+   //mpEnterpriseE->mProgram.SetUniformValue("light_dir", light_dir_cos, light_dir_sin, 0.0f);
+   mpEnterpriseE->mProgram.SetUniformValue("light_dir", light_dir_vec.X(), light_dir_vec.Y(), 0.0f);
    //mpEnterpriseE->mProgram.SetUniformValue("light_dir", 0.0f, -1.0f, 0.0f);
    
-   mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", light_dir_cos, light_dir_sin, 0.0f);
+   //mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", light_dir_cos, light_dir_sin, 0.0f);
+   mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", light_dir_vec.X(), light_dir_vec.Y(), 0.0f);
    //mpEnterpriseE->mProgram.SetUniformValue("directional_light.direction_world_space", 0.0f, -1.0f, 0.0f);
    mpEnterpriseE->mProgram.Disable();
 
-   light_dir += 0.0005f;
+   //light_dir += 0.0005f;
 
    WGL_ASSERT(!mpEnterpriseE->mRenderBuckets.empty());
 
@@ -371,8 +382,8 @@ void ShadowMapWindow::RenderScene( )
    // construct the model view matrix from the lights perspective
    const Matrixf mvp_light =
       Matrixf::Ortho(-80.0f, 80.0f, -80.0f, 80.0f, -50.0f, 50.0f) *
-      Matrixf::Rotate(math::RadToDeg(light_dir - 0.0005f), Vec3f(0.0f, -1.0f, 0.0f)) *
-      Matrixf::LookAt(Vec3f(0.0f, 1.0f, 10.0f), Vec3f(0.0f, 0.0f, 10.0f), Vec3f(0.0f, 0.0f, 1.0f));
+      Matrixf::LookAt(Vec3f(0.0f, 1.0f, 10.0f), Vec3f(0.0f, 0.0f, 10.0f), Vec3f(0.0f, 0.0f, 1.0f)) *
+      light_rotation.InverseFromOrthogonal();
 
    // update the matrix for the lighting
    mpEnterpriseE->mProgramShadow.SetUniformMatrix< 1, 4, 4 >("model_view_proj_mat", mvp_light);
