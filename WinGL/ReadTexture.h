@@ -46,6 +46,7 @@ struct TextureData
 
 template < typename T > struct TextureType;
 template < > struct TextureType< uint8_t > { static const GLenum type = GL_UNSIGNED_BYTE; };
+template < > struct TextureType< uint16_t > { static const GLenum type = GL_UNSIGNED_SHORT; };
 
 // reads a texture file
 template < typename T >

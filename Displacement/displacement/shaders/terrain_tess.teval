@@ -1,0 +1,46 @@
+// defines the glsl version to be used
+// leave commented out, as the lighting shader source declares it
+#version 440 core
+
+// tell the tessellation engine to generate triangles
+layout (triangles, equal_spacing, ccw) in;
+
+// defines the per geometry attributes
+uniform sampler2D disp_map_texture;
+
+// defines the attributes passed along through the shader pipeline
+in TC_OUT
+{
+   smooth vec2 tex_coord;
+} tc_in[];
+
+out TE_OUT
+{
+   smooth float height;
+   smooth vec2 tex_coord;
+} te_out;
+
+void main( )
+{
+   // determine the new position from the barycentric center generated
+   vec4 position = gl_in[0].gl_Position * gl_TessCoord.x +
+                   gl_in[1].gl_Position * gl_TessCoord.y +
+                   gl_in[2].gl_Position * gl_TessCoord.z;
+
+   // determine the texture coordinate
+   vec2 tc = vec2(gl_TessCoord.x) * tc_in[0].tex_coord +
+             vec2(gl_TessCoord.y) * tc_in[1].tex_coord +
+             vec2(gl_TessCoord.z) * tc_in[2].tex_coord;
+
+   // obtain the height at the specified texture coordinate
+   position.y = texture(disp_map_texture, tc).r * 40.0f;
+
+   // pass the world space position along
+   gl_Position = position;
+
+   // pass the texture coordinate along for the ride
+   te_out.tex_coord = tc;
+
+   // save the height and interpolate it
+   te_out.height = position.y;
+}

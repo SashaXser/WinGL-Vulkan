@@ -7,6 +7,9 @@
 #include "OpenGLWindow.h"
 #include "ShaderProgram.h"
 
+#include "Camera.h"
+#include "CameraPolicies/RoamNoRollRestrictPitch.h"
+
 class ProjectiveTextureWindow : public OpenGLWindow
 {
 public:

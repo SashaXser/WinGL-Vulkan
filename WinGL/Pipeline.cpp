@@ -11,6 +11,7 @@ mRasterDiscardEnabled      ( false ),
 mCullFaceEnabled           ( false ),
 mDepthTestingEnabled       ( false ),
 mProgramPointSizeEnabled   ( false ),
+mPolygonMode               ( GL_FILL ),
 mEnabledReadBuffer         ( GL_BACK_LEFT ),
 mEnabledDrawBuffer         ( GL_BACK_LEFT ),
 mEnabledDrawBuffers        ( { GL_BACK_LEFT } ),
@@ -77,6 +78,17 @@ void Pipeline::EnableProgramPointSize( const bool enable )
    }
 
    mProgramPointSizeEnabled = enable;
+}
+
+void Pipeline::SetPolygonMode( const GLenum mode )
+{
+   assert(mode == GL_POINT ||
+          mode == GL_LINE ||
+          mode == GL_FILL);
+
+   glPolygonMode(GL_FRONT_AND_BACK, mode);
+
+   mPolygonMode = mode;
 }
 
 void Pipeline::DrawBuffers( const std::vector< GLenum > & buffers )

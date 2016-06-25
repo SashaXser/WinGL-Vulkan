@@ -1,0 +1,38 @@
+// defines the glsl version to be used
+// leave commented out, as the lighting shader source declares it
+#version 440 core
+
+// defines the number of vertices in the output patch
+// for the tessellation engine to work with...
+layout (vertices = 3) out;
+
+// defines the per geometry attributes
+
+// defines the attributes passed along through the shader pipeline
+in VS_OUT
+{
+   smooth vec2 tex_coord;
+} vs_in[];
+
+out TC_OUT
+{
+   smooth vec2 tex_coord;
+} tc_out[];
+
+void main( )
+{
+   // just pass the position along to the next stage
+   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+
+   // just pass the texture coords along to the next stage
+   tc_out[gl_InvocationID].tex_coord = vs_in[gl_InvocationID].tex_coord;
+
+   if (gl_InvocationID == 0)
+   {
+      gl_TessLevelOuter[0] = 64;
+      gl_TessLevelOuter[1] = 64;
+      gl_TessLevelOuter[2] = 64;
+
+      gl_TessLevelInner[0] = 64;
+   }
+}

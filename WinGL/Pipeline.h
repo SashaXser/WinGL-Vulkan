@@ -35,6 +35,10 @@ public:
    void EnableProgramPointSize( const bool enable );
    bool IsProgramPointSizeEnabled( ) const { return mProgramPointSizeEnabled; }
 
+   // sets / gets the polygon mode
+   void SetPolygonMode( const GLenum mode );
+   GLenum GetPolygonMode( ) const { return mPolygonMode; }
+
    // enables buffers to be drawn into
    void DrawBuffers( const std::vector< GLenum > & buffers );
    void DrawBuffers( const GLenum * const pBuffers, const size_t count );
@@ -84,6 +88,8 @@ private:
    bool mCullFaceEnabled;
    bool mDepthTestingEnabled;
    bool mProgramPointSizeEnabled;
+
+   GLenum mPolygonMode;
 
    std::vector< bool > mEnabledVertAttribArray;
 
