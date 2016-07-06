@@ -3,17 +3,19 @@
 #version 440 core
 
 // defines the per geometry attributes
-uniform sampler2D disp_map_texture;
 uniform sampler2D grass_texture;
 uniform sampler2D dirt_texture;
 uniform sampler2D rock_texture;
 uniform sampler2D snow_texture;
+uniform sampler2D normal_map_texture;
 uniform mat4 mv_matrix;
+uniform uint calculate_lighting;
 
 // defines the attributes passed along through the shader pipeline
 in GEOM_OUT
 {
-   flat vec3 normal;
+   flat mat3 tbn_matrix;
+   smooth vec3 normal;
    smooth float height;
    smooth vec2 tex_coord;
 } geom_in;
@@ -84,6 +86,9 @@ void main( )
    vec4 rock = texture(rock_texture, geom_in.tex_coord * 50);
    vec4 snow = texture(snow_texture, geom_in.tex_coord * 50);
 
+   // pull out the normal from the tangent space
+   vec3 normal = geom_in.tbn_matrix * texture(normal_map_texture, geom_in.tex_coord).xyz;
+
    // something more complex can be done later to give
    // the terrain a more natural feel and look...
    vec4 color;
@@ -103,8 +108,19 @@ void main( )
    else
       color = snow;
 
-   color0 = color * CalculateDirectionalLighting(mat3(mv_matrix) * normalize(vec3(-1.0f, -1.0f, 0.0f)),
-                                                 geom_in.normal,
-                                                 vec3(1.0f, 1.0f, 1.0f),
-                                                 0.1f, 1.0f);
+   //const vec3 light_dir = mat3(mv_matrix) * normalize(vec3(-1.0f, -1.0f, 0.0f));
+   const vec3 light_dir = mat3(mv_matrix) * normalize(vec3(0.0f, 1.0f, 0.0f));
+   
+   if (calculate_lighting == 1)
+      color0 = color * CalculateDirectionalLighting(light_dir,
+                                                    normal,
+                                                    vec3(1.0f, 1.0f, 1.0f),
+                                                    0.1f, 1.0f);
+   else if (calculate_lighting == 2)
+      color0 = color * CalculateDirectionalLighting(light_dir,
+                                                    geom_in.normal,
+                                                    vec3(1.0f, 1.0f, 1.0f),
+                                                    0.1f, 1.0f);
+   else
+      color0 = color;
 }

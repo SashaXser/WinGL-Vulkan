@@ -138,8 +138,8 @@ ConstructTangentsAndBitangents( const std::vector< Vector< T, 3 > > & vertices,
 
       // calculate the tangent
       Vector< T, 3 > t(det * (t2 * e1.X() - t1 * e2.X()),
-                     det * (t2 * e1.Y() - t1 * e2.Y()),
-                     det * (t2 * e1.Z() - t1 * e2.Z()));
+                       det * (t2 * e1.Y() - t1 * e2.Y()),
+                       det * (t2 * e1.Z() - t1 * e2.Z()));
 
       if (t.Length() == 0)
       {

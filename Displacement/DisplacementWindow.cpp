@@ -15,6 +15,7 @@
 
 DisplacementWindow::DisplacementWindow( ) :
 mWireframe     ( false ),
+mLighting      ( 1 ),
 mNumTiles      ( 15 ),
 mNumOfPatches  ( 0 )
 {
@@ -49,10 +50,7 @@ bool DisplacementWindow::Create( unsigned int nWidth,
       mPipeline.EnableDepthTesting(true);
 
       // generate the required data
-      GenerateTerrain();
-      
-      // temp
-      mCamera.LookAt(Vec3f(0,0.0,1050), Vec3f(0,0.0,0.0f));
+      GenerateTerrain(true);
 
       // force the projection matrix to get calculated and updated
       SendMessage(GetHWND(), WM_SIZE, 0, nHeight << 16 | nWidth);
@@ -91,6 +89,8 @@ int DisplacementWindow::Run( )
          if (mWireframe) mPipeline.SetPolygonMode(GL_LINE);
 
          mTerrainPgm.Enable();
+
+         mTerrainPgm.SetUniformValue< uint32_t >("calculate_lighting", mLighting);
          
          //mCamera.SetPerspective(45.0f, 1.0f, 0.5f, 2000.0);
          //mCamera.LookAt(Vec3f(0,0.0,1050), Vec3f(0,0.0,0.0f));
@@ -98,10 +98,11 @@ int DisplacementWindow::Run( )
          mTerrainPgm.SetUniformMatrix< 1, 4, 4 >("mvp_matrix", mCamera.GetProjectionMatrix() * mCamera.GetViewMatrix());
          
          mDispMapTex.Bind(GL_TEXTURE0); mTerrainPgm.SetUniformValue("disp_map_texture", static_cast< GLint >(mDispMapTex.GetBoundSamplerID()));
-         mGrassTex.Bind(GL_TEXTURE1); mTerrainPgm.SetUniformValue("grass_texture", static_cast< GLint >(mGrassTex.GetBoundSamplerID()));
-         mDirtTex.Bind(GL_TEXTURE2); mTerrainPgm.SetUniformValue("dirt_texture", static_cast< GLint >(mDirtTex.GetBoundSamplerID()));
-         mRockTex.Bind(GL_TEXTURE3); mTerrainPgm.SetUniformValue("rock_texture", static_cast< GLint >(mRockTex.GetBoundSamplerID()));
-         mSnowTex.Bind(GL_TEXTURE4); mTerrainPgm.SetUniformValue("snow_texture", static_cast< GLint >(mSnowTex.GetBoundSamplerID()));
+         mNormalMap.Bind(GL_TEXTURE1);  mTerrainPgm.SetUniformValue("normal_map_texture", static_cast< GLint >(mNormalMap.GetBoundSamplerID()));
+         mGrassTex.Bind(GL_TEXTURE2); mTerrainPgm.SetUniformValue("grass_texture", static_cast< GLint >(mGrassTex.GetBoundSamplerID()));
+         mDirtTex.Bind(GL_TEXTURE3); mTerrainPgm.SetUniformValue("dirt_texture", static_cast< GLint >(mDirtTex.GetBoundSamplerID()));
+         mRockTex.Bind(GL_TEXTURE4); mTerrainPgm.SetUniformValue("rock_texture", static_cast< GLint >(mRockTex.GetBoundSamplerID()));
+         mSnowTex.Bind(GL_TEXTURE5); mTerrainPgm.SetUniformValue("snow_texture", static_cast< GLint >(mSnowTex.GetBoundSamplerID()));
 
          mTerrainVAO.Bind();
          //mPipeline.DrawElements(GL_PATCHES, mTerrainIdxVBO.Size< uint32_t >(), GL_UNSIGNED_INT, nullptr);
@@ -194,14 +195,22 @@ LRESULT DisplacementWindow::MessageHandler( UINT uMsg,
       {
          mWireframe = !mWireframe;
       }
+      else if (wParam == 'r' || wParam == 'R')
+      {
+         GenerateTerrain(true);
+      }
       else if (wParam == '+')
       {
-         ++mNumTiles; GenerateTerrain();
+         ++mNumTiles; GenerateTerrain(false);
       }
       else if (wParam == '-')
       {
          mNumTiles = std::max< uint32_t >(1, mNumTiles - 1);
-         GenerateTerrain();
+         GenerateTerrain(false);
+      }
+      else if (wParam == 'l' || wParam == 'L')
+      {
+         mLighting = (mLighting + 1) % 3;
       }
    }
    
@@ -217,20 +226,21 @@ LRESULT DisplacementWindow::MessageHandler( UINT uMsg,
    return result;
 }
 
-void DisplacementWindow::GenerateTerrain( )
+void DisplacementWindow::GenerateTerrain( const bool reload_shaders )
 {
    // read in the visual textures
    if (!mDirtTex) mDirtTex.Load2D(R"(.\displacement\textures\dirt.jpg)", GL_RGB, GL_COMPRESSED_RGB, true);
    if (!mRockTex) mRockTex.Load2D(R"(.\displacement\textures\rock.jpg)", GL_RGB, GL_COMPRESSED_RGB, true);
    if (!mSnowTex) mSnowTex.Load2D(R"(.\displacement\textures\snow.jpg)", GL_RGB, GL_COMPRESSED_RGB, true);
    if (!mGrassTex) mGrassTex.Load2D(R"(.\displacement\textures\grass.jpg)", GL_RGB, GL_COMPRESSED_RGB, true);
+   if (!mNormalMap) mNormalMap.Load2D(R"(.\displacement\textures\normal_map.png)", GL_RGB, GL_COMPRESSED_RGB, true);
 
    if (!mDispMapTex)
    {
       // read in the displacement map...
       const auto tex_data =
          ReadTexture< uint8_t >(R"(.\displacement\textures\displacement_map.bmp)",
-                                 GL_RGB);
+                                GL_RGB);
 
       // load the texture data into the texture
       mDispMapTex.GenerateTextureImmutable(GL_TEXTURE_2D, GL_RGB8,
@@ -311,8 +321,11 @@ void DisplacementWindow::GenerateTerrain( )
 
    mTerrainVAO.Unbind();
 
-   if (!mTerrainPgm)
+   if (!mTerrainPgm || reload_shaders)
    {
+      // release the current shader
+      mTerrainPgm = ShaderProgram();
+
       // load the terrain program
       mTerrainPgm.AttachFile(GL_VERTEX_SHADER, R"(.\displacement\shaders\terrain_tess.vert)");
       mTerrainPgm.AttachFile(GL_TESS_CONTROL_SHADER, R"(.\displacement\shaders\terrain_tess.tctrl)");
@@ -320,5 +333,8 @@ void DisplacementWindow::GenerateTerrain( )
       mTerrainPgm.AttachFile(GL_GEOMETRY_SHADER, R"(.\displacement\shaders\terrain_tess.geom)");
       mTerrainPgm.AttachFile(GL_FRAGMENT_SHADER, R"(.\displacement\shaders\terrain_tess.frag)");
       mTerrainPgm.Link();
+
+      // place the camera at a corner of the terrain
+      mCamera.LookAt(Vec3f(plane.vertices[0][0], 250.0f, plane.vertices[0][2]), Vec3f(0.0f, 0.0f, 0.0f));
    }
 }

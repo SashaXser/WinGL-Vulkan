@@ -50,10 +50,11 @@ protected:
 
 private:
    // generates the terrain data
-   void GenerateTerrain( );
+   void GenerateTerrain( const bool reload_shaders );
 
-   // displacment texture for the terrain
+   // displacment / normal textures for the terrain
    Texture mDispMapTex;
+   Texture mNormalMap;
 
    // textures for the terrain
    Texture mDirtTex;
@@ -68,6 +69,9 @@ private:
 
    // show terrain's wireframe
    bool mWireframe;
+
+   // indicates if light should be applied
+   uint8_t mLighting;
 
    // determines the number of terrain tiles
    uint32_t mNumTiles;
