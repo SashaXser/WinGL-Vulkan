@@ -70,6 +70,12 @@ private:
    // show terrain's wireframe
    bool mWireframe;
 
+   // indicates if the shift key is down
+   bool mShiftDown;
+
+   // determines how much of a displacement to place on the height
+   float mDispMult;
+
    // indicates if light should be applied
    uint8_t mLighting;
 

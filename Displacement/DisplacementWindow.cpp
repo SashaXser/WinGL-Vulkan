@@ -15,6 +15,8 @@
 
 DisplacementWindow::DisplacementWindow( ) :
 mWireframe     ( false ),
+mShiftDown     ( false ),
+mDispMult      ( 40.0f ),
 mLighting      ( 1 ),
 mNumTiles      ( 15 ),
 mNumOfPatches  ( 0 )
@@ -91,6 +93,8 @@ int DisplacementWindow::Run( )
          mTerrainPgm.Enable();
 
          mTerrainPgm.SetUniformValue< uint32_t >("calculate_lighting", mLighting);
+
+         mTerrainPgm.SetUniformValue("disp_multiplier", mDispMult);
          
          //mCamera.SetPerspective(45.0f, 1.0f, 0.5f, 2000.0);
          //mCamera.LookAt(Vec3f(0,0.0,1050), Vec3f(0,0.0,0.0f));
@@ -197,6 +201,16 @@ LRESULT DisplacementWindow::MessageHandler( UINT uMsg,
       }
       else if (wParam == 'r' || wParam == 'R')
       {
+         if (wParam == 'R')
+         {
+            mDirtTex = Texture();
+            mRockTex = Texture();
+            mSnowTex = Texture();
+            mGrassTex = Texture();
+            mNormalMap = Texture();
+            mDispMapTex = Texture();
+         }
+
          GenerateTerrain(true);
       }
       else if (wParam == '+')
@@ -214,6 +228,34 @@ LRESULT DisplacementWindow::MessageHandler( UINT uMsg,
       }
    }
    
+   break;
+
+   case WM_KEYDOWN:
+   {
+      if (wParam == VK_UP)
+      {
+         mDispMult = mShiftDown ? 40.0f : mDispMult + 0.5f;
+      }
+      else if (wParam == VK_DOWN)
+      {
+         mDispMult = mShiftDown ? 0.0f : mDispMult - 0.5f;
+      }
+      else if (wParam == VK_SHIFT)
+      {
+         mShiftDown = true;
+      }
+   }
+
+   break;
+
+   case WM_KEYUP:
+   {
+      if (wParam == VK_SHIFT)
+      {
+         mShiftDown = false;
+      }
+   }
+
    break;
 
    default:
@@ -234,12 +276,14 @@ void DisplacementWindow::GenerateTerrain( const bool reload_shaders )
    if (!mSnowTex) mSnowTex.Load2D(R"(.\displacement\textures\snow.jpg)", GL_RGB, GL_COMPRESSED_RGB, true);
    if (!mGrassTex) mGrassTex.Load2D(R"(.\displacement\textures\grass.jpg)", GL_RGB, GL_COMPRESSED_RGB, true);
    if (!mNormalMap) mNormalMap.Load2D(R"(.\displacement\textures\normal_map.png)", GL_RGB, GL_COMPRESSED_RGB, true);
+   //if (!mNormalMap) mNormalMap.Load2D(R"(.\displacement\textures\bricks2_normal.png)", GL_RGB, GL_COMPRESSED_RGB, true);
 
    if (!mDispMapTex)
    {
       // read in the displacement map...
       const auto tex_data =
          ReadTexture< uint8_t >(R"(.\displacement\textures\displacement_map.bmp)",
+         //ReadTexture< uint8_t >(R"(.\displacement\textures\bricks2_height.jpg)",
                                 GL_RGB);
 
       // load the texture data into the texture

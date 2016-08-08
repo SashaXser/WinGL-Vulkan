@@ -6,6 +6,7 @@
 layout (triangles, equal_spacing, ccw) in;
 
 // defines the per geometry attributes
+uniform float disp_multiplier;
 uniform sampler2D disp_map_texture;
 
 // defines the attributes passed along through the shader pipeline
@@ -33,7 +34,7 @@ void main( )
              vec2(gl_TessCoord.z) * tc_in[2].tex_coord;
 
    // obtain the height at the specified texture coordinate
-   position.y = texture(disp_map_texture, tc).r * 40.0f;
+   position.y = texture(disp_map_texture, tc).r * disp_multiplier;
 
    // pass the world space position along
    gl_Position = position;

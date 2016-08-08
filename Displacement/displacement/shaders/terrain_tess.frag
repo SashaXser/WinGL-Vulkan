@@ -15,7 +15,7 @@ uniform uint calculate_lighting;
 in GEOM_OUT
 {
    flat mat3 tbn_matrix;
-   smooth vec3 normal;
+   flat vec3 normal;
    smooth float height;
    smooth vec2 tex_coord;
 } geom_in;
@@ -87,7 +87,7 @@ void main( )
    vec4 snow = texture(snow_texture, geom_in.tex_coord * 50);
 
    // pull out the normal from the tangent space
-   vec3 normal = geom_in.tbn_matrix * texture(normal_map_texture, geom_in.tex_coord).xyz;
+   vec3 normal = normalize(geom_in.tbn_matrix * (2.0f * texture(normal_map_texture, geom_in.tex_coord).xyz - 1.0f));
 
    // something more complex can be done later to give
    // the terrain a more natural feel and look...
@@ -108,8 +108,7 @@ void main( )
    else
       color = snow;
 
-   //const vec3 light_dir = mat3(mv_matrix) * normalize(vec3(-1.0f, -1.0f, 0.0f));
-   const vec3 light_dir = mat3(mv_matrix) * normalize(vec3(0.0f, 1.0f, 0.0f));
+   const vec3 light_dir = mat3(mv_matrix) * normalize(vec3(0.0f, -1.0f, 0.0f));
    
    if (calculate_lighting == 1)
       color0 = color * CalculateDirectionalLighting(light_dir,

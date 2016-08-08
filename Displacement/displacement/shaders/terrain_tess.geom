@@ -22,7 +22,7 @@ in TE_OUT
 out GEOM_OUT
 {
    flat mat3 tbn_matrix;
-   smooth vec3 normal;
+   flat vec3 normal;
    smooth float height;
    smooth vec2 tex_coord;
 } geom_out;
@@ -51,6 +51,10 @@ void main( )
 
    // calculate the bitange as just the cross of the normal and tangent
    vec3 bitangent = normalize(cross(normal, tangent));
+   //vec3 bitangent = normalize((mv_matrix * vec4(det * (-uv2.s * e1.x - uv1.s * e2.x),
+   //                                             det * (-uv2.s * e1.y - uv1.s * e2.y),
+   //                                             det * (-uv2.s * e1.z - uv1.s * e2.z),
+   //                                             0.0f)).xyz);
    
    // just pass the data through (making sure to project the position to clip space)
    geom_out.tbn_matrix = mat3(tangent, bitangent, normal);
