@@ -11,6 +11,7 @@ mRasterDiscardEnabled      ( false ),
 mCullFaceEnabled           ( false ),
 mDepthTestingEnabled       ( false ),
 mProgramPointSizeEnabled   ( false ),
+mBlendingEnabled           ( false ),
 mPolygonMode               ( GL_FILL ),
 mEnabledReadBuffer         ( GL_BACK_LEFT ),
 mEnabledDrawBuffer         ( GL_BACK_LEFT ),
@@ -224,3 +225,16 @@ void Pipeline::PopViewport( )
    glViewport(vp.x, vp.y, vp.width, vp.height);
 }
 
+void Pipeline::EnableStandardBlending( const bool enable )
+{
+   if (mBlendingEnabled = enable)
+   {
+      glEnable(GL_BLEND);
+
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   }
+   else
+   {
+      glDisable(GL_BLEND);
+   }
+}

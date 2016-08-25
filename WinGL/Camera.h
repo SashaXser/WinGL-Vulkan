@@ -27,12 +27,8 @@ public:
 
    // constructor / destructor
     Camera( );
-    Camera( const Camera< Policy > & camera );
     Camera( const vec_type & eye, const vec_type & center );
    ~Camera( );
-
-   // copy operator
-   Camera & operator = ( const Camera & camera );
 
    // initializes the camera at a specific location
    void LookAt( const vec_type & eye, const vec_type & center );
@@ -70,6 +66,7 @@ public:
    mat_type GetViewMatrix( ) const;
 
    // sets the projection matrix
+   void SetOrtho( const type left, const type right, const type bottom, const type top, const type near, const type far );
    void SetPerspective( const type fov, const type aspect, const type near, const type far );
 
    // obtains properties of the projection matrix
@@ -78,6 +75,13 @@ public:
    type GetProjectionNear( ) const { return mProjNear; }
    type GetProjectionFar( ) const { return mProjFar; }
 
+   type GetProjectionOrthoLeft( ) const { return mProjOrthoLeft; }
+   type GetProjectionOrthoRight( ) const { return mProjOrthoRight; }
+   type GetProjectionOrthoBottom( ) const { return mProjOrthoBottom; }
+   type GetProjectionOrthoTop( ) const { return mProjOrthoTop; }
+   type GetProjectionOrthoNear( ) const { return mProjNear; }
+   type GetProjectionOrthoFar( ) const { return mProjFar; }
+
    // returns the projection matrix
    const mat_type & GetProjectionMatrix( ) const { return mProjection; }
 
@@ -85,11 +89,17 @@ private:
    // camera policy used to define the type of camera
    Policy      mPolicy;
 
-   // defines attributes for the projection
+   // defines attributes for the perspective projection
    type        mProjFOV;
    type        mProjAspect;
    type        mProjNear;
    type        mProjFar;
+
+   // defines attributes for the orthographic projection
+   type        mProjOrthoLeft;
+   type        mProjOrthoRight;
+   type        mProjOrthoBottom;
+   type        mProjOrthoTop;
 
    // defines the projection matrix associated to the camera
    mat_type    mProjection;
@@ -97,15 +107,16 @@ private:
 };
 
 template < typename Policy >
-Camera< Policy >::Camera( )
+Camera< Policy >::Camera( ) :
+mProjFOV          ( 0 ),
+mProjAspect       ( 0 ),
+mProjNear         ( 0 ),
+mProjFar          ( 0 ),
+mProjOrthoLeft    ( 0 ),
+mProjOrthoRight   ( 0 ),
+mProjOrthoBottom  ( 0 ),
+mProjOrthoTop     ( 0 )
 {
-}
-
-template < typename Policy >
-Camera< Policy >::Camera( const Camera< Policy > & camera )
-{
-   // fill in
-   WGL_ASSERT(false);
 }
 
 template < typename Policy >
@@ -117,13 +128,6 @@ Camera< Policy >::Camera( const vec_type & eye, const vec_type & center )
 template < typename Policy >
 Camera< Policy >::~Camera( )
 {
-}
-
-template < typename Policy >
-Camera< Policy > & Camera< Policy >::operator = ( const Camera< Policy > & camera )
-{
-   // fill in
-   WGL_ASSERT(false);
 }
 
 template < typename Policy >
@@ -239,6 +243,24 @@ typename Camera< Policy >::mat_type Camera< Policy >::GetViewMatrix( ) const
 }
 
 template < typename Policy >
+typename void Camera< Policy >::SetOrtho( const type left, const type right,
+                                          const type bottom, const type top,
+                                          const type near, const type far )
+{
+   mProjection.MakeOrtho(left, right, bottom, top, near, far);
+
+   mProjFOV = 0;
+   mProjAspect = 0;
+   mProjNear = near;
+   mProjFar = far;
+
+   mProjOrthoLeft = left;
+   mProjOrthoRight = right;
+   mProjOrthoBottom = bottom;
+   mProjOrthoTop = top;
+}
+
+template < typename Policy >
 typename void Camera< Policy >::SetPerspective( const type fov, const type aspect, const type near, const type far )
 {
    mProjection.MakePerspective(fov, aspect, near, far);
@@ -247,6 +269,11 @@ typename void Camera< Policy >::SetPerspective( const type fov, const type aspec
    mProjAspect = aspect;
    mProjNear = near;
    mProjFar = far;
+
+   mProjOrthoLeft = 0;
+   mProjOrthoRight = 0;
+   mProjOrthoBottom = 0;
+   mProjOrthoTop = 0;
 }
 
 #ifdef restore_near_marco

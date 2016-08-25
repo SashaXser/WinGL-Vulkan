@@ -82,12 +82,17 @@ public:
                       const GLint width, const GLint height );
    void PopViewport( );
 
+   // enables / disables blending
+   void EnableStandardBlending( const bool enable );
+   bool IsBlendingEnabled( ) const { return mBlendingEnabled; }
+
 private:
    // private member variables
    bool mRasterDiscardEnabled;
    bool mCullFaceEnabled;
    bool mDepthTestingEnabled;
    bool mProgramPointSizeEnabled;
+   bool mBlendingEnabled;
 
    GLenum mPolygonMode;
 
