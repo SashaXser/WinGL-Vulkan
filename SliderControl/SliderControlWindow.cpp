@@ -96,15 +96,16 @@ int SliderControlWindow::Run( )
          mGrooveShader.SetUniformMatrix< 1, 4, 4 >("mvp", mCamera.GetProjectionMatrix() * mCamera.GetViewMatrix());
 
          // temp
-         const Vec3f groove_vertices[] = { Vec3f(0.0f, -1.0f, 0.0f), Vec3f(0.0f, 1.0f, 0.0f) };
-         mGrooveShader.SetUniformValue< 3 >("vertices",
-                                            static_cast< const float * >(*groove_vertices),
-                                            sizeof(groove_vertices) / sizeof(*groove_vertices));
+         //const Vec3f groove_vertices[] = { Vec3f(0.0f, -1.0f, 0.0f), Vec3f(0.0f, 1.0f, 0.0f) };
+         //mGrooveShader.SetUniformValue< 3 >("vertices",
+         //                                   static_cast< const float * >(*groove_vertices),
+         //                                   sizeof(groove_vertices) / sizeof(*groove_vertices));
          mGrooveShader.SetUniformValue("line_color", 1.0f, 0.0f, 0.0f);
+         mGrooveShader.SetUniformValue("widget_width", static_cast< float >(GetSize().width));
          // end temp
 
          // render the groove shape
-         mPipeline.DrawArrays(GL_LINES, 0, 2);
+         mPipeline.DrawArrays(GL_TRIANGLES, 0, 6);
 
          // unprepare the line from rendering         
          mGrooveShader.Disable();
@@ -199,11 +200,16 @@ bool SliderControlWindow::InitGLData( )
    mGrooveShader.Attach(GL_VERTEX_SHADER,
                         "#version 410 core\n"
                         "uniform mat4 mvp;\n"
-                        "uniform vec3 vertices[2];\n"
+                        "uniform float widget_width;\n"
                         "\n"
                         "void main( )\n"
                         "{\n"
-                        "   gl_Position = mvp * vec4(vertices[gl_VertexID], 1.0f);\n"
+                        "   float half_w = 2.0f / widget_width * 8;\n"
+                        "   vec2 vertices[6] = vec2[6](\n"
+                        "   vec2(-half_w, 1), vec2(-half_w, -1), vec2(half_w, -1),\n"
+                        "   vec2(-half_w, 1), vec2(half_w, -1), vec2(half_w, 1)\n"
+                        "   );\n"
+                        "   gl_Position = mvp * vec4(vertices[gl_VertexID], 0.0f, 1.0f);\n"
                         "}\n");
    mGrooveShader.Attach(GL_FRAGMENT_SHADER,
                         "#version 410 core\n"
