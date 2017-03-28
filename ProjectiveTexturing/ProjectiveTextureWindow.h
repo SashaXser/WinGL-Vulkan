@@ -101,6 +101,7 @@ private:
    RenderModeFuncPtr    mpRenderModeFuncPtr;
 
    ShaderProgram        mProjTexProg;
+   ShaderProgram        mVizDepthTex;
 
 };
 

@@ -760,10 +760,10 @@ inline bool Matrix< T >::GetPerspective( U & rFOV, U & rAspect,
 
    if (GetPerspective(fov, asp, n, f))
    {
-      rFOV = fov;
-      rAspect = asp;
-      rZNear = n;
-      rZFar = f;
+      rFOV = static_cast< U >(fov);
+      rAspect = static_cast< U >(asp);
+      rZNear = static_cast< U >(n);
+      rZFar = static_cast< U >(f);
 
       return true;
    }

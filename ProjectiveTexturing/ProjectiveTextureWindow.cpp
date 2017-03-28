@@ -236,6 +236,11 @@ void ProjectiveTextureWindow::InitGLState( int vpWidth, int vpHeight )
    mProjTexProg.AttachFile(GL_VERTEX_SHADER, "projective_texture.vert");
    mProjTexProg.AttachFile(GL_FRAGMENT_SHADER, "projective_texture.frag");
    mProjTexProg.Link();
+
+   // setup the depth visualization shader
+   mVizDepthTex.AttachFile(GL_VERTEX_SHADER, "viz_projective_texture.vert");
+   mVizDepthTex.AttachFile(GL_FRAGMENT_SHADER, "viz_projective_texture.frag");
+   mVizDepthTex.Link();
 }
 
 void ProjectiveTextureWindow::RenderScene( )
@@ -699,24 +704,24 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
    RenderSpotLightImmediateMode();
 
    if (mRenderShadowMap)
-   {
-      // update the projection and modelview matrices
-      glMatrixMode(GL_PROJECTION);
-      glPushMatrix();
-      glLoadIdentity();
-      glOrtho(0.0, 1.0, 0.0, 1.0, 1.0, -1.0);
-      glMatrixMode(GL_MODELVIEW);
-      glPushMatrix();
-      glLoadIdentity();
+   {     
+      // enable the depth viz shader
+      mVizDepthTex.Enable();
 
-      // update the texture environment to replace color values
-      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-      // enable 2d texture support
-      glEnable(GL_TEXTURE_2D);
+      // setup the matrices for rendering
+      Matrixf proj; proj.MakeOrtho(0.0f, 1.0f, 0.0f, 1.0f, 1.0f, -1.0f);
+      mVizDepthTex.SetUniformMatrix< 1, 4, 4 >("mvp_mat4", proj);
 
       // bind the depth texture 
       mDepthTex.Bind();
+      mVizDepthTex.SetUniformValue("depth_texture",
+                                   static_cast< GLint >(mDepthTex.GetBoundSamplerID()));
+
+      // update the near / far parameters
+      float na = 0.0f;
+      float near_far[2] = { };
+      light_projection.GetPerspective(na, na, near_far[0], near_far[1]);
+      mVizDepthTex.SetUniformValue< 2 >("depth_near_far", near_far);
 
       // match the apsect of the logo
       const Size window_size = GetSize();
@@ -735,14 +740,8 @@ void ProjectiveTextureWindow::RenderSceneWithShader( )
       // unbind the texture
       mDepthTex.Unbind();
 
-      // disable 2d texture support
-      glDisable(GL_TEXTURE_2D);
-
-      // restore the matrices
-      glMatrixMode(GL_PROJECTION);
-      glPopMatrix();
-      glMatrixMode(GL_MODELVIEW);
-      glPopMatrix();
+      // disable the depth viz shader
+      mVizDepthTex.Disable();
    }
 
    WGL_ASSERT(glGetError() == GL_NO_ERROR);
