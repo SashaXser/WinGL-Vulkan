@@ -18,6 +18,41 @@ const GLenum INVALID_TEXTURE_TARGET = -1;
 const GLenum INVALID_INTERNAL_TEXTURE_FORMAT = -1;
 const GLenum INVALID_TEXTURE_UNIT = -1;
 
+GLenum GetTextureTarget( const GLuint id )
+{
+   GLenum target = INVALID_TEXTURE_TARGET;
+
+   const GLenum targets[] =
+   {
+      GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D,
+      GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY,
+      GL_TEXTURE_RECTANGLE,
+      GL_TEXTURE_CUBE_MAP,
+      // GL_TEXTURE_CUBE_MAP_ARRAY, // need to determine this one
+      GL_TEXTURE_BUFFER,
+      GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+   };
+
+   // clear out any errors
+   WGL_ASSERT(glGetError() == GL_NONE);
+
+   for (const auto t : targets)
+   {
+      // bind the texture to the target
+      glBindTexture(t, id);
+
+      // if there is an error, then do not use 
+      if (glGetError() == GL_NONE)
+      {
+         target = t; break;
+      }
+   }
+
+   WGL_ASSERT(target != INVALID_TEXTURE_TARGET);
+
+   return target;
+}
+
 GLuint Texture::GetCurrentTexture( const GLenum target, const GLenum texture_unit )
 {
    // must happen within a valid gl context
@@ -85,24 +120,63 @@ void Texture::SetActiveTextureUnitToDefault( )
 }
 
 Texture::Texture( ) :
-mTexID            ( 0 ),
+Texture(0, true)
+{
+}
+
+Texture::Texture( const GLuint id, const bool own_texture ) :
+mTexID            ( id ),
 mTexTarget        ( INVALID_TEXTURE_TARGET ),
 mTexWidth         ( 0 ),
 mTexHeight        ( 0 ),
 mTexIFormat       ( INVALID_INTERNAL_TEXTURE_FORMAT ),
 mBoundTexUnit     ( INVALID_TEXTURE_UNIT ),
 mTexIsMipMapped   ( false ),
-mTexIsImmutable   ( false )
+mTexIsImmutable   ( false ),
+mTexIsOwned       ( own_texture )
 {
+   if (id)
+   {
+      // must happen within a valid gl context
+      WGL_ASSERT(wglGetCurrentContext());
+
+      if ((mTexTarget = GetTextureTarget(id)) == INVALID_TEXTURE_TARGET)
+      {
+         mTexID = 0;
+         mTexIsOwned = false;
+      }
+      else
+      {
+         const GLuint bound_tex = Texture::GetCurrentTexture(mTexTarget, GL_TEXTURE0);
+
+         glActiveTexture(GL_TEXTURE0);
+         glBindTexture(mTexTarget, id);
+
+         glGetTexLevelParameteriv(mTexTarget, 0, GL_TEXTURE_WIDTH, reinterpret_cast< GLint * >(&mTexWidth));
+         glGetTexLevelParameteriv(mTexTarget, 0, GL_TEXTURE_HEIGHT, reinterpret_cast< GLint * >(&mTexHeight));
+         glGetTexLevelParameteriv(mTexTarget, 0, GL_TEXTURE_INTERNAL_FORMAT, reinterpret_cast< GLint * >(&mTexIFormat));
+         // no bound texture unit, but should possibly consider for the future
+
+         GLint min_filter;
+         glGetTexParameteriv(mTexTarget, GL_TEXTURE_MIN_FILTER, &min_filter);
+         mTexIsMipMapped = min_filter != GL_NEAREST && min_filter != GL_LINEAR;
+
+         GLint immutable;
+         glGetTexParameteriv(mTexTarget, GL_TEXTURE_IMMUTABLE_FORMAT, &immutable);
+         mTexIsImmutable = immutable == GL_TRUE;
+
+         glBindTexture(mTexTarget, bound_tex);
+      }
+   }
 }
 
 Texture::~Texture( )
 {
-   // must happen within a valid gl context
-   WGL_ASSERT(wglGetCurrentContext());
-
-   if (mTexID)
+   if (mTexID && mTexIsOwned)
    {
+      // must happen within a valid gl context
+      WGL_ASSERT(wglGetCurrentContext());
+
       // there is a valid texture here so delete it
       glDeleteTextures(1, &mTexID);
    }
@@ -118,6 +192,7 @@ Texture::Texture( Texture && texture )
    std::swap(mBoundTexUnit, texture.mBoundTexUnit);
    std::swap(mTexIsMipMapped, texture.mTexIsMipMapped);
    std::swap(mTexIsImmutable, texture.mTexIsImmutable);
+   std::swap(mTexIsOwned, texture.mTexIsOwned);
 }
 
 Texture & Texture::operator = ( Texture && texture )
@@ -131,6 +206,8 @@ Texture & Texture::operator = ( Texture && texture )
       std::swap(mTexIFormat, texture.mTexIFormat);
       std::swap(mBoundTexUnit, texture.mBoundTexUnit);
       std::swap(mTexIsMipMapped, texture.mTexIsMipMapped);
+      std::swap(mTexIsImmutable, texture.mTexIsImmutable);
+      std::swap(mTexIsOwned, texture.mTexIsOwned);
    }
 
    return *this;
@@ -175,6 +252,9 @@ bool Texture::GenerateTexture( const GLenum target, const GLenum internal_format
       // figure out how to handle other cases later
       default: WGL_ASSERT(false); break;
       };
+
+      // the call to a glTexImage2D makes the texture object mutable
+      mTexIsImmutable = false;
 
       // if generate mipmap is turned on, then create it
       if(generate_mipmap)

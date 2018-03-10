@@ -24,6 +24,7 @@ public:
 
    // constructor / destructor
     Texture( );
+    Texture( const GLuint id, const bool own_texture = false );
    ~Texture( );
 
    // move operations
@@ -118,6 +119,9 @@ private:
 
    // determines if immutable was requested
    bool        mTexIsImmutable;
+
+   // determines if the texture is owned by this impl
+   bool        mTexIsOwned;
 
 };
 
