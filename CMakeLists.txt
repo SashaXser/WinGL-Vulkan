@@ -38,7 +38,7 @@ endif ( )
 set(EXT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext-src)
 set(EXT_SRC_IDE_FOLDER ext-src)
 
-set(PROJECTS_USE_GLEW_STATIC YES)
+set(PROJECTS_USE_GLEW_STATIC NO)
 
 # just in case an install happens, just install locally...
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install")
@@ -61,3 +61,4 @@ add_subdirectory(./DOFTransform)
 add_subdirectory(./TransformFeedback)
 add_subdirectory(./Displacement)
 add_subdirectory(./SliderControl)
+add_subdirectory(./GLStudioTest)
