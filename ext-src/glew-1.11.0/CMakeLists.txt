@@ -25,7 +25,7 @@ target_include_directories(glew_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/includ
 target_include_directories(glew_shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_definitions(glew_static PUBLIC "GLEW_STATIC")
-target_compile_definitions(glew_shared PUBLIC "GLEW_BUILD")
+target_compile_definitions(glew_shared PRIVATE "GLEW_BUILD")
 set_target_properties(glewinfo PROPERTIES COMPILE_DEFINITIONS "GLEW_STATIC")
 set_target_properties(visualinfo PROPERTIES COMPILE_DEFINITIONS "GLEW_STATIC")
 
