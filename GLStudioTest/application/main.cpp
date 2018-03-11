@@ -85,6 +85,8 @@ bool GLStudioWindow::Create( unsigned int nWidth,
    // call base class to init
    if (OpenGLWindow::Create(nWidth, nHeight, pWndTitle, glInit))
    {
+      std::cout << "Press 'o' to find texture and render to it" << std::endl;
+
       // make the context current
       MakeCurrent();
 
