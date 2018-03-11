@@ -180,6 +180,11 @@ int GLStudioWindow::Run( )
             Matrixf proj;
             proj.MakeOrtho(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
 
+            float lwidth;
+            glGetFloatv(GL_LINE_WIDTH, &lwidth);
+
+            glLineWidth(3.0f);
+
             for (size_t i = 0; i <= 10; ++i)
             {
                const float scale = i != 0 ? i / 10.0f : 0.01f;
@@ -198,6 +203,8 @@ int GLStudioWindow::Run( )
 
                vbo.Unbind();
             }
+
+            glLineWidth(lwidth);
 
             pipeline.EnableVertexAttribArray(false, 0);
 
