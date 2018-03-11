@@ -13,6 +13,22 @@ void ComponentImpl::Draw( )
    float viewport[4];
    glGetFloatv(GL_VIEWPORT, viewport);
 
+   const float vp_width = viewport[2];
+   const float vp_height = viewport[3];
+
+   if (vp_width >= vp_height)
+   {
+      float middle_x = vp_width / 2.0f;
+      float start_x = middle_x - vp_height / 2.0f;
+      glViewport(start_x, 0, vp_height, vp_height);
+   }
+   else
+   {
+      float middle_y = vp_height / 2.0f;
+      float start_y = middle_y - vp_width / 2.0f;
+      glViewport(0, start_y, vp_width, vp_width);
+   }
+
    Matrixf projection;
    projection.MakeOrtho(-200.0f, 200.0f, -200.0f, 200.0f, 100.0f, -100.0f);
 
