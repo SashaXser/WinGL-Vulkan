@@ -11,7 +11,7 @@ set(ASSIMP_ENABLE_BOOST_WORKAROUND ON CACHE BOOL "ext-src forced override for as
 # do a lookup of zlib first, so other cmake module paths are not overwritten...
 find_package(ZLIB REQUIRED)
 
-add_subdirectory(./glew-1.11.0)
+add_subdirectory(./glew-2.1.0)
 add_subdirectory(./assimp-3.1.1)
 add_subdirectory(./resil-1.8.2)
 
