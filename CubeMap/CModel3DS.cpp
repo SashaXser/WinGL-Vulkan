@@ -296,7 +296,9 @@ void CModel3DS::ProcessObjectBlock( std::istream & iStream, unsigned int nChunkL
    } while (*(pObjBlkName - 1) && pObjBlkName != (pObjBlk->strObjName + 20));
 
    // decrease the chunk length
-   nChunkLength -= (pObjBlkName - pObjBlk->strObjName);
+   nChunkLength -=
+      static_cast< decltype(nChunkLength) >(
+         pObjBlkName - pObjBlk->strObjName);
 
    while (nChunkLength)
    {
