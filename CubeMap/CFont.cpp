@@ -92,8 +92,8 @@ void CFont::Draw( const double &rElapsedTime )
       glEnable(GL_BLEND);
       glEnable(GL_TEXTURE_2D);
       glEnable(GL_ALPHA_TEST);
-      glEnable(GL_VERTEX_ARRAY);
-      glEnable(GL_TEXTURE_COORD_ARRAY);
+      glEnableClientState(GL_VERTEX_ARRAY);
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -118,7 +118,7 @@ void CFont::Draw( const double &rElapsedTime )
          glVertexPointer(3, GL_FLOAT, 0, itTextBeg->m_pVertices.get() + 1);
 
          // draw the quads
-         glDrawArrays(GL_QUADS, 0, itTextBeg->m_unNumOfVerts);
+         glDrawArrays(GL_TRIANGLES, 0, itTextBeg->m_unNumOfVerts);
       }
 
       // pop the matrix from the stack
@@ -128,8 +128,8 @@ void CFont::Draw( const double &rElapsedTime )
       glDisable(GL_BLEND);
       glDisable(GL_TEXTURE_2D);
       glDisable(GL_ALPHA_TEST);
-      glDisable(GL_VERTEX_ARRAY);
-      glDisable(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_VERTEX_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
    }
 }
 
@@ -210,17 +210,22 @@ void CFont::ConstructHorizontal( )
       }
 
       // determine the data sizes
-      unsigned int nDataSize = unTextLength * 4;
+      unsigned int nDataSize = unTextLength * 6;
 
       // determine the number of points
       pData->m_unNumOfVerts = nDataSize;
       pData->m_unNumOfTexCoords = nDataSize;
       
-      if (!pData->m_pVertices || nDataSize > (unsigned int)pData->m_pVertices.get()[0])
+      if (!pData->m_pVertices ||
+          nDataSize > (unsigned int)pData->m_pVertices.get()[0])
       {
          // create the new data
-         pData->m_pVertices.reset(new float[pData->m_unNumOfVerts * 3 + 1], [ ] ( const float * const p ) { delete [] p; });
-         pData->m_pTexCoords.reset(new float[pData->m_unNumOfTexCoords * 2 + 1], [ ] ( const float * const p ) { delete [] p; });
+         pData->m_pVertices.reset(
+            new float[pData->m_unNumOfVerts * 3 + 1],
+            [ ] ( const float * const p ) { delete [] p; });
+         pData->m_pTexCoords.reset(
+            new float[pData->m_unNumOfTexCoords * 2 + 1],
+            [ ] ( const float * const p ) { delete [] p; });
 
          // set the data sizes
          pData->m_pVertices.get()[0] = (float)nDataSize;
@@ -262,9 +267,17 @@ void CFont::ConstructHorizontal( )
          *(pVerts + 7)  = oPosition.Y() - fCharHeight;
          *(pVerts + 8)  = oPosition.Z();
          // set point 4
-         *(pVerts + 9)  = oPosition.X() + fCharWidth;
+         *(pVerts + 9)  = oPosition.X();
          *(pVerts + 10) = oPosition.Y();
          *(pVerts + 11) = oPosition.Z();
+         // set point 5
+         *(pVerts + 12) = oPosition.X() + fCharWidth;
+         *(pVerts + 13) = oPosition.Y() - fCharHeight;
+         *(pVerts + 14) = oPosition.Z();
+         // set point 6
+         *(pVerts + 15) = oPosition.X() + fCharWidth;
+         *(pVerts + 16) = oPosition.Y();
+         *(pVerts + 17) = oPosition.Z();
 
          // update the position vector
          oPosition.X() += fCharWidth;
@@ -292,12 +305,18 @@ void CFont::ConstructHorizontal( )
          *(pTexCoords + 4) = dS + dDeltaS;
          *(pTexCoords + 5) = dT - dDeltaT;
          // set tex coord 4
-         *(pTexCoords + 6) = dS + dDeltaS;
+         *(pTexCoords + 6) = dS;
          *(pTexCoords + 7) = dT;
+         // set tex coord 5
+         *(pTexCoords + 8) = dS + dDeltaS;
+         *(pTexCoords + 9) = dT - dDeltaT;
+         // set tex coord 6
+         *(pTexCoords + 10) = dS + dDeltaS;
+         *(pTexCoords + 11) = dT;
 
          // increase the data pointers
-         pVerts += 12;
-         pTexCoords += 8;
+         pVerts += 18;
+         pTexCoords += 12;
       }
 
       // add to the vector

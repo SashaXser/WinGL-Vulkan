@@ -184,8 +184,8 @@ void CSphere::DrawSphere( const double & rElapsedTime ) const
    if (m_oMaterial.nFlags & MF_SHININESS) glMaterialfv(m_oMaterial.nFace, GL_SHININESS, &m_oMaterial.fShininess);
 
    // enable gl arttributes
-   glEnable(GL_VERTEX_ARRAY);
-   glEnable(GL_NORMAL_ARRAY);
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_NORMAL_ARRAY);
    glEnable(GL_TEXTURE_CUBE_MAP_EXT);
 
    // determine how to enable the texture attributes
@@ -197,7 +197,7 @@ void CSphere::DrawSphere( const double & rElapsedTime ) const
    }
    else
    {
-      glEnable(GL_TEXTURE_COORD_ARRAY);
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
    }
 
    // bind the texture cube map
@@ -206,7 +206,9 @@ void CSphere::DrawSphere( const double & rElapsedTime ) const
    // bind the texture correctly if a pbuffer is used
    if (m_nReflection == REFLECT_DYNAMIC_PBUFFER)
    {
-      m_pPBuffer->wglBindTexImageARB(m_pPBufferObjs->m_hPBuffer, WGL_FRONT_LEFT_ARB);
+      m_pPBuffer->wglBindTexImageARB(
+         m_pPBufferObjs->m_hPBuffer,
+         WGL_FRONT_LEFT_ARB);
    }
 
    // set the vertex pointer
@@ -226,8 +228,8 @@ void CSphere::DrawSphere( const double & rElapsedTime ) const
                   m_pIndices);
 
    // disable gl attributes
-   glDisable(GL_VERTEX_ARRAY);
-   glDisable(GL_NORMAL_ARRAY);
+   glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_NORMAL_ARRAY);
    glDisable(GL_TEXTURE_CUBE_MAP_EXT);
 
    // determine how to disable the texture attributes
@@ -239,13 +241,15 @@ void CSphere::DrawSphere( const double & rElapsedTime ) const
    }
    else
    {
-      glDisable(GL_TEXTURE_COORD_ARRAY);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
    }
 
    // release the pbuffer texture
    if (m_nReflection == REFLECT_DYNAMIC_PBUFFER)
    {
-      m_pPBuffer->wglReleaseTexImageARB(m_pPBufferObjs->m_hPBuffer, WGL_FRONT_LEFT_ARB);
+      m_pPBuffer->wglReleaseTexImageARB(
+         m_pPBufferObjs->m_hPBuffer,
+         WGL_FRONT_LEFT_ARB);
    }
 }
 
@@ -278,8 +282,8 @@ void CSphere::DrawQuads( const double & rElapsedTime ) const
    glDisable(GL_CULL_FACE);
 
    // enable gl arttributes
-   glEnable(GL_VERTEX_ARRAY);
-   glEnable(GL_TEXTURE_COORD_ARRAY);
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
    glEnable(GL_TEXTURE_CUBE_MAP_EXT);
 
    // setup the texture unit
@@ -317,8 +321,8 @@ void CSphere::DrawQuads( const double & rElapsedTime ) const
    glEnable(GL_CULL_FACE);
 
    // disable gl attributes
-   glDisable(GL_VERTEX_ARRAY);
-   glDisable(GL_TEXTURE_COORD_ARRAY);
+   glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
    glDisable(GL_TEXTURE_CUBE_MAP_EXT);
 
    // release the pbuffer texture

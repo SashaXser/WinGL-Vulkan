@@ -73,8 +73,8 @@ void SkyBox::Render( const double & rElapsedTime )
    glDisable(GL_DEPTH_TEST);
    // enable specific attributes
    glEnable(GL_TEXTURE_2D);
-   glEnable(GL_VERTEX_ARRAY);
-   glEnable(GL_TEXTURE_COORD_ARRAY);
+   glEnableClientState(GL_VERTEX_ARRAY);
+   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
    // push a matrix onto the stack
    glPushMatrix();
@@ -111,8 +111,8 @@ void SkyBox::Render( const double & rElapsedTime )
    glEnable(GL_DEPTH_TEST);
    // disable specific attributes
    glDisable(GL_TEXTURE_2D);
-   glDisable(GL_VERTEX_ARRAY);
-   glDisable(GL_TEXTURE_COORD_ARRAY);
+   glDisableClientState(GL_VERTEX_ARRAY);
+   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
 void SkyBox::Update( const double & rElapsedTime )

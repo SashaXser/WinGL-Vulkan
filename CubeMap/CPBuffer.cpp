@@ -108,17 +108,26 @@ BOOL CPBuffer::wglChoosePixelFormatARB( HDC hDC,
 
 BOOL CPBuffer::wglBindTexImageARB( HPBUFFERARB hPbuffer, int iBuffer )
 {
-   return _wglBindTexImageARB(hPbuffer, iBuffer);
+   if (_wglBindTexImageARB)
+      return _wglBindTexImageARB(hPbuffer, iBuffer);
+
+   return FALSE;
 }
 
 BOOL CPBuffer::wglReleaseTexImageARB( HPBUFFERARB hPbuffer, int iBuffer )
 {
-   return _wglReleaseTexImageARB(hPbuffer, iBuffer);
+   if (_wglReleaseTexImageARB)
+      return _wglReleaseTexImageARB(hPbuffer, iBuffer);
+
+   return FALSE;
 }
 
 BOOL CPBuffer::wglSetPbufferAttribARB( HPBUFFERARB hPbuffer, const int * piAttribList )
 {
-   return _wglSetPbufferAttribARB(hPbuffer, piAttribList);
+   if (_wglSetPbufferAttribARB)
+      return _wglSetPbufferAttribARB(hPbuffer, piAttribList);
+
+   return FALSE;
 }
 
 // initialize the static gl functions
