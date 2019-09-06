@@ -246,14 +246,14 @@ inline Vector< T, SIZE >::Vector( const T & x, const T & y, const T & z, const T
 
 template < typename T, uint32_t SIZE >
 template < typename U, typename >
-inline Vector< T, SIZE >::Vector( const Vector< U, 3 > & vec, const U & w = 1 )
+inline Vector< T, SIZE >::Vector( const Vector< U, 3 > & vec, const U & w )
 {
    mT[0] = vec.mT[0]; mT[1] = vec.mT[1]; mT[2] = vec.mT[2]; mT[3] = w;
 }
 
 template < typename T, uint32_t SIZE >
 template < typename >
-inline Vector< T, SIZE >::Vector( const Vector< T, 3 > & vec, const T & w = 1 )
+inline Vector< T, SIZE >::Vector( const Vector< T, 3 > & vec, const T & w )
 {
    mT[0] = vec.mT[0]; mT[1] = vec.mT[1]; mT[2] = vec.mT[2]; mT[3] = w;
 }
