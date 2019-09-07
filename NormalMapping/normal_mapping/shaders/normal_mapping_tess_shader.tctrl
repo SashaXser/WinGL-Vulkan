@@ -5,9 +5,23 @@ layout (vertices = 3) out;
 uniform mat4 model_view_mat4;
 uniform mat4 model_view_proj_mat4;
 
-flat in vec2 tctrl_tex_coords[];
+in VertData
+{
+   flat vec2 tctrl_tex_coords;
+   smooth vec3 frag_normal;
+   smooth vec3 vertex_position_eye_space;
+   flat vec3 directional_light_eye_space;
+   flat vec3 point_light_position_eye_space;
+} tctrl_in[];
 
-flat out vec2 teval_tex_coords[];
+out TCtrlData
+{
+   flat vec2 teval_tex_coords;
+   smooth vec3 frag_normal;
+   smooth vec3 vertex_position_eye_space;
+   flat vec3 directional_light_eye_space;
+   flat vec3 point_light_position_eye_space;
+} tctrl_out[];
 
 float CalculateTessellationLevel( const vec4 clip_space_position )
 {
@@ -28,13 +42,25 @@ float CalculateTessellationLevel( const vec4 clip_space_position )
 
 void main( )
 {
-   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+   gl_out[gl_InvocationID].gl_Position =
+      gl_in[gl_InvocationID].gl_Position;
 
-   teval_tex_coords[gl_InvocationID] = tctrl_tex_coords[gl_InvocationID];
+   tctrl_out[gl_InvocationID].teval_tex_coords =
+      tctrl_in[gl_InvocationID].tctrl_tex_coords;
 
    gl_TessLevelOuter[0] = CalculateTessellationLevel(gl_in[0].gl_Position);
    gl_TessLevelOuter[1] = CalculateTessellationLevel(gl_in[1].gl_Position);
    gl_TessLevelOuter[2] = CalculateTessellationLevel(gl_in[2].gl_Position);
 
    gl_TessLevelInner[0] = gl_TessLevelOuter[2];
+
+   // keep passing the data along (required for direct linking)
+   tctrl_out[gl_InvocationID].frag_normal =
+      tctrl_in[gl_InvocationID].frag_normal;
+   tctrl_out[gl_InvocationID].vertex_position_eye_space =
+      tctrl_in[gl_InvocationID].vertex_position_eye_space;
+   tctrl_out[gl_InvocationID].directional_light_eye_space =
+      tctrl_in[gl_InvocationID].directional_light_eye_space;
+   tctrl_out[gl_InvocationID].point_light_position_eye_space =
+      tctrl_in[gl_InvocationID].point_light_position_eye_space;
 }

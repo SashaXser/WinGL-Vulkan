@@ -4,19 +4,53 @@ layout (triangles, equal_spacing, ccw) in;
 
 uniform sampler2D parallax_texture;
 
-flat in vec2 teval_tex_coords[];
+out TCtrlData
+{
+   flat vec2 teval_tex_coords[];
+   smooth vec3 frag_normal[];
+   smooth vec3 vertex_position_eye_space[];
+   flat vec3 directional_light_eye_space[];
+   flat vec3 point_light_position_eye_space[];
+} teval_in;
 
-smooth out vec2 frag_tex_coords;
+out TEvalData
+{
+   smooth vec2 frag_tex_coords;
+   smooth vec3 frag_normal;
+   smooth vec3 vertex_position_eye_space;
+   flat vec3 directional_light_eye_space;
+   flat vec3 point_light_position_eye_space;
+} teval_out;
 
 void main( )
 {
-   gl_Position = gl_in[0].gl_Position * gl_TessCoord.x + gl_in[1].gl_Position * gl_TessCoord.y + gl_in[2].gl_Position * gl_TessCoord.z;
+   gl_Position =
+      gl_in[0].gl_Position * gl_TessCoord.x +
+      gl_in[1].gl_Position * gl_TessCoord.y +
+      gl_in[2].gl_Position * gl_TessCoord.z;
 
-   //frag_tex_coords = teval_tex_coords[0] * gl_TessCoord.x + teval_tex_coords[1] * gl_TessCoord.y + teval_tex_coords[2] * gl_TessCoord.z;
-   frag_tex_coords = vec2(gl_TessCoord.x) * teval_tex_coords[0] + vec2(gl_TessCoord.y) * teval_tex_coords[1] + vec2(gl_TessCoord.z) * teval_tex_coords[2];
+   //teval_out.frag_tex_coords =
+   //   teval_inteval_tex_coords[0] * gl_TessCoord.x +
+   //   teval_inteval_tex_coords[1] * gl_TessCoord.y +
+   //   teval_inteval_tex_coords[2] * gl_TessCoord.z;
+   teval_out.frag_tex_coords =
+      vec2(gl_TessCoord.x) * teval_in.teval_tex_coords[0] +
+      vec2(gl_TessCoord.y) * teval_in.teval_tex_coords[1] +
+      vec2(gl_TessCoord.z) * teval_in.teval_tex_coords[2];
 
-   float height = texture(parallax_texture, frag_tex_coords).r * 10.0f;
+   float height =
+      texture(parallax_texture, teval_out.frag_tex_coords).r * 10.0f;
 
    // fix... these are in clip coordinates
    gl_Position.y += height;
+
+   // keep passing the data along (required for direct linking)
+   teval_out.frag_normal =
+      teval_in.frag_normal[0];
+   teval_out.vertex_position_eye_space =
+      teval_in.vertex_position_eye_space[0];
+   teval_out.directional_light_eye_space =
+      teval_in.directional_light_eye_space[0];
+   teval_out.point_light_position_eye_space =
+      teval_in.point_light_position_eye_space[0];
 }

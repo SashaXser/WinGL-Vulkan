@@ -15,29 +15,38 @@ uniform lighting_directional directional_light;
 uniform lighting_point point_light;
 
 // defines the attributes passed along through the shader pipeline
-flat out vec2 tctrl_tex_coords;
-smooth out vec3 frag_normal;
-smooth out vec3 vertex_position_eye_space;
-flat out vec3 directional_light_eye_space;
-flat out vec3 point_light_position_eye_space;
+out VertData
+{
+   flat vec2 tctrl_tex_coords;
+   smooth vec3 frag_normal;
+   smooth vec3 vertex_position_eye_space;
+   flat vec3 directional_light_eye_space;
+   flat vec3 point_light_position_eye_space;
+} vert_out;
 
 void main( )
 {
    // just copy over the texture coords to be interp in the tctrl shader
-   tctrl_tex_coords = vertex_tex_coords.st;
+   vert_out.tctrl_tex_coords =
+      vertex_tex_coords.st;
 
    // calculate the normal for the fragments in eye space
-   frag_normal = (model_view_tinv_mat4 * vec4(vertex_normal, 0.0f)).xyz;
+   vert_out.frag_normal =
+      (model_view_tinv_mat4 * vec4(vertex_normal, 0.0f)).xyz;
 
    // calculate the eye space direction for the light
-   directional_light_eye_space = (model_view_tinv_mat4 * vec4(directional_light.direction_world_space, 0.0f)).xyz;
+   vert_out.directional_light_eye_space =
+      (model_view_tinv_mat4 * vec4(directional_light.direction_world_space, 0.0f)).xyz;
 
    // calculate the eye space location of the point light
-   point_light_position_eye_space = (model_view_mat4 * vec4(point_light.position_world_space, 1.0f)).xyz;
+   vert_out.point_light_position_eye_space =
+      (model_view_mat4 * vec4(point_light.position_world_space, 1.0f)).xyz;
 
    // calculate the eye space position of the vertex
-   vertex_position_eye_space = (model_view_mat4 * vec4(vertex_position, 1.0f)).xyz;
+   vert_out.vertex_position_eye_space =
+      (model_view_mat4 * vec4(vertex_position, 1.0f)).xyz;
 
    // project the vertex position
-   gl_Position = model_view_proj_mat4 * vec4(vertex_position, 1.0f);
+   gl_Position =
+      model_view_proj_mat4 * vec4(vertex_position, 1.0f);
 }
