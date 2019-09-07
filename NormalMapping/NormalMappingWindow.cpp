@@ -381,14 +381,14 @@ LRESULT NormalMappingWindow::MessageHandler( UINT uMsg,
       {
 
       // get current mouse positions
-      const int32_t current_mouse_x = static_cast< int32_t >(lParam & 0xFFFF);
-      const int32_t current_mouse_y = static_cast< int32_t >(lParam >> 16);
+      const intptr_t current_mouse_x = static_cast< int32_t >(lParam & 0xFFFF);
+      const intptr_t current_mouse_y = static_cast< int32_t >(lParam >> 16);
 
       if (wParam & MK_LBUTTON)
       {
          // get the delta between current and previous positions
-         const int32_t delta_x = current_mouse_x - GetPreviousMousePosition().x;
-         const int32_t delta_y = current_mouse_y - GetPreviousMousePosition().y;
+         const intptr_t delta_x = current_mouse_x - GetPreviousMousePosition().x;
+         const intptr_t delta_y = current_mouse_y - GetPreviousMousePosition().y;
 
          if (MANIPULATE_CAMERA == mManipulate)
          {
