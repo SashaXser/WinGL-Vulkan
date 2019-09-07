@@ -313,7 +313,10 @@ void ShaderProgram::TransformFeedbackVaryings( const char * const * const pVaryi
 void ShaderProgram::TransformFeedbackVaryings( const std::vector< const char * > & varyings,
                                                const GLenum buffer_mode )
 {
-   TransformFeedbackVaryings(&varyings.front(), varyings.size(), buffer_mode);
+   TransformFeedbackVaryings(
+      &varyings.front(),
+      static_cast< GLsizei >(varyings.size()),
+      buffer_mode);
 }
 
 void ShaderProgram::TransformFeedbackVaryings( const std::vector< std::string > & varyings,
