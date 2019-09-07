@@ -777,9 +777,9 @@ bool NormalMappingWindow::LoadTexture( )
    // indicates what to load
    static size_t next_texture_index = 0;
 
-   if (!mpDiffuseTex->Load2D(textures[next_texture_index][0], GL_RGB, GL_RGB, true) ||
-       !mpHeightTex->Load2D(textures[next_texture_index][1], GL_RGB, GL_RED, true) ||
-       !mpNormalTex->Load2D(textures[next_texture_index][2], GL_RGB, GL_RGB, true))
+   if (!mpDiffuseTex->Load2D(textures[next_texture_index][0], GL_RGB, GL_RGB8, true) ||
+       !mpHeightTex->Load2D(textures[next_texture_index][1], GL_RGB, GL_R8, true) ||
+       !mpNormalTex->Load2D(textures[next_texture_index][2], GL_RGB, GL_RGB8, true))
    {
       // release the textures
       mpDiffuseTex = nullptr;
