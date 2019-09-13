@@ -13,5 +13,8 @@ layout (location = 0) out vec4 frag_color_dest_0;
 void main( )
 {
    // do the lookup and just place it in the output
-   frag_color_dest_0 = texture(shadow_texture, frag_tex_coords);
+   const float depth =
+      texture(shadow_texture, frag_tex_coords).r;
+   frag_color_dest_0 =
+      vec4(depth, depth, depth, 1.0f);
 }
