@@ -2,12 +2,14 @@
 #define _SHADOW_MAP_WINDOW_H_
 
 // wingl includes
-#include <Camera.h>
-#include <Pipeline.h>
-#include <OpenGLWindow.h>
-#include <CameraPolicies/RoamNoRollRestrictPitch.h>
+#include "Matrix.h"
+#include "Camera.h"
+#include "Pipeline.h"
+#include "OpenGLWindow.h"
+#include "CameraPolicies/RoamNoRollRestrictPitch.h"
 
 // std includes
+#include <cstdint>
 #include <memory>
 
 // forward declarations
@@ -15,6 +17,13 @@ class FrameBufferObject;
 
 class ShadowMapWindow : public OpenGLWindow
 {
+   // defines the active model
+   enum class ActiveModel : uint8_t
+   {
+      ENTERPRISE,
+      DEFIANT
+   };
+
 public:
    // constructor
    // destructor is not public to make sure
@@ -72,6 +81,13 @@ private:
 
    // graphics pipeline
    Pipeline mPipeline;
+
+   // defines the current active model
+   ActiveModel mActiveModel;
+
+   // defines the directional light view and projection
+   Matrixf mLightProj;
+   Matrixf mLightView;
 
 };
 

@@ -20,6 +20,7 @@ target_link_libraries(ShadowMap WinGL)
 target_link_libraries(ShadowMap assimp)
 
 copy_to_bin(enterprise)
+copy_to_bin(DEFIANT)
 copy_to_bin(enterprise.frag)
 copy_to_bin(enterprise.vert)
 copy_to_bin(enterprise_display_shadow.frag)

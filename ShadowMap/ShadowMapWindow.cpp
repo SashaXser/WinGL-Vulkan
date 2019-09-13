@@ -2,7 +2,6 @@
 #include "ShadowMapWindow.h"
 
 // wgl includes
-#include "Matrix.h"
 #include "Vector.h"
 #include "Texture.h"
 #include "WglAssert.h"
@@ -33,7 +32,6 @@
 #include <sstream>
 #include <cstring>
 #include <cstdlib>
-#include <cstdint>
 #include <utility>
 #include <algorithm>
 
@@ -73,7 +71,8 @@ ShadowMapWindow::ShadowMapWindow( ) :
 mpEnterpriseE     ( new Renderable ),
 mCamera           ( Vec3f(0.0f, 40.0f, 100.0f), Vec3f(0.0f, 40.0f, 0.0f) ),
 mDisplayNormals   ( false ),
-mpShadowMap       ( new FrameBufferObject )
+mpShadowMap       ( new FrameBufferObject ),
+mActiveModel      ( ActiveModel::ENTERPRISE )
 {
 }
 
@@ -310,6 +309,21 @@ LRESULT ShadowMapWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARAM lParam
       {
          mDisplayNormals = !mDisplayNormals;
       }
+      else if (wParam == 'm' || wParam == 'M')
+      {
+         switch (mActiveModel)
+         {
+         case ActiveModel::ENTERPRISE:
+            mActiveModel = ActiveModel::DEFIANT;
+            break;
+
+         case ActiveModel::DEFIANT:
+            mActiveModel = ActiveModel::ENTERPRISE;
+            break;
+         }
+
+         GenerateSceneData();
+      }
       else if (wParam == 'a' || wParam == 'A')
       {
          mCamera.TranslateRight(-multiplier); update_mv = true;
@@ -381,8 +395,8 @@ void ShadowMapWindow::RenderScene( )
 
    // construct the model view matrix from the lights perspective
    const Matrixf mvp_light =
-      Matrixf::Ortho(-80.0f, 80.0f, -80.0f, 80.0f, -50.0f, 50.0f) *
-      Matrixf::LookAt(Vec3f(0.0f, 1.0f, 10.0f), Vec3f(0.0f, 0.0f, 10.0f), Vec3f(0.0f, 0.0f, 1.0f)) *
+      mLightProj *
+      mLightView *
       light_rotation.InverseFromOrthogonal();
 
    // update the matrix for the lighting
@@ -547,11 +561,25 @@ void ShadowMapWindow::RenderScene( )
 
 void ShadowMapWindow::GenerateSceneData( )
 {
+   // release all the data
+   mpEnterpriseE->mVertBuf.DeleteBuffer();
+   mpEnterpriseE->mClrBuf.DeleteBuffer();
+   mpEnterpriseE->mNormBuf.DeleteBuffer();
+   mpEnterpriseE->mTexBuf.DeleteBuffer();
+   mpEnterpriseE->mVAO.DeleteArray();
+   mpEnterpriseE->mIdxBuf.DeleteBuffer();
+
+   mpEnterpriseE->mRenderBuckets.empty();
+
+   // generate the data based on the active model data
    GenerateEnterpriseE();
 
-   // required by a core context to have at least a single
-   // vao present even if there are no bound arrays...
-   mpEnterpriseE->mVAOEmpty.GenArray();
+   if (!mpEnterpriseE->mVAOEmpty)
+   {
+      // required by a core context to have at least a single
+      // vao present even if there are no bound arrays...
+      mpEnterpriseE->mVAOEmpty.GenArray();
+   }
 }
 
 void ShadowMapWindow::GenerateEnterpriseE( )
@@ -887,7 +915,40 @@ void ShadowMapWindow::GenerateEnterpriseE( )
    };
 
    // read all the attributes of the model
-   ReadModel(R"(.\enterprise\Enterp TOS - Arena.3DS)");
+   switch (mActiveModel)
+   {
+   case ActiveModel::ENTERPRISE:
+      ReadModel(R"(.\enterprise\Enterp TOS - Arena.3DS)");
+
+      mLightProj.MakeOrtho(
+         -80.0f, 80.0f,
+         -80.0f, 80.0f,
+         -50.0f, 50.0f);
+      mLightView.MakeLookAt(
+         Vec3f(0.0f, 1.0f, 10.0f),
+         Vec3f(0.0f, 0.0f, 10.0f),
+         Vec3f(0.0f, 0.0f, 1.0f));
+
+      break;
+
+   case ActiveModel::DEFIANT:
+      ReadModel(R"(.\DEFIANT\defiant.3ds)");
+
+      mLightProj.MakeOrtho(
+         -275.0f, 275.0f,
+         -275.0f, 275.0f,
+         -200.0f, 200.0f);
+      mLightView.MakeLookAt(
+         Vec3f(0.0f, 1.0f, -180.0f),
+         Vec3f(0.0f, 0.0f, -180.0f),
+         Vec3f(0.0f, 0.0f, -1.0f));
+
+      break;
+
+   default:
+      assert(false);
+      break;
+   }
 
    // vertices size should match tangents and bitangents
    WGL_ASSERT(vertices.size() == tangents.size());
