@@ -45,7 +45,7 @@
 struct ShadowMapWindow::Renderable
 {
    // typedefs
-   typedef std::vector< std::shared_ptr< Texture > > TextureCtr;
+   typedef std::vector< std::shared_ptr< Texture > > TexturePtr;
    typedef std::multimap< GLuint, std::pair< GLuint, GLsizei > > RenderBucket;
 
    // vao id
@@ -58,7 +58,7 @@ struct ShadowMapWindow::Renderable
    VBO      mNormBuf;
    VBO      mClrBuf;
    // texture containers
-   TextureCtr     mDiffuse;
+   TexturePtr     mDiffuse;
    // shader program
    ShaderProgram  mProgram;
    ShaderProgram  mProgramNormals;
