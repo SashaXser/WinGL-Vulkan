@@ -692,13 +692,13 @@ void ShadowMapWindow::GenerateEnterpriseE( )
                const std::string filename_bump = std::string(filename).replace(filename.find("DIFF"), 4, "BUMP");
 
                // load the heigt map texture
-               LoadTexture(filename_bump, GL_RGBA, height);
+               LoadTexture(filename_bump, GL_RGBA8, height);
 
                // construct the normal file name
                const std::string filename_norm = std::string(filename_bump).insert(filename_bump.find_last_of("."), "_NORM");
 
                // load the normal texture
-               LoadTexture(filename_norm, GL_RGBA, normal);
+               LoadTexture(filename_norm, GL_RGBA8, normal);
             }
          }
       }
