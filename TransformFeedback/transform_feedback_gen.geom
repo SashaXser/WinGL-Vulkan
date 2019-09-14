@@ -5,7 +5,7 @@
 // the input topology must match the output topology
 // for transform feedback operations to work correctly
 layout (points) in;
-layout (points, max_vertices = 512) out;
+layout (points, max_vertices = 256) out;
 
 // defines the per geometry attributes
 uniform mat4 model_view;
@@ -58,9 +58,11 @@ vec3 six_point_bezier_curve( const vec3 pt1, const vec3 pt2, const vec3 pt3, con
 
 void main( )
 {
+   const float max_num_to_emit = 255.0f;
+
    if (number_of_control_points == 3)
    {
-      for (float i = 0.0f; i <= 1.0f; i += (1.0f / 512.0f))
+      for (float i = 0.0f; i <= 1.0f; i += (1.0f / max_num_to_emit))
       {
          gl_Position = vec4(quadratic_bezier_curve(control_points[0].xyz,
                                                    control_points[1].xyz,
@@ -72,7 +74,7 @@ void main( )
    }
    else if (number_of_control_points == 4)
    {
-      for (float i = 0.0f; i <= 1.0f; i += (1.0f / 512.0f))
+      for (float i = 0.0f; i <= 1.0f; i += (1.0f / max_num_to_emit))
       {
          gl_Position = vec4(cubic_bezier_curve(control_points[0].xyz,
                                                control_points[1].xyz,
@@ -85,7 +87,7 @@ void main( )
    }
    else if (number_of_control_points == 5)
    {
-      for (float i = 0.0f; i <= 1.0f; i += (1.0f / 512.0f))
+      for (float i = 0.0f; i <= 1.0f; i += (1.0f / max_num_to_emit))
       {
          gl_Position = vec4(quintic_bezier_curve(control_points[0].xyz,
                                                  control_points[1].xyz,
@@ -99,7 +101,7 @@ void main( )
    }
    else if (number_of_control_points == 6)
    {
-      for (float i = 0.0f; i <= 1.0f; i += (1.0f / 512.0f))
+      for (float i = 0.0f; i <= 1.0f; i += (1.0f / max_num_to_emit))
       {
          gl_Position = vec4(six_point_bezier_curve(control_points[0].xyz,
                                                    control_points[1].xyz,
