@@ -62,3 +62,5 @@ add_subdirectory(./TransformFeedback)
 add_subdirectory(./Displacement)
 add_subdirectory(./SliderControl)
 add_subdirectory(./GLStudioTest)
+
+add_subdirectory(./Vulkan)
