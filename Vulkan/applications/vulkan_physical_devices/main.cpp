@@ -163,7 +163,7 @@ int32_t main(
          };
 
       std::cout
-         << std::dec << std::endl
+         << std::dec << std::endl << std::endl << std::endl
          << "Limits.Max Image Dim 1D "
          << physical_device_properties.limits.maxImageDimension1D << std::endl
          << "Limits.Max Image Dim 2D "
@@ -396,6 +396,7 @@ int32_t main(
          << "Limits.Non Coherent Atom Size "
          << physical_device_properties.limits.nonCoherentAtomSize << std::endl
 
+         << std::endl << std::endl
          << "Sparse Properties.Residency Standard 2D Block Shape "
          << physical_device_properties.sparseProperties.residencyStandard2DBlockShape << std::endl
          << "Sparse Properties.Residency Standard 2D Multisample Block Shape "
@@ -409,125 +410,256 @@ int32_t main(
          << std::endl
          << std::endl;
 
-         VkPhysicalDeviceFeatures physical_device_features { };
+      VkPhysicalDeviceFeatures physical_device_features { };
 
-         vkGetPhysicalDeviceFeatures(
-            physical_device,
-            &physical_device_features);
+      vkGetPhysicalDeviceFeatures(
+         physical_device,
+         &physical_device_features);
 
+      std::cout
+         << "Features.Robust Buffer Access "
+         << physical_device_features.robustBufferAccess << std::endl
+         << "Features.Full Draw Index uint32 "
+         << physical_device_features.fullDrawIndexUint32 << std::endl
+         << "Features.Image Cube Array "
+         << physical_device_features.imageCubeArray << std::endl
+         << "Features.Independent Blend "
+         << physical_device_features.independentBlend << std::endl
+         << "Features.Geometry Shader "
+         << physical_device_features.geometryShader << std::endl
+         << "Features.Tessellation Shader "
+         << physical_device_features.tessellationShader << std::endl
+         << "Features.Sample Rate Shading "
+         << physical_device_features.sampleRateShading << std::endl
+         << "Features.Dual Src Blend "
+         << physical_device_features.dualSrcBlend << std::endl
+         << "Features.Logic Op "
+         << physical_device_features.logicOp << std::endl
+         << "Features.Multi Draw Indirect "
+         << physical_device_features.multiDrawIndirect << std::endl
+         << "Features.Draw Indirect First Instance "
+         << physical_device_features.drawIndirectFirstInstance << std::endl
+         << "Features.Depth Clamp "
+         << physical_device_features.depthClamp << std::endl
+         << "Features.Depth Bias Clamp "
+         << physical_device_features.depthBiasClamp << std::endl
+         << "Features.Fill Mode Non Solid "
+         << physical_device_features.fillModeNonSolid << std::endl
+         << "Features.Depth Bounds "
+         << physical_device_features.depthBounds << std::endl
+         << "Features.Wide Lines "
+         << physical_device_features.wideLines << std::endl
+         << "Features.Large Points "
+         << physical_device_features.largePoints << std::endl
+         << "Features.Alpha To One "
+         << physical_device_features.alphaToOne << std::endl
+         << "Features.Multi Viewport "
+         << physical_device_features.multiViewport << std::endl
+         << "Features.Sampler Anisotropy "
+         << physical_device_features.samplerAnisotropy << std::endl
+         << "Features.Texture Compression ETC2 "
+         << physical_device_features.textureCompressionETC2 << std::endl
+         << "Features.Texture Compression ASTC LDR "
+         << physical_device_features.textureCompressionASTC_LDR << std::endl
+         << "Features.Texture Compression BC "
+         << physical_device_features.textureCompressionBC << std::endl
+         << "Features.Occlusion Query Precise "
+         << physical_device_features.occlusionQueryPrecise << std::endl
+         << "Features.Pipeline Statistics Query "
+         << physical_device_features.pipelineStatisticsQuery << std::endl
+         << "Features.Vertex Pipeline Stores And Atomics "
+         << physical_device_features.vertexPipelineStoresAndAtomics << std::endl
+         << "Features.Fragment Stores And Atomics "
+         << physical_device_features.fragmentStoresAndAtomics << std::endl
+         << "Features.Shader Tessellation And Geometry Point Size "
+         << physical_device_features.shaderTessellationAndGeometryPointSize << std::endl
+         << "Features.Shader Image Gather Extended "
+         << physical_device_features.shaderImageGatherExtended << std::endl
+         << "Features.Shader Storage Image Extended Formats "
+         << physical_device_features.shaderStorageImageExtendedFormats << std::endl
+         << "Features.Shader Storage Image Multisample "
+         << physical_device_features.shaderStorageImageMultisample << std::endl
+         << "Features.Shader Storage Image Read Without Format "
+         << physical_device_features.shaderStorageImageReadWithoutFormat << std::endl
+         << "Features.Shader Storage Image Write Without Format "
+         << physical_device_features.shaderStorageImageWriteWithoutFormat << std::endl
+         << "Features.Shader Uniform Buffer Array Dynamic Indexing "
+         << physical_device_features.shaderUniformBufferArrayDynamicIndexing << std::endl
+         << "Features.Shader Sampled Image Array Dynamic Indexing "
+         << physical_device_features.shaderSampledImageArrayDynamicIndexing << std::endl
+         << "Features.Shader Storage Buffer Array Dynamic Indexing "
+         << physical_device_features.shaderStorageBufferArrayDynamicIndexing << std::endl
+         << "Features.Shader Storage Image Array Dynamic Indexing "
+         << physical_device_features.shaderStorageImageArrayDynamicIndexing << std::endl
+         << "Features.Shader Clip Distance "
+         << physical_device_features.shaderClipDistance << std::endl
+         << "Features.Shader Cull Distance "
+         << physical_device_features.shaderCullDistance << std::endl
+         << "Features.Shader Float 64 "
+         << physical_device_features.shaderFloat64 << std::endl
+         << "Features.Shader Int 64 "
+         << physical_device_features.shaderInt64 << std::endl
+         << "Features.Shader Int 16 "
+         << physical_device_features.shaderInt16 << std::endl
+         << "Features.Shader Resource Residency "
+         << physical_device_features.shaderResourceResidency << std::endl
+         << "Features.Shader Resource Min LOD "
+         << physical_device_features.shaderResourceMinLod << std::endl
+         << "Features.Sparse Binding "
+         << physical_device_features.sparseBinding << std::endl
+         << "Features.Sparse Residency Buffer "
+         << physical_device_features.sparseResidencyBuffer << std::endl
+         << "Features.Sparse Residency Image 2D "
+         << physical_device_features.sparseResidencyImage2D << std::endl
+         << "Features.Sparse Residency Image 3D "
+         << physical_device_features.sparseResidencyImage3D << std::endl
+         << "Features.Sparse Residency Image 2 Samples "
+         << physical_device_features.sparseResidency2Samples << std::endl
+         << "Features.Sparse Residency Image 4 Samples "
+         << physical_device_features.sparseResidency4Samples << std::endl
+         << "Features.Sparse Residency Image 8 Samples "
+         << physical_device_features.sparseResidency8Samples << std::endl
+         << "Features.Sparse Residency Image 16 Samples "
+         << physical_device_features.sparseResidency16Samples << std::endl
+         << "Features.Sparse Residency Aliased "
+         << physical_device_features.sparseResidencyAliased << std::endl
+         << "Features.Variable Multisample Rate "
+         << physical_device_features.variableMultisampleRate << std::endl
+         << "Features.Inherited Queries "
+         << physical_device_features.inheritedQueries << std::endl
+         << std::endl
+         << std::endl;
+
+      VkPhysicalDeviceMemoryProperties
+         physical_device_memory_properties { };
+
+      vkGetPhysicalDeviceMemoryProperties(
+         physical_device,
+         &physical_device_memory_properties);
+
+      std::cout
+         << "Memory Properties.Memory Type Count "
+         << physical_device_memory_properties.memoryTypeCount << std::endl;
+
+      for (uint32_t i = 0;
+           i < physical_device_memory_properties.memoryTypeCount;
+           ++i)
+      {
          std::cout
-            << "Features.Robust Buffer Access "
-            << physical_device_features.robustBufferAccess << std::endl
-            << "Features.Full Draw Index uint32 "
-            << physical_device_features.fullDrawIndexUint32 << std::endl
-            << "Features.Image Cube Array "
-            << physical_device_features.imageCubeArray << std::endl
-            << "Features.Independent Blend "
-            << physical_device_features.independentBlend << std::endl
-            << "Features.Geometry Shader "
-            << physical_device_features.geometryShader << std::endl
-            << "Features.Tessellation Shader "
-            << physical_device_features.tessellationShader << std::endl
-            << "Features.Sample Rate Shading "
-            << physical_device_features.sampleRateShading << std::endl
-            << "Features.Dual Src Blend "
-            << physical_device_features.dualSrcBlend << std::endl
-            << "Features.Logic Op "
-            << physical_device_features.logicOp << std::endl
-            << "Features.Multi Draw Indirect "
-            << physical_device_features.multiDrawIndirect << std::endl
-            << "Features.Draw Indirect First Instance "
-            << physical_device_features.drawIndirectFirstInstance << std::endl
-            << "Features.Depth Clamp "
-            << physical_device_features.depthClamp << std::endl
-            << "Features.Depth Bias Clamp "
-            << physical_device_features.depthBiasClamp << std::endl
-            << "Features.Fill Mode Non Solid "
-            << physical_device_features.fillModeNonSolid << std::endl
-            << "Features.Depth Bounds "
-            << physical_device_features.depthBounds << std::endl
-            << "Features.Wide Lines "
-            << physical_device_features.wideLines << std::endl
-            << "Features.Large Points "
-            << physical_device_features.largePoints << std::endl
-            << "Features.Alpha To One "
-            << physical_device_features.alphaToOne << std::endl
-            << "Features.Multi Viewport "
-            << physical_device_features.multiViewport << std::endl
-            << "Features.Sampler Anisotropy "
-            << physical_device_features.samplerAnisotropy << std::endl
-            << "Features.Texture Compression ETC2 "
-            << physical_device_features.textureCompressionETC2 << std::endl
-            << "Features.Texture Compression ASTC LDR "
-            << physical_device_features.textureCompressionASTC_LDR << std::endl
-            << "Features.Texture Compression BC "
-            << physical_device_features.textureCompressionBC << std::endl
-            << "Features.Occlusion Query Precise "
-            << physical_device_features.occlusionQueryPrecise << std::endl
-            << "Features.Pipeline Statistics Query "
-            << physical_device_features.pipelineStatisticsQuery << std::endl
-            << "Features.Vertex Pipeline Stores And Atomics "
-            << physical_device_features.vertexPipelineStoresAndAtomics << std::endl
-            << "Features.Fragment Stores And Atomics "
-            << physical_device_features.fragmentStoresAndAtomics << std::endl
-            << "Features.Shader Tessellation And Geometry Point Size "
-            << physical_device_features.shaderTessellationAndGeometryPointSize << std::endl
-            << "Features.Shader Image Gather Extended "
-            << physical_device_features.shaderImageGatherExtended << std::endl
-            << "Features.Shader Storage Image Extended Formats "
-            << physical_device_features.shaderStorageImageExtendedFormats << std::endl
-            << "Features.Shader Storage Image Multisample "
-            << physical_device_features.shaderStorageImageMultisample << std::endl
-            << "Features.Shader Storage Image Read Without Format "
-            << physical_device_features.shaderStorageImageReadWithoutFormat << std::endl
-            << "Features.Shader Storage Image Write Without Format "
-            << physical_device_features.shaderStorageImageWriteWithoutFormat << std::endl
-            << "Features.Shader Uniform Buffer Array Dynamic Indexing "
-            << physical_device_features.shaderUniformBufferArrayDynamicIndexing << std::endl
-            << "Features.Shader Sampled Image Array Dynamic Indexing "
-            << physical_device_features.shaderSampledImageArrayDynamicIndexing << std::endl
-            << "Features.Shader Storage Buffer Array Dynamic Indexing "
-            << physical_device_features.shaderStorageBufferArrayDynamicIndexing << std::endl
-            << "Features.Shader Storage Image Array Dynamic Indexing "
-            << physical_device_features.shaderStorageImageArrayDynamicIndexing << std::endl
-            << "Features.Shader Clip Distance "
-            << physical_device_features.shaderClipDistance << std::endl
-            << "Features.Shader Cull Distance "
-            << physical_device_features.shaderCullDistance << std::endl
-            << "Features.Shader Float 64 "
-            << physical_device_features.shaderFloat64 << std::endl
-            << "Features.Shader Int 64 "
-            << physical_device_features.shaderInt64 << std::endl
-            << "Features.Shader Int 16 "
-            << physical_device_features.shaderInt16 << std::endl
-            << "Features.Shader Resource Residency "
-            << physical_device_features.shaderResourceResidency << std::endl
-            << "Features.Shader Resource Min LOD "
-            << physical_device_features.shaderResourceMinLod << std::endl
-            << "Features.Sparse Binding "
-            << physical_device_features.sparseBinding << std::endl
-            << "Features.Sparse Residency Buffer "
-            << physical_device_features.sparseResidencyBuffer << std::endl
-            << "Features.Sparse Residency Image 2D "
-            << physical_device_features.sparseResidencyImage2D << std::endl
-            << "Features.Sparse Residency Image 3D "
-            << physical_device_features.sparseResidencyImage3D << std::endl
-            << "Features.Sparse Residency Image 2 Samples "
-            << physical_device_features.sparseResidency2Samples << std::endl
-            << "Features.Sparse Residency Image 4 Samples "
-            << physical_device_features.sparseResidency4Samples << std::endl
-            << "Features.Sparse Residency Image 8 Samples "
-            << physical_device_features.sparseResidency8Samples << std::endl
-            << "Features.Sparse Residency Image 16 Samples "
-            << physical_device_features.sparseResidency16Samples << std::endl
-            << "Features.Sparse Residency Aliased "
-            << physical_device_features.sparseResidencyAliased << std::endl
-            << "Features.Variable Multisample Rate "
-            << physical_device_features.variableMultisampleRate << std::endl
-            << "Features.Inherited Queries "
-            << physical_device_features.inheritedQueries << std::endl
-            << std::endl
-            << std::endl;
+            << "Memory Properties.Memory Type [" << i << "].Heap Index "
+            << physical_device_memory_properties.memoryTypes[i].heapIndex << std::endl;
+
+         for (uint32_t j = 1;
+              j <= VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
+              j <<= 1)
+         {
+            switch (j & physical_device_memory_properties.memoryTypes[i].propertyFlags)
+            {
+            case 0: break;
+            case VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Device Local"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Host Visible"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_HOST_COHERENT_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Host Coherent"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_HOST_CACHED_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Host Cached"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Lazily Allocated"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_PROTECTED_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Protected"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Device Coherent AMD"
+                  << std::endl;
+               break;
+            case VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Device Uncached AMD"
+                  << std::endl;
+               break;
+            default:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Property Flags "
+                     "Unknown Flag 0x"
+                  << std::hex
+                  << (j & physical_device_memory_properties.memoryTypes[j].propertyFlags)
+                  << std::dec
+                  << std::endl;
+               break;
+            }
+         }
+      }
+
+      std::cout
+         << "Memory Properties.Memory Heap Count "
+         << physical_device_memory_properties.memoryHeapCount << std::endl;
+
+      for (uint32_t i = 0;
+           i < physical_device_memory_properties.memoryHeapCount;
+           ++i)
+      {
+         std::cout
+            << "Memory Properties.Memory Type [" << i << "].Size "
+            << physical_device_memory_properties.memoryHeaps[i].size << std::endl;
+
+         for (uint32_t j = 1;
+              j <= VK_MEMORY_HEAP_FLAG_BITS_MAX_ENUM;
+              j <<= 1)
+         {
+            switch (j & physical_device_memory_properties.memoryHeaps[i].flags)
+            {
+            case 0: break;
+            case VK_MEMORY_HEAP_DEVICE_LOCAL_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Heap Flags "
+                     "Device Local"
+                  << std::endl;
+               break;
+            case VK_MEMORY_HEAP_MULTI_INSTANCE_BIT:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Heap Flags "
+                     "Host Visible"
+                  << std::endl;
+               break;
+            default:
+               std::cout
+                  << "Memory Properties.Memory Type [" << i << "].Heap Flags "
+                     "Unknown Flag 0x"
+                  << std::hex
+                  << (j & physical_device_memory_properties.memoryHeaps[j].flags)
+                  << std::dec
+                  << std::endl;
+               break;
+            }
+         }
+      }
    }
 
    vkDestroyInstance(
