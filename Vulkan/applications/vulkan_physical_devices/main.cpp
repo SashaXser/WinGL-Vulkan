@@ -627,7 +627,10 @@ int32_t main(
       {
          std::cout
             << "Memory Properties.Memory Type [" << i << "].Size "
-            << physical_device_memory_properties.memoryHeaps[i].size << std::endl;
+            << physical_device_memory_properties.memoryHeaps[i].size
+            << " B ("
+            << physical_device_memory_properties.memoryHeaps[i].size / 1024.0 / 1024.0 / 1024.0
+            << " GiB)" <<std::endl;
 
          for (uint32_t j = 1;
               j <= VK_MEMORY_HEAP_FLAG_BITS_MAX_ENUM;
