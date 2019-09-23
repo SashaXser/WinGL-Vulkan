@@ -663,6 +663,94 @@ int32_t main(
             }
          }
       }
+
+      std::cout
+         << std::endl
+         << std::endl;
+
+      uint32_t queue_family_count { };
+
+      vkGetPhysicalDeviceQueueFamilyProperties(
+         physical_device,
+         &queue_family_count,
+         nullptr);
+
+      std::cout
+         << "Number Of Queue Family Properties "
+         << queue_family_count << std::endl;
+
+      std::vector< VkQueueFamilyProperties >
+         physical_device_queue_family_properties(
+            queue_family_count, VkQueueFamilyProperties { });
+
+      vkGetPhysicalDeviceQueueFamilyProperties(
+         physical_device,
+         &queue_family_count,
+         physical_device_queue_family_properties.data());
+
+      for (const auto & physical_device_queue_family_property :
+           physical_device_queue_family_properties)
+      {
+         const size_t index =
+            &physical_device_queue_family_property -
+            &physical_device_queue_family_properties.front();
+
+         for (uint32_t i = 1;
+              i <= VK_QUEUE_FLAG_BITS_MAX_ENUM;
+              i <<= 1)
+         {
+            switch (i & physical_device_queue_family_property.queueFlags)
+            {
+            case 0: break;
+            case VK_QUEUE_GRAPHICS_BIT:
+               std::cout
+                  << "Queue Family Properties[" << index << "].Queue Flag "
+                  << "Graphics" << std::endl;
+               break;
+            case VK_QUEUE_COMPUTE_BIT:
+               std::cout
+                  << "Queue Family Properties[" << index << "].Queue Flag "
+                  << "Compute" << std::endl;
+               break;
+            case VK_QUEUE_TRANSFER_BIT:
+               std::cout
+                  << "Queue Family Properties[" << index << "].Queue Flag "
+                  << "Transfer" << std::endl;
+               break;
+            case VK_QUEUE_SPARSE_BINDING_BIT:
+               std::cout
+                  << "Queue Family Properties[" << index << "].Queue Flag "
+                  << "Sparse Binding" << std::endl;
+               break;
+            case VK_QUEUE_PROTECTED_BIT:
+               std::cout
+                  << "Queue Family Properties[" << index << "].Queue Flag "
+                  << "Protected" << std::endl;
+               break;
+            default:
+               std::cout
+                  << "Queue Family Properties[" << index << "].Queue Flag "
+                  << "Unknown Flag 0x"
+                  << std::hex
+                  << (i & physical_device_queue_family_property.queueFlags)
+                  << std::dec
+                  << std::endl;
+            }
+         }
+
+         std::cout
+            << "Queue Family Properties[" << index << "].Queue Count "
+            << physical_device_queue_family_property.queueCount << std::endl
+            << "Queue Family Properties[" << index << "].Timestamp Valid Bits "
+            << physical_device_queue_family_property.timestampValidBits << std::endl
+            << "Queue Family Properties[" << index << "].Min Image Transfer Granularity "
+            << physical_device_queue_family_property.minImageTransferGranularity.width
+            << ", "
+            << physical_device_queue_family_property.minImageTransferGranularity.height
+            << ", "
+            << physical_device_queue_family_property.minImageTransferGranularity.depth
+            << std::endl;
+      }
    }
 
    vkDestroyInstance(
