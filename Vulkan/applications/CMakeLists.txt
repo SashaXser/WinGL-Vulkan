@@ -5,3 +5,4 @@ set(VULKAN_APPLICATION_IDE_FOLDER
 
 add_subdirectory(./vulkan_instance)
 add_subdirectory(./vulkan_physical_devices)
+add_subdirectory(./vulkan_logical_devices)
