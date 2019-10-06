@@ -483,6 +483,82 @@ int32_t main(
          << std::endl;
    }
 
+   std::cout
+      << std::endl
+      << "Instance Extensions"
+      << std::endl;
+
+   counted =
+      vkEnumerateInstanceExtensionProperties(
+         nullptr,
+         &property_count,
+         nullptr);
+
+   if (VK_SUCCESS != counted)
+   {
+      std::cerr
+         << "Unable to enumerate instnace extension properties ("
+         << counted
+         << ")!"
+         << std::endl;
+
+      return -7;
+   }
+
+   std::vector< VkExtensionProperties > instance_extensions {
+      property_count, VkExtensionProperties { } };
+
+   vkEnumerateInstanceExtensionProperties(
+      nullptr,
+      &property_count,
+      instance_extensions.data());
+
+   for (const auto & extension : instance_extensions)
+   {
+      std::cout
+         << "IExtension Name " << extension.extensionName << std::endl
+         << "   Spec Version " << DecodeVersion(extension.specVersion) << std::endl;
+   }
+
+   std::cout
+      << std::endl
+      << "Device Extensions"
+      << std::endl;
+
+   counted =
+      vkEnumerateDeviceExtensionProperties(
+         gpu_devices.cbegin()->second.front(),
+         nullptr,
+         &property_count,
+         nullptr);
+
+   if (VK_SUCCESS != counted)
+   {
+      std::cerr
+         << "Unable to enumerate device extension properties ("
+         << counted
+         << ")!"
+         << std::endl;
+
+      return -8;
+   }
+
+   std::vector< VkExtensionProperties > device_extensions {
+      property_count, VkExtensionProperties { } };
+
+   vkEnumerateDeviceExtensionProperties(
+      gpu_devices.cbegin()->second.front(),
+      nullptr,
+      &property_count,
+      device_extensions.data());
+
+   for (const auto & extension : device_extensions)
+   {
+      std::cout
+         << "DExtension Name " << extension.extensionName << std::endl
+         << "   Spec Version " << DecodeVersion(extension.specVersion) << std::endl;
+   }
+
    return 0;
 }
 
