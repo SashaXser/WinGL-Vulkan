@@ -710,7 +710,7 @@ BufferHandle CreateBuffer(
       nullptr,
       &DestroyBufferHandle };
 
-   if (device)
+   if (device && *device)
    {
       size_t * const context =
          new (std::nothrow) size_t[2] { };
@@ -1203,6 +1203,463 @@ void DisplayPhysicalDeviceImageFormatProperties(
    }
 }
 
+void DestroyImageHandle(
+   VkImage * const image )
+{
+   size_t * const context =
+      reinterpret_cast< size_t * >(
+         image) - 1;
+
+   if (image && *image)
+   {
+      VkDevice * const device =
+         reinterpret_cast< VkDevice * >(
+            context);
+
+      vkDestroyImage(
+         *device,
+         *image,
+         &CreateAllocator());
+   }
+
+   delete [] context;
+}
+
+using ImageHandle =
+   std::unique_ptr<
+      VkImage,
+      decltype(&DestroyImageHandle) >;
+
+ImageHandle CreateImage(
+   const LogicalDeviceHandle & device,
+   const VkImageCreateFlags create_flags,
+   const VkImageType image_type,
+   const VkFormat image_format,
+   const VkExtent3D image_extents,
+   const uint32_t mip_levels,
+   const uint32_t array_layers,
+   const VkSampleCountFlagBits sample_count,
+   const VkImageTiling image_tiling,
+   const VkImageUsageFlags image_usage,
+   const VkSharingMode sharing_mode,
+   const VkImageLayout image_layout )
+{
+   ImageHandle image {
+      nullptr, &DestroyImageHandle };
+
+   if (device && *device)
+   {
+      size_t * const context =
+         new (std::nothrow) size_t[2] { };
+
+      if (context)
+      {
+         *context =
+            reinterpret_cast< size_t >(
+               *device);
+
+         image.reset(
+            reinterpret_cast< VkImage * >(
+               context + 1));
+
+         std::cout
+            << "Creating image of size "
+            << image_extents.width << " x "
+            << image_extents.height << " x "
+            << image_extents.depth
+            << std::endl;
+
+         const VkImageCreateInfo info {
+            VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            nullptr,
+            create_flags,
+            image_type,
+            image_format,
+            image_extents,
+            mip_levels,
+            array_layers,
+            sample_count,
+            image_tiling,
+            image_usage,
+            sharing_mode,
+            0, nullptr,
+            image_layout
+         };
+
+         const auto result =
+            vkCreateImage(
+               *device,
+               &info,
+               &CreateAllocator(),
+               image.get());
+
+         if (result == VK_SUCCESS)
+         {
+            std::cout
+               << "Image Created Successfully!"
+               << std::endl;
+         }
+         else
+         {
+            std::cout
+               << "Image Created Unsuccessfully!"
+               << std::endl;
+         }
+      }
+   }
+
+   return image;
+}
+
+void DestroyDeviceMemory(
+   VkDeviceMemory * const memory )
+{
+   size_t * const context =
+      reinterpret_cast< size_t * >(
+         memory) - 1;
+
+   if (memory && *memory)
+   {
+      VkDevice * const device =
+         reinterpret_cast< VkDevice * >(
+            context);
+
+      vkFreeMemory(
+         *device,
+         *memory,
+         &CreateAllocator());
+   }
+
+   delete [] context;
+}
+
+using DeviceMemoryHandle =
+   std::unique_ptr<
+      VkDeviceMemory,
+      decltype(&DestroyDeviceMemory) >;
+
+DeviceMemoryHandle AllocateMemory(
+   const LogicalDeviceHandle & device,
+   const VkDeviceSize size,
+   const uint32_t type_index )
+{
+   DeviceMemoryHandle memory {
+      nullptr, &DestroyDeviceMemory };
+
+   if (device && *device)
+   {
+      size_t * const context =
+         new (std::nothrow) size_t[2] { };
+
+      if (context)
+      {
+         *context =
+            reinterpret_cast< size_t >(
+               *device);
+
+         memory.reset(
+            reinterpret_cast< VkDeviceMemory * >(
+               context + 1));
+
+         const VkMemoryAllocateInfo info {
+            VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            nullptr,
+            size,
+            type_index
+         };
+
+         const auto result =
+            vkAllocateMemory(
+               *device,
+               &info,
+               &CreateAllocator(),
+               memory.get());
+
+         if (result == VK_SUCCESS)
+         {
+            std::cout
+               << "Memory Allocated Successfully!"
+               << std::endl;
+         }
+         else
+         {
+            std::cout
+               << "Memory Allocated Unsuccessfully!"
+               << std::endl;
+         }
+      }
+   }
+
+   return memory;
+}
+
+void ReleaseMappedMemory(
+   void * const memory )
+{
+   size_t * const context =
+      reinterpret_cast< size_t * >(
+         memory) - 2;
+
+   if (memory &&
+       *reinterpret_cast< size_t * >(memory))
+   {
+      VkDevice * const device =
+         reinterpret_cast< VkDevice * >(
+            context);
+      VkDeviceMemory * const device_memory =
+         reinterpret_cast< VkDeviceMemory * >(
+            context + 1);
+
+      vkUnmapMemory(
+         *device,
+         *device_memory);
+   }
+
+   delete [] context;
+}
+
+using MappedMemoryHandle =
+   std::unique_ptr<
+      void *,
+      decltype(&ReleaseMappedMemory) >;
+
+MappedMemoryHandle MapMemory(
+   const LogicalDeviceHandle & device,
+   const DeviceMemoryHandle & device_memory,
+   const VkDeviceSize offset,
+   const VkDeviceSize size,
+   const VkMemoryMapFlags flags )
+{
+   MappedMemoryHandle mapped_memory {
+      nullptr, &ReleaseMappedMemory };
+
+   if (device && *device &&
+       device_memory && *device_memory)
+   {
+      size_t * const context =
+         new (std::nothrow) size_t[3] { };
+
+      if (context)
+      {
+         *context =
+            reinterpret_cast< size_t >(
+               *device);
+
+         *(context + 1) =
+            reinterpret_cast< size_t >(
+               *device_memory);
+
+         mapped_memory.reset(
+            reinterpret_cast< void ** >(
+               context + 2));
+
+         const auto result =
+            vkMapMemory(
+               *device,
+               *device_memory,
+               offset,
+               size,
+               flags,
+               mapped_memory.get());
+
+         if (result == VK_SUCCESS)
+         {
+            std::cout
+               << "Memory Mapped Successfully!"
+               << std::endl;
+         }
+         else
+         {
+            std::cout
+               << "Memory Mapped Unsuccessfully!"
+               << std::endl;
+         }
+      }
+   }
+
+   return mapped_memory;
+}
+
+void DestroyBufferViewHandle(
+   VkBufferView * const view )
+{
+   size_t * const context =
+      reinterpret_cast< size_t * >(
+         view) - 1;
+
+   if (view && *view)
+   {
+      VkDevice * const device =
+         reinterpret_cast< VkDevice * >(
+            context);
+
+      vkDestroyBufferView(
+         *device,
+         *view,
+         &CreateAllocator());
+   }
+
+   delete [] context;
+}
+
+using BufferViewHandle =
+   std::unique_ptr<
+      VkBufferView,
+      decltype(&DestroyBufferViewHandle) >;
+
+BufferViewHandle CreateBufferView(
+   const LogicalDeviceHandle & device,
+   const BufferHandle & buffer,
+   const VkBufferViewCreateFlags create_flags,
+   const VkFormat format,
+   const VkDeviceSize offset,
+   const VkDeviceSize range )
+{
+   BufferViewHandle view {
+      nullptr, &DestroyBufferViewHandle };
+
+   if (device && *device &&
+       buffer && *buffer)
+   {
+      size_t * const context =
+         new (std::nothrow) size_t[2] { };
+
+      if (context)
+      {
+         *context =
+            reinterpret_cast< size_t >(
+               *device);
+
+         view.reset(
+            reinterpret_cast< VkBufferView * >(
+               context + 1));
+
+         const VkBufferViewCreateInfo info {
+            VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
+            nullptr,
+            create_flags,
+            *buffer,
+            format,
+            offset,
+            range
+         };
+
+         const auto result =
+            vkCreateBufferView(
+               *device,
+               &info,
+               &CreateAllocator(),
+               view.get());
+
+         if (result == VK_SUCCESS)
+         {
+            std::cout
+               << "Buffer View Created Successfully!"
+               << std::endl;
+         }
+         else
+         {
+            std::cout
+               << "Buffer View Created Unsuccessfully!"
+               << std::endl;
+         }
+      }
+   }
+
+   return view;
+}
+
+void DestroyImageViewHandle(
+   VkImageView * const view )
+{
+   size_t * const context =
+      reinterpret_cast< size_t * >(
+         view) - 1;
+
+   if (view && *view)
+   {
+      VkDevice * const device =
+         reinterpret_cast< VkDevice * >(
+            context);
+
+      vkDestroyImageView(
+         *device,
+         *view,
+         &CreateAllocator());
+   }
+
+   delete [] context;
+}
+
+using ImageViewHandle =
+   std::unique_ptr<
+      VkImageView,
+      decltype(&DestroyImageViewHandle) >;
+
+ImageViewHandle CreateImageView(
+   const LogicalDeviceHandle & device,
+   const ImageHandle & image,
+   const VkImageViewCreateFlags create_flags,
+   const VkImageViewType view_type,
+   const VkFormat format,
+   const VkComponentMapping & component_mapping,
+   const VkImageSubresourceRange & subresource_range )
+{
+   ImageViewHandle view {
+      nullptr, &DestroyImageViewHandle };
+
+   if (device && *device &&
+       image && *image)
+   {
+      size_t * const context =
+         new (std::nothrow) size_t[2] { };
+
+      if (context)
+      {
+         *context =
+            reinterpret_cast< size_t >(
+               *device);
+
+         view.reset(
+            reinterpret_cast< VkImageView * >(
+               context + 1));
+
+         const VkImageViewCreateInfo info {
+            VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            nullptr,
+            create_flags,
+            *image,
+            view_type,
+            format,
+            component_mapping,
+            subresource_range
+         };
+
+         const auto result =
+            vkCreateImageView(
+               *device,
+               &info,
+               &CreateAllocator(),
+               view.get());
+
+         if (result == VK_SUCCESS)
+         {
+            std::cout
+               << "Image View Created Successfully!"
+               << std::endl;
+         }
+         else
+         {
+            std::cout
+               << "Image View Created Unsuccessfully!"
+               << std::endl;
+         }
+      }
+   }
+
+   return view;
+}
+
 int32_t main(
    const int32_t argc,
    const char* const argv[] )
@@ -1265,6 +1722,157 @@ int32_t main(
 
    DisplayPhysicalDeviceImageFormatProperties(
       gpu_devices.begin()->second.front());
+
+   const auto image1 =
+      CreateImage(
+         logical_device,
+         0,
+         VK_IMAGE_TYPE_2D,
+         VK_FORMAT_R8G8B8A8_UNORM,
+         { 1024, 1024, 1 },
+         1,
+         1,
+         VK_SAMPLE_COUNT_8_BIT,
+         VK_IMAGE_TILING_LINEAR,
+         VK_IMAGE_USAGE_SAMPLED_BIT,
+         VK_SHARING_MODE_EXCLUSIVE,
+         VK_IMAGE_LAYOUT_UNDEFINED);
+
+   const auto image2 =
+      CreateImage(
+         logical_device,
+         0,
+         VK_IMAGE_TYPE_2D,
+         VK_FORMAT_R8G8B8A8_SNORM,
+         { 2048, 2048, 1 },
+         1,
+         1,
+         VK_SAMPLE_COUNT_1_BIT,
+         VK_IMAGE_TILING_OPTIMAL,
+         VK_IMAGE_USAGE_SAMPLED_BIT,
+         VK_SHARING_MODE_EXCLUSIVE,
+         VK_IMAGE_LAYOUT_UNDEFINED);
+
+   const auto buffer3 =
+      CreateBuffer(
+         logical_device,
+         1024 * 1024,
+         VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
+         VK_SHARING_MODE_EXCLUSIVE);
+
+   // need to do more to get the correct type index
+   const auto buffer3_memory =
+      AllocateMemory(
+         logical_device,
+         1024 * 1024,
+         0);
+
+   const auto buffer3_mapped_memory =
+      MapMemory(
+         logical_device,
+         buffer3_memory,
+         0,
+         1024 * 1024,
+         0);
+
+   std::memset(
+      *buffer3_mapped_memory,
+      0x05,
+      1024 * 1024);
+
+   auto result =
+      vkBindBufferMemory(
+         *logical_device,
+         *buffer3,
+         *buffer3_memory,
+         0);
+
+   if (result == VK_SUCCESS)
+   {
+      std::cout
+         << "Buffer Bound Successfully!"
+         << std::endl;
+   }
+   else
+   {
+      std::cout
+         << "Buffer Bound Unsuccessfully!"
+         << std::endl;
+   }
+
+   const auto buffer3_view =
+      CreateBufferView(
+         logical_device,
+         buffer3,
+         VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
+         VK_FORMAT_R8_UNORM,
+         0,
+         1024 * 1024);
+
+   const auto image3 =
+      CreateImage(
+         logical_device,
+         0,
+         VK_IMAGE_TYPE_2D,
+         VK_FORMAT_R8G8B8A8_SNORM,
+         { 2048, 2048, 1 },
+         1,
+         1,
+         VK_SAMPLE_COUNT_1_BIT,
+         VK_IMAGE_TILING_OPTIMAL,
+         VK_IMAGE_USAGE_SAMPLED_BIT,
+         VK_SHARING_MODE_EXCLUSIVE,
+         VK_IMAGE_LAYOUT_UNDEFINED);
+
+   // need to do more to get the correct type index
+   const auto image3_memory =
+      AllocateMemory(
+         logical_device,
+         2048 * 2048 * sizeof(uint32_t),
+         0);
+
+   const auto image3_mapped_memory =
+      MapMemory(
+         logical_device,
+         image3_memory,
+         0,
+         2048 * 2048 * sizeof(uint32_t),
+         0);
+
+   std::memset(
+      *image3_mapped_memory,
+      0x10,
+      2048 * 2048 * sizeof(uint32_t));
+
+   result =
+      vkBindImageMemory(
+         *logical_device,
+         *image3,
+         *image3_memory,
+         0);
+
+   if (result == VK_SUCCESS)
+   {
+      std::cout
+         << "Image Bound Successfully!"
+         << std::endl;
+   }
+   else
+   {
+      std::cout
+         << "Image Bound Unsuccessfully!"
+         << std::endl;
+   }
+
+   const auto image3_view =
+      CreateImageView(
+         logical_device,
+         image3,
+         0,
+         VK_IMAGE_VIEW_TYPE_2D,
+         VK_FORMAT_R8G8B8A8_SNORM,
+         { },
+         { VK_IMAGE_ASPECT_COLOR_BIT });
    
    return 0;
 }
