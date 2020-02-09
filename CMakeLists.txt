@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+# use cxx17 as the standard for all projects
+set(
+   CMAKE_CXX_STANDARD
+   17)
+
 # update the cmake module path
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/ext-src/cmake-modules" ${CMAKE_MODULE_PATH})
 
