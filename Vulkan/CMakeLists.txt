@@ -7,4 +7,5 @@ set(CMAKE_PREFIX_PATH
 set(VULKAN_IDE_FOLDER vulkan)
 
 add_subdirectory(./ext-src)
+add_subdirectory(./libraries)
 add_subdirectory(./applications)
