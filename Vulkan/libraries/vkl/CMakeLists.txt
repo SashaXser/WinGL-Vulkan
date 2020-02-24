@@ -12,6 +12,12 @@ add_library(
    vkl_buffer_view.cpp
    vkl_buffer_view.h
    vkl_buffer_view_fwds.h
+   vkl_command_buffer.cpp
+   vkl_command_buffer.h
+   vkl_command_buffer_fwds.h
+   vkl_command_pool.cpp
+   vkl_command_pool.h
+   vkl_command_pool_fwds.h
    vkl_context_data.h
    vkl_device.cpp
    vkl_device.h
