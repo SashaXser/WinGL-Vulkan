@@ -4,7 +4,6 @@
 #include "vkl_device.h"
 
 #include <iostream>
-#include <new>
 
 namespace vkl
 {
@@ -29,14 +28,14 @@ void DestroyBufferViewHandle(
             DefaultAllocator());
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            buffer_view) - (CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         CONTEXT_SIZE >(
+            buffer_view);
    }
 }
 
 BufferViewHandle SetBufferViewContext(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const DeviceHandle & device,
    const BufferHandle & buffer,
    const VkBufferViewCreateFlags create_flags,
@@ -77,8 +76,9 @@ BufferViewHandle CreateBufferView(
    if (device && *device &&
        buffer && *buffer)
    {
-      size_t * const context =
-         new (std::nothrow) size_t[CONTEXT_SIZE] { };
+      const auto context =
+         vkl::internal::AllocateContext<
+            CONTEXT_SIZE >();
 
       if (context)
       {

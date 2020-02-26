@@ -4,7 +4,6 @@
 #include "vkl_device.h"
 
 #include <iostream>
-#include <new>
 
 namespace vkl
 {
@@ -29,14 +28,14 @@ void DestroyImageViewHandle(
             DefaultAllocator());
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            image_view) - (CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         CONTEXT_SIZE >(
+            image_view);
    }
 }
 
 ImageViewHandle SetImageViewContext(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const DeviceHandle & device,
    const ImageHandle & image,
    const VkImageViewCreateFlags create_flags,
@@ -79,8 +78,9 @@ ImageViewHandle CreateImageView(
    if (device && *device &&
        image && *image)
    {
-      size_t * const context =
-         new (std::nothrow) size_t[CONTEXT_SIZE] { };
+      const auto context =
+         vkl::internal::AllocateContext<
+            CONTEXT_SIZE >();
 
       if (context)
       {
@@ -129,7 +129,6 @@ ImageViewHandle CreateImageView(
             std::cout
                << "Image view created successfully!"
                << std::endl;
-
          }
       }
    }

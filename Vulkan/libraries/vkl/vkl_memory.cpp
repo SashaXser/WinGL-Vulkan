@@ -5,7 +5,6 @@
 
 #include <ios>
 #include <iostream>
-#include <new>
 
 namespace vkl
 {
@@ -37,14 +36,14 @@ void DestroyDeviceMemoryHandle(
             DefaultAllocator());
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            memory) - (device_memory::CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         device_memory::CONTEXT_SIZE >(
+            memory);
    }
 }
 
 DeviceMemoryHandle SetAllocatedDeviceMemoryContextData(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const DeviceHandle & device,
    const VkDeviceSize size,
    const uint32_t type_index )
@@ -94,8 +93,9 @@ DeviceMemoryHandle AllocateDeviceMemory(
    {
       namespace dm = device_memory;
 
-      size_t * const context =
-         new (std::nothrow) size_t[dm::CONTEXT_SIZE] { };
+      const auto context =
+         vkl::internal::AllocateContext<
+            dm::CONTEXT_SIZE >();
 
       if (context)
       {
@@ -218,14 +218,14 @@ void DestroyMappedDeviceMemoryHandle(
                   mapped_memory));
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            mapped_memory) - (mdm::CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         mdm::CONTEXT_SIZE >(
+            mapped_memory);
    }
 }
 
 MappedDeviceMemoryHandle SetMapDeviceMemoryContext(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const DeviceHandle & device,
    const DeviceMemoryHandle & device_memory,
    const VkDeviceSize offset,
@@ -292,8 +292,9 @@ MappedDeviceMemoryHandle MapDeviceMemory(
    {
       namespace mdm = mapped_device_memory;
 
-      size_t * const context =
-         new (std::nothrow) size_t[mdm::CONTEXT_SIZE] { };
+      const auto context =
+         vkl::internal::AllocateContext<
+            mdm::CONTEXT_SIZE >();
 
       if (context)
       {

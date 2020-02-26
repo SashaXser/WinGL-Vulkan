@@ -1,12 +1,16 @@
 #ifndef _VKL_CONTEXT_DATA_H_
 #define _VKL_CONTEXT_DATA_H_
 
-// todo: need to change from size_t * to uint64_t *
-
+#include <cstddef>
+#include <cstdint>
+#include <new>
 #include <type_traits>
 
 namespace vkl::internal
 {
+
+using context_t = uint64_t;
+using context_ptr_t = context_t *;
 
 namespace details
 {
@@ -39,19 +43,39 @@ reinterpret_static_cast( const F f )
 
 } // namespace details
 
+template <
+   size_t CONTEXT_SIZE >
+inline context_ptr_t AllocateContext( )
+{
+   return
+      new (std::nothrow) context_t[CONTEXT_SIZE] { };
+}
+
+template <
+   size_t CONTEXT_SIZE,
+   typename T >
+inline void DeallocateContext(
+   const T * const context )
+{
+   delete []
+      (reinterpret_cast< const context_t * >(
+         context) - (CONTEXT_SIZE - 1));
+}
 
 template <
    size_t INDEX,
    size_t CONTEXT_SIZE,
    typename T >
 inline void SetContextData(
-   size_t * const context,
+   const context_ptr_t context,
    const T data )
 {
+   static_assert(sizeof(T) <= sizeof(context_t));
+
    if (context)
    {
       *(context + (CONTEXT_SIZE - INDEX - 1)) =
-         details::reinterpret_static_cast< size_t >(
+         details::reinterpret_static_cast< context_t >(
             data);
    }
 }
@@ -69,7 +93,7 @@ inline T GetContextData(
    {
       data =
          *reinterpret_cast< const T * >(
-            reinterpret_cast< const size_t * >(
+            reinterpret_cast< const context_t * >(
                context) - INDEX);
    }
 

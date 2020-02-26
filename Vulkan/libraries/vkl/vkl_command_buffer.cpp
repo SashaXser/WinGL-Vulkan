@@ -3,7 +3,6 @@
 #include "vkl_device.h"
 
 #include <iostream>
-#include <new>
 
 namespace vkl
 {
@@ -34,14 +33,14 @@ void FreeCommandBuffer(
             command_buffer);
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            command_buffer) - (CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         CONTEXT_SIZE >(
+            command_buffer);
    }
 }
 
 CommandBufferHandle SetCommandBufferContext(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const DeviceHandle & device,
    const CommandPoolHandle & command_pool,
    const VkCommandBufferLevel command_buffer_level )
@@ -145,8 +144,9 @@ AllocateCommandBuffers(
          for (const auto & allocated_command_buffer :
               allocated_command_buffers)
          {
-            size_t * const context =
-               new (std::nothrow) size_t[CONTEXT_SIZE] { };
+            const auto context =
+               vkl::internal::AllocateContext<
+                  CONTEXT_SIZE >();
 
             if (context)
             {

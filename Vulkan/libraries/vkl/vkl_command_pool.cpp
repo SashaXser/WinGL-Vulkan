@@ -4,7 +4,6 @@
 #include "vkl_device.h"
 
 #include <iostream>
-#include <new>
 
 namespace vkl
 {
@@ -31,14 +30,14 @@ void DestroyCommandPoolHandle(
             DefaultAllocator());
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            command_pool) - (CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         CONTEXT_SIZE >(
+            command_pool);
    }
 }
 
 CommandPoolHandle SetCommandPoolContext(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const DeviceHandle & device,
    const VkCommandPoolCreateFlags create_flags,
    const uint32_t queue_family_index )
@@ -84,8 +83,9 @@ CommandPoolHandle CreateCommandPool(
 
    if (device && *device)
    {
-      size_t * const context =
-         new (std::nothrow) size_t[CONTEXT_SIZE] { };
+      const auto context =
+         vkl::internal::AllocateContext<
+            CONTEXT_SIZE >();
 
       if (context)
       {

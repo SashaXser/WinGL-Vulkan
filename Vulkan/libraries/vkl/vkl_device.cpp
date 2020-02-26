@@ -3,7 +3,6 @@
 #include "vkl_allocator.h"
 
 #include <iostream>
-#include <new>
 
 #if _DEBUG
 #include <vector>
@@ -27,14 +26,14 @@ void DestoryDeviceHandle(
             DefaultAllocator());
       }
 
-      delete []
-         (reinterpret_cast< const size_t * >(
-            device) - (CONTEXT_SIZE - 1));
+      vkl::internal::DeallocateContext<
+         CONTEXT_SIZE >(
+            device);
    }
 }
 
 DeviceHandle SetDeviceContext(
-   size_t * const context,
+   const vkl::internal::context_ptr_t context,
    const VkPhysicalDevice physical_device,
    const VkDeviceQueueCreateFlags create_flags,
    const uint32_t queue_family_index,
@@ -149,8 +148,9 @@ DeviceHandle CreateDevice(
       create_info.ppEnabledExtensionNames = nullptr;
       create_info.pEnabledFeatures = &supported_features;
 
-      size_t * const context =
-         new (std::nothrow) size_t[2] { };
+      const auto context =
+         vkl::internal::AllocateContext<
+            CONTEXT_SIZE >();
 
       if (context)
       {
