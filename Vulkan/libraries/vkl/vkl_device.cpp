@@ -2,6 +2,7 @@
 #include "vkl_context_data.h"
 #include "vkl_allocator.h"
 
+#include <cstddef>
 #include <iostream>
 
 #if _DEBUG

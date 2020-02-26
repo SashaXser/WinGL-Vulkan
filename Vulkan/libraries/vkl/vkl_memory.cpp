@@ -3,6 +3,7 @@
 #include "vkl_context_data.h"
 #include "vkl_device.h"
 
+#include <cstddef>
 #include <ios>
 #include <iostream>
 
