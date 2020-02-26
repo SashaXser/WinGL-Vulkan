@@ -40,6 +40,43 @@ void FreeCommandBuffer(
    }
 }
 
+CommandBufferHandle SetCommandBufferContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const CommandPoolHandle & command_pool,
+   const VkCommandBufferLevel command_buffer_level )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *device);
+
+   vkl::internal::SetContextData<
+      COMMAND_POOL_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *command_pool);
+
+   vkl::internal::SetContextData<
+      COMMAND_BUFFER_LEVEL_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         command_buffer_level);
+
+   return {
+      reinterpret_cast< VkCommandBuffer * >(
+         context + (CONTEXT_SIZE - 1)),
+      &FreeCommandBuffer
+   };
+}
+
 CommandBufferHandle AllocateCommandBuffer(
    const DeviceHandle & device,
    const CommandPoolHandle & command_pool,
@@ -105,34 +142,23 @@ AllocateCommandBuffers(
       }
       else
       {
-         for (const auto & allocated_command_buffer : allocated_command_buffers)
+         for (const auto & allocated_command_buffer :
+              allocated_command_buffers)
          {
             size_t * const context =
                new (std::nothrow) size_t[CONTEXT_SIZE] { };
 
             if (context)
             {
-               *(context + (CONTEXT_SIZE - PHYSICAL_DEVICE_INDEX - 1)) =
-                  reinterpret_cast< size_t >(
-                     GetPhysicalDevice(device));
+               command_buffers.push_back(
+                  SetCommandBufferContext(
+                     context,
+                     device,
+                     command_pool,
+                     command_buffer_level));
 
-               *(context + (CONTEXT_SIZE - DEVICE_INDEX - 1)) =
-                  reinterpret_cast< size_t >(
-                     *device);
-
-               *(context + (CONTEXT_SIZE - COMMAND_POOL_INDEX - 1)) =
-                  reinterpret_cast< size_t >(
-                     *command_pool);
-
-               *(context + (CONTEXT_SIZE - COMMAND_BUFFER_LEVEL_INDEX - 1)) =
-                  command_buffer_level;
-
-               command_buffers.emplace_back(
-                  reinterpret_cast< VkCommandBuffer * >(
-                     context + (CONTEXT_SIZE - 1)),
-                  &FreeCommandBuffer);
-
-               *command_buffers.back() = allocated_command_buffer;
+               *command_buffers.back() =
+                  allocated_command_buffer;
             }
             else
             {

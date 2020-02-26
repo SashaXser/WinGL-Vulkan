@@ -35,6 +35,40 @@ void DestroyImageHandle(
    }
 }
 
+ImageHandle SetImageContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const VkImageCreateFlags create_flags,
+   const VkImageType image_type,
+   const VkFormat image_format,
+   const VkExtent3D image_extents,
+   const uint32_t mip_levels,
+   const uint32_t array_layers,
+   const VkSampleCountFlagBits sample_count,
+   const VkImageTiling image_tiling,
+   const VkImageUsageFlags image_usage,
+   const VkSharingMode sharing_mode,
+   const VkImageLayout image_layout )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *device);
+
+   return {
+      reinterpret_cast< VkImage * >(
+         context + (CONTEXT_SIZE - 1)),
+      &DestroyImageHandle
+   };
+}
+
 ImageHandle CreateImage(
    const DeviceHandle & device,
    const VkImageCreateFlags create_flags,
@@ -59,17 +93,21 @@ ImageHandle CreateImage(
 
       if (context)
       {
-         *(context + (CONTEXT_SIZE - PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (CONTEXT_SIZE - DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         image.reset(
-            reinterpret_cast< VkImage * >(
-               context + (CONTEXT_SIZE - 1)));
+         image =
+            SetImageContext(
+               context,
+               device,
+               create_flags,
+               image_type,
+               image_format,
+               image_extents,
+               mip_levels,
+               array_layers,
+               sample_count,
+               image_tiling,
+               image_usage,
+               sharing_mode,
+               image_layout);
 
          const VkImageCreateInfo info {
             VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,

@@ -43,6 +43,45 @@ void DestroyDeviceMemoryHandle(
    }
 }
 
+DeviceMemoryHandle SetAllocatedDeviceMemoryContextData(
+   size_t * const context,
+   const DeviceHandle & device,
+   const VkDeviceSize size,
+   const uint32_t type_index )
+{
+   namespace dm = device_memory;
+
+   vkl::internal::SetContextData<
+      dm::PHYSICAL_DEVICE_INDEX,
+      dm::CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      dm::DEVICE_INDEX,
+      dm::CONTEXT_SIZE >(
+         context,
+         *device);
+
+    vkl::internal::SetContextData<
+      dm::SIZE_INDEX,
+      dm::CONTEXT_SIZE >(
+         context,
+         size);
+
+   vkl::internal::SetContextData<
+      dm::TYPE_INDEX_INDEX,
+      dm::CONTEXT_SIZE >(
+         context,
+         type_index);
+
+   return {
+      reinterpret_cast< VkDeviceMemory * >(
+         context + (dm::CONTEXT_SIZE - 1)),
+      &DestroyDeviceMemoryHandle
+   };
+}
+
 DeviceMemoryHandle AllocateDeviceMemory(
    const DeviceHandle & device,
    const VkDeviceSize size,
@@ -60,23 +99,12 @@ DeviceMemoryHandle AllocateDeviceMemory(
 
       if (context)
       {
-         *(context + (dm::CONTEXT_SIZE - dm::PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (dm::CONTEXT_SIZE - dm::DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         *(context + (dm::CONTEXT_SIZE - dm::SIZE_INDEX - 1)) =
-            size;
-
-         *(context + (dm::CONTEXT_SIZE - dm::TYPE_INDEX_INDEX - 1)) =
-            type_index;
-
-         memory.reset(
-            reinterpret_cast< VkDeviceMemory * >(
-               context + (dm::CONTEXT_SIZE - 1)));
+         memory =
+            SetAllocatedDeviceMemoryContextData(
+               context,
+               device,
+               size,
+               type_index);
 
          const VkMemoryAllocateInfo info {
             VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -196,6 +224,59 @@ void DestroyMappedDeviceMemoryHandle(
    }
 }
 
+MappedDeviceMemoryHandle SetMapDeviceMemoryContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const DeviceMemoryHandle & device_memory,
+   const VkDeviceSize offset,
+   const VkDeviceSize size,
+   const VkMemoryMapFlags flags )
+{
+   namespace mdm = mapped_device_memory;
+
+   vkl::internal::SetContextData<
+      mdm::DEVICE_MEMORY_INDEX,
+      mdm::CONTEXT_SIZE >(
+         context,
+         *device_memory);
+
+   vkl::internal::SetContextData<
+      mdm::PHYSICAL_DEVICE_INDEX,
+      mdm::CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      mdm::DEVICE_INDEX,
+      mdm::CONTEXT_SIZE >(
+         context,
+         *device);
+
+   vkl::internal::SetContextData<
+      mdm::OFFSET_INDEX,
+      mdm::CONTEXT_SIZE >(
+         context,
+         offset);
+
+   vkl::internal::SetContextData<
+      mdm::SIZE_INDEX,
+      mdm::CONTEXT_SIZE >(
+         context,
+         size);
+
+   vkl::internal::SetContextData<
+      mdm::MEM_MAP_FLAGS_INDEX,
+      mdm::CONTEXT_SIZE >(
+         context,
+         flags);
+
+   return {
+      reinterpret_cast<void **>(
+         context + (mdm::CONTEXT_SIZE - 1)),
+      &DestroyMappedDeviceMemoryHandle
+   };
+}
+
 MappedDeviceMemoryHandle MapDeviceMemory(
    const DeviceHandle & device,
    const DeviceMemoryHandle & device_memory,
@@ -216,30 +297,14 @@ MappedDeviceMemoryHandle MapDeviceMemory(
 
       if (context)
       {
-         *(context + (mdm::CONTEXT_SIZE - mdm::DEVICE_MEMORY_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device_memory);
-
-         *(context + (mdm::CONTEXT_SIZE - mdm::PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (mdm::CONTEXT_SIZE - mdm::DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         *(context + (mdm::CONTEXT_SIZE - mdm::OFFSET_INDEX - 1)) =
-            offset;
-
-         *(context + (mdm::CONTEXT_SIZE - mdm::SIZE_INDEX - 1)) =
-            size;
-
-         *(context + (mdm::CONTEXT_SIZE - mdm::MEM_MAP_FLAGS_INDEX - 1)) =
-            flags;
-
-         mapped_memory.reset(
-            reinterpret_cast< void ** >(
-               context + (mdm::CONTEXT_SIZE - 1)));
+         mapped_memory =
+            SetMapDeviceMemoryContext(
+               context,
+               device,
+               device_memory,
+               offset,
+               size,
+               flags);
 
          const auto result =
             vkMapMemory(

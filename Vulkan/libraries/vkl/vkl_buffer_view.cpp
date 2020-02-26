@@ -35,6 +35,34 @@ void DestroyBufferViewHandle(
    }
 }
 
+BufferViewHandle SetBufferViewContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const BufferHandle & buffer,
+   const VkBufferViewCreateFlags create_flags,
+   const VkFormat format,
+   const VkDeviceSize offset,
+   const VkDeviceSize range )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *device);
+
+   return {
+      reinterpret_cast< VkBufferView * >(
+         context + (CONTEXT_SIZE - 1)),
+      &DestroyBufferViewHandle
+   };
+}
+
 BufferViewHandle CreateBufferView(
    const DeviceHandle & device,
    const BufferHandle & buffer,
@@ -54,17 +82,15 @@ BufferViewHandle CreateBufferView(
 
       if (context)
       {
-         *(context + (CONTEXT_SIZE - PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (CONTEXT_SIZE - DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         buffer_view.reset(
-            reinterpret_cast< VkBufferView * >(
-               context + (CONTEXT_SIZE - 1)));
+         buffer_view =
+            SetBufferViewContext(
+               context,
+               device,
+               buffer,
+               create_flags,
+               format,
+               offset,
+               range);
 
          const VkBufferViewCreateInfo info {
             VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,

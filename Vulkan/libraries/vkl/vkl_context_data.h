@@ -3,24 +3,58 @@
 
 // todo: need to change from size_t * to uint64_t *
 
+#include <type_traits>
+
 namespace vkl::internal
 {
 
-//template <
-//   size_t INDEX,
-//   size_t CONTEXT_SIZE,
-//   typename T >
-//inline T SetContextData(
-//   size_t * const context,
-//   const T data )
-//{
-//   if (context)
-//   {
-//      *(context + (CONTEXT_SIZE - INDEX - 1)) =
-//         reinterpret_cast< size_t >(
-//            data);
-//   }
-//}
+namespace details
+{
+
+template <
+   typename T,
+   typename F >
+inline
+std::enable_if_t<
+   !std::is_convertible_v< F, T >,
+   T >
+reinterpret_static_cast( const F f )
+{
+   return
+      reinterpret_cast< T >(f);
+}
+
+template <
+   typename T,
+   typename F >
+inline
+std::enable_if_t<
+   std::is_convertible_v< F, T >,
+   T >
+reinterpret_static_cast( const F f )
+{
+   return
+      static_cast< T >(f);
+}
+
+} // namespace details
+
+
+template <
+   size_t INDEX,
+   size_t CONTEXT_SIZE,
+   typename T >
+inline void SetContextData(
+   size_t * const context,
+   const T data )
+{
+   if (context)
+   {
+      *(context + (CONTEXT_SIZE - INDEX - 1)) =
+         details::reinterpret_static_cast< size_t >(
+            data);
+   }
+}
 
 template <
    typename T,

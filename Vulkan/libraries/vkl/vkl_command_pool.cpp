@@ -37,6 +37,43 @@ void DestroyCommandPoolHandle(
    }
 }
 
+CommandPoolHandle SetCommandPoolContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const VkCommandPoolCreateFlags create_flags,
+   const uint32_t queue_family_index )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *device);
+
+   vkl::internal::SetContextData<
+      COMMAND_POOL_CREATE_FLAGS_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         create_flags);
+
+   vkl::internal::SetContextData<
+      QUEUE_FAMILY_INDEX_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         queue_family_index);
+
+   return {
+      reinterpret_cast< VkCommandPool * >(
+         context + (CONTEXT_SIZE - 1)),
+      &DestroyCommandPoolHandle
+   };
+}
+
 CommandPoolHandle CreateCommandPool(
    const DeviceHandle & device,
    const VkCommandPoolCreateFlags create_flags,
@@ -52,23 +89,12 @@ CommandPoolHandle CreateCommandPool(
 
       if (context)
       {
-         *(context + (CONTEXT_SIZE - PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (CONTEXT_SIZE - DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         *(context + (CONTEXT_SIZE - COMMAND_POOL_CREATE_FLAGS_INDEX - 1)) =
-            create_flags;
-
-         *(context + (CONTEXT_SIZE - QUEUE_FAMILY_INDEX_INDEX - 1)) =
-            queue_family_index;
-
-         command_pool.reset(
-            reinterpret_cast< VkCommandPool * >(
-               context + (CONTEXT_SIZE - 1)));
+         command_pool =
+            SetCommandPoolContext(
+               context,
+               device,
+               create_flags,
+               queue_family_index);
 
          const VkCommandPoolCreateInfo info {
             VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,

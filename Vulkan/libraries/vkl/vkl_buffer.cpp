@@ -38,6 +38,50 @@ void DestroyBufferHandle(
    }
 }
 
+BufferHandle SetBufferContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const VkDeviceSize size,
+   const VkBufferUsageFlags usage,
+   const VkSharingMode mode )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *device);
+
+   vkl::internal::SetContextData<
+      SIZE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         size);
+
+   vkl::internal::SetContextData<
+      BUFFER_USAGE_FLAGS_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         usage);
+
+   vkl::internal::SetContextData<
+      SHARING_MODE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         mode);
+
+   return {
+      reinterpret_cast< VkBuffer * >(
+         context + (CONTEXT_SIZE - 1)),
+      &DestroyBufferHandle
+   };
+}
+
 BufferHandle CreateBuffer(
    const DeviceHandle & device,
    const VkDeviceSize size,
@@ -55,26 +99,13 @@ BufferHandle CreateBuffer(
 
       if (context)
       {
-         *(context + (CONTEXT_SIZE - PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (CONTEXT_SIZE - DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         *(context + (CONTEXT_SIZE - SIZE_INDEX - 1)) =
-            size;
-
-         *(context + (CONTEXT_SIZE - BUFFER_USAGE_FLAGS_INDEX - 1)) =
-            usage;
-
-         *(context + (CONTEXT_SIZE - SHARING_MODE_INDEX - 1)) =
-            mode;
-
-         buffer.reset(
-            reinterpret_cast< VkBuffer * >(
-               context + (CONTEXT_SIZE - 1)));
+         buffer =
+            SetBufferContext(
+               context,
+               device,
+               size,
+               usage,
+               mode);
 
          const VkBufferCreateInfo info {
             VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,

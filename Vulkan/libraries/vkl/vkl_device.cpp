@@ -1,4 +1,5 @@
 #include "vkl_device.h"
+#include "vkl_context_data.h"
 #include "vkl_allocator.h"
 
 #include <iostream>
@@ -10,6 +11,9 @@
 
 namespace vkl
 {
+
+constexpr size_t PHYSICAL_DEVICE_INDEX = 1;
+constexpr size_t CONTEXT_SIZE = 2;
 
 void DestoryDeviceHandle(
    const VkDevice * const device )
@@ -25,8 +29,28 @@ void DestoryDeviceHandle(
 
       delete []
          (reinterpret_cast< const size_t * >(
-            device) - 1);
+            device) - (CONTEXT_SIZE - 1));
    }
+}
+
+DeviceHandle SetDeviceContext(
+   size_t * const context,
+   const VkPhysicalDevice physical_device,
+   const VkDeviceQueueCreateFlags create_flags,
+   const uint32_t queue_family_index,
+   const uint32_t queue_count )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         physical_device);
+
+   return {
+      reinterpret_cast< VkDevice * >(
+         context + (CONTEXT_SIZE - 1)),
+      &DestoryDeviceHandle
+   };
 }
 
 DeviceHandle CreateDevice(
@@ -130,13 +154,13 @@ DeviceHandle CreateDevice(
 
       if (context)
       {
-         *context =
-            reinterpret_cast< size_t >(
-               physical_device);
-
-         device.reset(
-            reinterpret_cast< VkDevice * >(
-               context + 1));
+         device =
+            SetDeviceContext(
+               context,
+               physical_device,
+               create_flags,
+               queue_family_index,
+               queue_count);
 
          const VkResult created =
             vkCreateDevice(
@@ -174,17 +198,11 @@ DeviceHandle CreateDevice(
 VkPhysicalDevice GetPhysicalDevice(
    const DeviceHandle & device )
 {
-   VkPhysicalDevice physical_device { };
-
-   if (device && *device)
-   {
-      physical_device =
-         *reinterpret_cast< const VkPhysicalDevice * >(
-            reinterpret_cast< const size_t * >(
-               device.get()) - 1);
-   }
-
-   return physical_device;
+   return
+      vkl::internal::GetContextData<
+         VkPhysicalDevice,
+         PHYSICAL_DEVICE_INDEX >(
+            device.get());
 }
 
 } // namespace vkl

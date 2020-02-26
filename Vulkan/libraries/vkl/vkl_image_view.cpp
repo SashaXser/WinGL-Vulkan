@@ -35,6 +35,35 @@ void DestroyImageViewHandle(
    }
 }
 
+ImageViewHandle SetImageViewContext(
+   size_t * const context,
+   const DeviceHandle & device,
+   const ImageHandle & image,
+   const VkImageViewCreateFlags create_flags,
+   const VkImageViewType view_type,
+   const VkFormat format,
+   const VkComponentMapping & component_mapping,
+   const VkImageSubresourceRange & subresource_range )
+{
+   vkl::internal::SetContextData<
+      PHYSICAL_DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         GetPhysicalDevice(device));
+
+   vkl::internal::SetContextData<
+      DEVICE_INDEX,
+      CONTEXT_SIZE >(
+         context,
+         *device);
+
+   return {
+      reinterpret_cast< VkImageView * >(
+         context + (CONTEXT_SIZE - 1)),
+      &DestroyImageViewHandle
+   };
+}
+
 ImageViewHandle CreateImageView(
    const DeviceHandle & device,
    const ImageHandle & image,
@@ -55,17 +84,16 @@ ImageViewHandle CreateImageView(
 
       if (context)
       {
-         *(context + (CONTEXT_SIZE - PHYSICAL_DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               GetPhysicalDevice(device));
-
-         *(context + (CONTEXT_SIZE - DEVICE_INDEX - 1)) =
-            reinterpret_cast< size_t >(
-               *device);
-
-         image_view.reset(
-            reinterpret_cast< VkImageView * >(
-               context + (CONTEXT_SIZE - 1)));
+         image_view =
+            SetImageViewContext(
+               context,
+               device,
+               image,
+               create_flags,
+               view_type,
+               format,
+               component_mapping,
+               subresource_range);
 
          const VkImageViewCreateInfo info {
             VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
