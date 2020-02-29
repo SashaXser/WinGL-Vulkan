@@ -76,8 +76,10 @@ DeviceMemoryHandle SetAllocatedDeviceMemoryContextData(
          type_index);
 
    return {
-      reinterpret_cast< VkDeviceMemory * >(
-         context + (dm::CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         dm::CONTEXT_SIZE,
+         VkDeviceMemory >(
+            context),
       &DestroyDeviceMemoryHandle
    };
 }
@@ -272,8 +274,10 @@ MappedDeviceMemoryHandle SetMapDeviceMemoryContext(
          flags);
 
    return {
-      reinterpret_cast<void **>(
-         context + (mdm::CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         mdm::CONTEXT_SIZE,
+         void * >(
+            context),
       &DestroyMappedDeviceMemoryHandle
    };
 }

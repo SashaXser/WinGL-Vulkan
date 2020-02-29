@@ -76,8 +76,10 @@ BufferHandle SetBufferContext(
          mode);
 
    return {
-      reinterpret_cast< VkBuffer * >(
-         context + (CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         CONTEXT_SIZE,
+         VkBuffer >(
+            context),
       &DestroyBufferHandle
    };
 }

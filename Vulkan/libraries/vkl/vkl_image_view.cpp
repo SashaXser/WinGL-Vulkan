@@ -58,8 +58,10 @@ ImageViewHandle SetImageViewContext(
          *device);
 
    return {
-      reinterpret_cast< VkImageView * >(
-         context + (CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         CONTEXT_SIZE,
+         VkImageView >(
+            context),
       &DestroyImageViewHandle
    };
 }

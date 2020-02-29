@@ -62,6 +62,17 @@ inline void DeallocateContext(
          context) - (CONTEXT_SIZE - 1));
 }
 
+template<
+   size_t CONTEXT_SIZE,
+   typename T >
+inline T * GetContextPointer(
+   const context_ptr_t context )
+{
+   return
+      reinterpret_cast< T * >(
+         context + (CONTEXT_SIZE - 1));
+}
+
 template <
    size_t INDEX,
    size_t CONTEXT_SIZE,

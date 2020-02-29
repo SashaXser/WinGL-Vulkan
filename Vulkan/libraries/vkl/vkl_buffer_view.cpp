@@ -57,8 +57,10 @@ BufferViewHandle SetBufferViewContext(
          *device);
 
    return {
-      reinterpret_cast< VkBufferView * >(
-         context + (CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         CONTEXT_SIZE,
+         VkBufferView >(
+            context),
       &DestroyBufferViewHandle
    };
 }

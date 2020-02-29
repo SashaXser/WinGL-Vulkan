@@ -68,8 +68,10 @@ CommandPoolHandle SetCommandPoolContext(
          queue_family_index);
 
    return {
-      reinterpret_cast< VkCommandPool * >(
-         context + (CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         CONTEXT_SIZE,
+         VkCommandPool >(
+            context),
       &DestroyCommandPoolHandle
    };
 }

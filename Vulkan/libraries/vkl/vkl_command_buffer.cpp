@@ -71,8 +71,10 @@ CommandBufferHandle SetCommandBufferContext(
          command_buffer_level);
 
    return {
-      reinterpret_cast< VkCommandBuffer * >(
-         context + (CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         CONTEXT_SIZE,
+         VkCommandBuffer >(
+            context),
       &FreeCommandBuffer
    };
 }

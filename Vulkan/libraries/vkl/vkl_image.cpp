@@ -63,8 +63,10 @@ ImageHandle SetImageContext(
          *device);
 
    return {
-      reinterpret_cast< VkImage * >(
-         context + (CONTEXT_SIZE - 1)),
+      vkl::internal::GetContextPointer<
+         CONTEXT_SIZE,
+         VkImage >(
+            context),
       &DestroyImageHandle
    };
 }
