@@ -103,7 +103,7 @@ CommandBufferHandle AllocateCommandBuffer(
    return command_buffer;
 }
 
-std::vector< CommandBufferHandle >
+AllocatedCommandBuffers
 AllocateCommandBuffers(
    const DeviceHandle & device,
    const CommandPoolHandle & command_pool,

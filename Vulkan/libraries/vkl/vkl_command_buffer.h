@@ -8,7 +8,6 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
-#include <vector>
 
 namespace vkl
 {
@@ -18,7 +17,7 @@ CommandBufferHandle AllocateCommandBuffer(
    const CommandPoolHandle & command_pool,
    const VkCommandBufferLevel command_buffer_level );
 
-std::vector< CommandBufferHandle >
+AllocatedCommandBuffers
 AllocateCommandBuffers(
    const DeviceHandle & device,
    const CommandPoolHandle & command_pool,
