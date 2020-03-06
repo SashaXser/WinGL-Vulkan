@@ -10,9 +10,7 @@ namespace vkl
 {
 
 using InstanceHandle =
-   std::unique_ptr<
-      VkInstance,
-      void (*) ( const VkInstance * const ) >;
+   std::shared_ptr< VkInstance >;
 
 InstanceHandle CreateInstance(
    const char * const application_name,

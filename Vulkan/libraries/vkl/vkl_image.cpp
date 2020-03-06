@@ -144,8 +144,7 @@ ImageHandle CreateImage(
                << ")!"
                << std::endl;
 
-            image.reset(
-               nullptr);
+            image.reset();
          }
          else
          {

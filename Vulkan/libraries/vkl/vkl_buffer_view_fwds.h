@@ -9,9 +9,7 @@ namespace vkl
 {
 
 using BufferViewHandle =
-   std::unique_ptr<
-      VkBufferView,
-      void (*) ( const VkBufferView * const ) >;
+   std::shared_ptr< VkBufferView >;
 
 } // namespace vkl
 

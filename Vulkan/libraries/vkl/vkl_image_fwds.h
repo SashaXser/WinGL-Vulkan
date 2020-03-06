@@ -9,9 +9,7 @@ namespace vkl
 {
 
 using ImageHandle =
-   std::unique_ptr<
-      VkImage,
-      void (*) ( const VkImage * const ) >;
+   std::shared_ptr< VkImage >;
 
 } // namespace vkl
 

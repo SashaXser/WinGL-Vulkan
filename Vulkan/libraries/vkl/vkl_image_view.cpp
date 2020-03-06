@@ -124,8 +124,7 @@ ImageViewHandle CreateImageView(
                << ")!"
                << std::endl;
 
-            image_view.reset(
-               nullptr);
+            image_view.reset();
          }
          else
          {

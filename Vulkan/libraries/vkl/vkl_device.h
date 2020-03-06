@@ -10,9 +10,7 @@ namespace vkl
 {
 
 using DeviceHandle =
-   std::unique_ptr<
-      VkDevice,
-      void (*) ( const VkDevice * const ) >;
+   std::shared_ptr< VkDevice >;
 
 DeviceHandle CreateDevice(
    const VkPhysicalDevice physical_device,

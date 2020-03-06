@@ -9,9 +9,7 @@ namespace vkl
 {
 
 using BufferHandle =
-   std::unique_ptr<
-      VkBuffer,
-      void (*) ( const VkBuffer * const ) >;
+   std::shared_ptr< VkBuffer >;
 
 } // namespace vkl
 

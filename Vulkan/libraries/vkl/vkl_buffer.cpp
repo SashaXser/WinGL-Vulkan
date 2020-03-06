@@ -136,8 +136,7 @@ BufferHandle CreateBuffer(
                << ")!"
                << std::endl;
 
-            buffer.reset(
-               nullptr);
+            buffer.reset();
          }
          else
          {

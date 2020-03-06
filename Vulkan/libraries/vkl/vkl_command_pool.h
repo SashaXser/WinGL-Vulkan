@@ -12,9 +12,7 @@ namespace vkl
 {
 
 using CommandPoolHandle =
-   std::unique_ptr<
-      VkCommandPool,
-      void (*) ( const VkCommandPool * const ) >;
+   std::shared_ptr< VkCommandPool >;
 
 CommandPoolHandle CreateCommandPool(
    const DeviceHandle & device,

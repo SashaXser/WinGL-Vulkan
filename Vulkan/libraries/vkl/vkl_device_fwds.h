@@ -9,9 +9,7 @@ namespace vkl
 {
 
 using DeviceHandle =
-   std::unique_ptr<
-      VkDevice,
-      void (*) ( const VkDevice * const ) >;
+   std::shared_ptr< VkDevice >;
 
 } // namespace vkl
 

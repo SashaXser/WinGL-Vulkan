@@ -12,9 +12,7 @@ namespace vkl
 {
 
 using DeviceMemoryHandle =
-   std::unique_ptr<
-      VkDeviceMemory,
-      void (*) ( const VkDeviceMemory * const ) >;
+   std::shared_ptr< VkDeviceMemory >;
 
 DeviceMemoryHandle AllocateDeviceMemory(
    const DeviceHandle & device,
@@ -34,9 +32,7 @@ uint32_t GetTypeIndex(
    const DeviceMemoryHandle & memory );
 
 using MappedDeviceMemoryHandle =
-   std::unique_ptr<
-      void *,
-      void (*) ( const void * const * const ) >;
+   std::shared_ptr< void * >;
 
 MappedDeviceMemoryHandle MapDeviceMemory(
    const DeviceHandle & device,

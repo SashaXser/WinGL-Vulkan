@@ -121,8 +121,7 @@ CommandPoolHandle CreateCommandPool(
                << ")!"
                << std::endl;
 
-            command_pool.reset(
-               nullptr);
+            command_pool.reset();
          }
          else
          {

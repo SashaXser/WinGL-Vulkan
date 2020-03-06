@@ -131,8 +131,7 @@ DeviceMemoryHandle AllocateDeviceMemory(
                << ")!"
                << std::endl;
 
-            memory.reset(
-               nullptr);
+            memory.reset();
          }
          else
          {
@@ -329,8 +328,7 @@ MappedDeviceMemoryHandle MapDeviceMemory(
                << ")!"
                << std::endl;
 
-            mapped_memory.reset(
-               nullptr);
+            mapped_memory.reset();
          }
          else
          {

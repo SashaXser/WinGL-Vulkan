@@ -9,9 +9,7 @@ namespace vkl
 {
 
 using InstanceHandle =
-   std::unique_ptr<
-      VkInstance,
-      void (*) ( const VkInstance * const ) >;
+   std::shared_ptr< VkInstance >;
 
 } // namespace vkl
 

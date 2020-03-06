@@ -79,8 +79,7 @@ InstanceHandle CreateInstance(
             << ")!"
             << std::endl;
 
-         instance.reset(
-            nullptr);
+         instance.reset();
       }
       else
       {

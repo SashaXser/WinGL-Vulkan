@@ -9,14 +9,10 @@ namespace vkl
 {
 
 using DeviceMemoryHandle =
-   std::unique_ptr<
-      VkDeviceMemory,
-      void (*) ( const VkDeviceMemory * const ) >;
+   std::shared_ptr< VkDeviceMemory >;
 
 using MappedDeviceMemoryHandle =
-   std::unique_ptr<
-      void *,
-      void (*) ( const void * const * const ) >;
+   std::shared_ptr< void * >;
 
 } // namespace vkl
 

@@ -41,7 +41,7 @@ CreateBuffer(
          sharing_mode);
 
    vkl::DeviceMemoryHandle buffer_memory {
-      nullptr, nullptr };
+      nullptr };
 
    if (buffer)
    {
@@ -114,7 +114,7 @@ CreateImage(
          image_layout);
 
    vkl::DeviceMemoryHandle image_memory {
-      nullptr, nullptr };
+      nullptr };
 
    if (image)
    {
@@ -174,7 +174,7 @@ CreateCommandBuffer(
          queue_family_index);
 
    vkl::CommandBufferHandle command_buffer {
-      nullptr, nullptr };
+      nullptr };
 
    if (command_pool)
    {

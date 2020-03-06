@@ -120,8 +120,7 @@ BufferViewHandle CreateBufferView(
                << ")!"
                << std::endl;
 
-            buffer_view.reset(
-               nullptr);
+            buffer_view.reset();
          }
          else
          {

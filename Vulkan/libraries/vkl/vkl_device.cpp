@@ -180,8 +180,7 @@ DeviceHandle CreateDevice(
                << ")!"
                << std::endl;
 
-            device.reset(
-               nullptr);
+            device.reset();
          }
          else
          {
