@@ -2,17 +2,14 @@
 #define _VKL_IMAGE_H_
 
 #include "vkl_device_fwds.h"
+#include "vkl_image_fwds.h"
 
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
-#include <memory>
 
 namespace vkl
 {
-
-using ImageHandle =
-   std::shared_ptr< VkImage >;
 
 ImageHandle CreateImage(
    const DeviceHandle & device,

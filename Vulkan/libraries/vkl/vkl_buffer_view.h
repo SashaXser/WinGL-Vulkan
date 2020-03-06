@@ -1,18 +1,14 @@
 #ifndef _VKL_BUFFER_VIEW_H_
 #define _VKL_BUFFER_VIEW_H_
 
-#include "vkl/vkl_buffer_fwds.h"
-#include "vkl/vkl_device_fwds.h"
+#include "vkl_buffer_fwds.h"
+#include "vkl_buffer_view_fwds.h"
+#include "vkl_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
-#include <memory>
-
 namespace vkl
 {
-
-using BufferViewHandle =
-   std::shared_ptr< VkBufferView >;
 
 BufferViewHandle CreateBufferView(
    const DeviceHandle & device,

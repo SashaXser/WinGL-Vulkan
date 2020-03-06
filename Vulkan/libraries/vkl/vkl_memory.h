@@ -2,17 +2,14 @@
 #define _VKL_MEMORY_H_
 
 #include "vkl_device_fwds.h"
+#include "vkl_memory_fwds.h"
 
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
-#include <memory>
 
 namespace vkl
 {
-
-using DeviceMemoryHandle =
-   std::shared_ptr< VkDeviceMemory >;
 
 DeviceMemoryHandle AllocateDeviceMemory(
    const DeviceHandle & device,
@@ -30,9 +27,6 @@ VkDeviceSize GetSize(
 
 uint32_t GetTypeIndex(
    const DeviceMemoryHandle & memory );
-
-using MappedDeviceMemoryHandle =
-   std::shared_ptr< void * >;
 
 MappedDeviceMemoryHandle MapDeviceMemory(
    const DeviceHandle & device,

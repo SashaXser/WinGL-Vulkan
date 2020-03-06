@@ -1,17 +1,13 @@
 #ifndef _VKL_BUFFER_H_
 #define _VKL_BUFFER_H_
 
+#include "vkl_buffer_fwds.h"
 #include "vkl_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
-#include <memory>
-
 namespace vkl
 {
-
-using BufferHandle =
-   std::shared_ptr< VkBuffer >;
 
 BufferHandle CreateBuffer(
    const DeviceHandle & device,

@@ -3,16 +3,12 @@
 
 #include "vkl_device_fwds.h"
 #include "vkl_image_fwds.h"
+#include "vkl_image_view_fwds.h"
 
 #include <vulkan/vulkan.h>
 
-#include <memory>
-
 namespace vkl
 {
-
-using ImageViewHandle =
-   std::shared_ptr< VkImageView >;
 
 ImageViewHandle CreateImageView(
    const DeviceHandle & device,

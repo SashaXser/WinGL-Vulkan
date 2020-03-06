@@ -1,20 +1,17 @@
 #ifndef _VKL_COMMAND_BUFFER_H_
 #define _VKL_COMMAND_BUFFER_H_
 
+#include "vkl_command_buffer_fwds.h"
 #include "vkl_command_pool_fwds.h"
 #include "vkl_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 namespace vkl
 {
-
-using CommandBufferHandle =
-   std::shared_ptr< VkCommandBuffer >;
 
 CommandBufferHandle AllocateCommandBuffer(
    const DeviceHandle & device,

@@ -1,16 +1,14 @@
 #ifndef _VKL_INSTANCE_H_
 #define _VKL_INSTANCE_H_
 
+#include "vkl_instance_fwds.h"
+
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
-#include <memory>
 
 namespace vkl
 {
-
-using InstanceHandle =
-   std::shared_ptr< VkInstance >;
 
 InstanceHandle CreateInstance(
    const char * const application_name,

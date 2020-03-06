@@ -2,6 +2,7 @@
 #define _VKL_PHYSICAL_DEVICE_H_
 
 #include "vkl_instance_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -12,23 +13,11 @@
 namespace vkl
 {
 
-using PhysicalDevices =
-   std::vector<
-      std::pair<
-         VkPhysicalDeviceProperties,
-         VkPhysicalDevice > >;
-
 PhysicalDevices GetPhysicalDevices(
    const InstanceHandle & instance );
 
 PhysicalDevices GetPhysicalGPUDevices(
    const InstanceHandle & instnace );
-
-using PhysicalDeviceQueueFamilyProperties =
-   std::vector<
-      std::pair<
-         uint32_t,
-         VkQueueFamilyProperties > >;
 
 PhysicalDeviceQueueFamilyProperties
 GetPhysicalDeviceQueueFamilyProperties(
