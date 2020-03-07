@@ -18,7 +18,7 @@ BufferViewHandle CreateBufferView(
    const VkDeviceSize offset,
    const VkDeviceSize range );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const BufferViewHandle & buffer_view );
 
 VkPhysicalDevice GetPhysicalDevice(

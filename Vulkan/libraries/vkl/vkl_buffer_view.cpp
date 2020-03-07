@@ -3,15 +3,21 @@
 #include "vkl_context_data.h"
 #include "vkl_device.h"
 
-#include <cstddef>
 #include <iostream>
 
 namespace vkl
 {
 
-constexpr size_t DEVICE_INDEX = 1;
-constexpr size_t PHYSICAL_DEVICE_INDEX = 2;
-constexpr size_t CONTEXT_SIZE = 3;
+struct Context
+{
+   VkPhysicalDevice physical_device;
+   DeviceHandle device;
+   BufferHandle buffer;
+   VkBufferViewCreateFlags create_flags;
+   VkFormat format;
+   VkDeviceSize offset;
+   VkDeviceSize range;
+};
 
 void DestroyBufferViewHandle(
    const VkBufferView * const buffer_view )
@@ -20,49 +26,23 @@ void DestroyBufferViewHandle(
    {
       if (*buffer_view)
       {
-         vkDestroyBufferView(
-            vkl::internal::GetContextData<
-               VkDevice,
-               DEVICE_INDEX >(
-                  buffer_view),
-            *buffer_view,
-            DefaultAllocator());
+         const auto device =
+            vkl::internal::GetContextData(
+               buffer_view,
+               &Context::device);
+
+         if (device && *device)
+         {
+            vkDestroyBufferView(
+               *device,
+               *buffer_view,
+               DefaultAllocator());
+         }
       }
 
-      vkl::internal::DeallocateContext<
-         CONTEXT_SIZE >(
-            buffer_view);
+      vkl::internal::DeallocateContext(
+         buffer_view);
    }
-}
-
-BufferViewHandle SetBufferViewContext(
-   const vkl::internal::context_ptr_t context,
-   const DeviceHandle & device,
-   const BufferHandle & buffer,
-   const VkBufferViewCreateFlags create_flags,
-   const VkFormat format,
-   const VkDeviceSize offset,
-   const VkDeviceSize range )
-{
-   vkl::internal::SetContextData<
-      PHYSICAL_DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         GetPhysicalDevice(device));
-
-   vkl::internal::SetContextData<
-      DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         *device);
-
-   return {
-      vkl::internal::GetContextPointer<
-         CONTEXT_SIZE,
-         VkBufferView >(
-            context),
-      &DestroyBufferViewHandle
-   };
 }
 
 BufferViewHandle CreateBufferView(
@@ -79,22 +59,21 @@ BufferViewHandle CreateBufferView(
    if (device && *device &&
        buffer && *buffer)
    {
-      const auto context =
+      buffer_view.reset(
          vkl::internal::AllocateContext<
-            CONTEXT_SIZE >();
-
-      if (context)
-      {
-         buffer_view =
-            SetBufferViewContext(
-               context,
+            VkBufferView,
+            Context >(
+               GetPhysicalDevice(device),
                device,
                buffer,
                create_flags,
                format,
                offset,
-               range);
+               range),
+         &DestroyBufferViewHandle);
 
+      if (buffer_view)
+      {
          const VkBufferViewCreateInfo info {
             VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
             nullptr,
@@ -134,24 +113,22 @@ BufferViewHandle CreateBufferView(
    return buffer_view;
 }
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const BufferViewHandle & buffer_view )
 {
    return
-      vkl::internal::GetContextData<
-         VkDevice,
-         DEVICE_INDEX >(
-            buffer_view.get());
+      vkl::internal::GetContextData(
+         buffer_view.get(),
+         &Context::device);
 }
 
 VkPhysicalDevice GetPhysicalDevice(
    const BufferViewHandle & buffer_view )
 {
    return
-      vkl::internal::GetContextData<
-         VkPhysicalDevice,
-         PHYSICAL_DEVICE_INDEX >(
-            buffer_view.get());
+      vkl::internal::GetContextData(
+         buffer_view.get(),
+         &Context::physical_device);
 }
 
 } // namespace vkl
