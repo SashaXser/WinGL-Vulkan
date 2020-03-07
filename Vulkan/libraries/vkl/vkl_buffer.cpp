@@ -9,12 +9,14 @@
 namespace vkl
 {
 
-constexpr size_t DEVICE_INDEX = 1;
-constexpr size_t PHYSICAL_DEVICE_INDEX = 2;
-constexpr size_t SIZE_INDEX = 3;
-constexpr size_t BUFFER_USAGE_FLAGS_INDEX = 4;
-constexpr size_t SHARING_MODE_INDEX = 5;
-constexpr size_t CONTEXT_SIZE = 6;
+struct Context final
+{
+   VkPhysicalDevice physical_device;
+   DeviceHandle device;
+   VkDeviceSize size;
+   VkBufferUsageFlags usage_flags;
+   VkSharingMode sharing_mode;
+};
 
 void DestroyBufferHandle(
    const VkBuffer * const buffer )
@@ -23,65 +25,23 @@ void DestroyBufferHandle(
    {
       if (*buffer)
       {
-         vkDestroyBuffer(
-            vkl::internal::GetContextData<
-               VkDevice,
-               DEVICE_INDEX >(
-                  buffer),
-            *buffer,
-            DefaultAllocator());
+         const auto device =
+            vkl::internal::GetContextData(
+               buffer,
+               &Context::device);
+
+         if (device && *device)
+         {
+            vkDestroyBuffer(
+               *device,
+               *buffer,
+               DefaultAllocator());
+         }
       }
 
-      vkl::internal::DeallocateContext<
-         CONTEXT_SIZE >(
-            buffer);
+      vkl::internal::DeallocateContext(
+         buffer);
    }
-}
-
-BufferHandle SetBufferContext(
-   const vkl::internal::context_ptr_t context,
-   const DeviceHandle & device,
-   const VkDeviceSize size,
-   const VkBufferUsageFlags usage,
-   const VkSharingMode mode )
-{
-   vkl::internal::SetContextData<
-      PHYSICAL_DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         GetPhysicalDevice(device));
-
-   vkl::internal::SetContextData<
-      DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         *device);
-
-   vkl::internal::SetContextData<
-      SIZE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         size);
-
-   vkl::internal::SetContextData<
-      BUFFER_USAGE_FLAGS_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         usage);
-
-   vkl::internal::SetContextData<
-      SHARING_MODE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         mode);
-
-   return {
-      vkl::internal::GetContextPointer<
-         CONTEXT_SIZE,
-         VkBuffer >(
-            context),
-      &DestroyBufferHandle
-   };
 }
 
 BufferHandle CreateBuffer(
@@ -96,20 +56,19 @@ BufferHandle CreateBuffer(
 
    if (device && *device)
    {
-      const auto context =
+      buffer.reset(
          vkl::internal::AllocateContext<
-            CONTEXT_SIZE >();
-
-      if (context)
-      {
-         buffer =
-            SetBufferContext(
-               context,
+            VkBuffer,
+            Context >(
+               GetPhysicalDevice(device),
                device,
                size,
                usage,
-               mode);
+               mode),
+         &DestroyBufferHandle);
 
+      if (buffer)
+      {
          const VkBufferCreateInfo info {
             VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             nullptr,
@@ -152,54 +111,49 @@ BufferHandle CreateBuffer(
    return buffer;
 }
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const BufferHandle & buffer )
 {
    return
-      vkl::internal::GetContextData<
-         VkDevice,
-         DEVICE_INDEX >(
-            buffer.get());
+      vkl::internal::GetContextData(
+         buffer.get(),
+         &Context::device);
 }
 
 VkPhysicalDevice GetPhysicalDevice(
    const BufferHandle & buffer )
 {
    return
-      vkl::internal::GetContextData<
-         VkPhysicalDevice,
-         PHYSICAL_DEVICE_INDEX >(
-            buffer.get());
+      vkl::internal::GetContextData(
+         buffer.get(),
+         &Context::physical_device);
 }
 
 VkDeviceSize GetSize(
    const BufferHandle & buffer )
 {
    return
-      vkl::internal::GetContextData<
-         VkDeviceSize,
-         SIZE_INDEX >(
-            buffer.get());
+      vkl::internal::GetContextData(
+         buffer.get(),
+         &Context::size);
 }
 
 VkBufferUsageFlags GetBufferUsageFlags(
    const BufferHandle & buffer )
 {
    return
-      vkl::internal::GetContextData<
-         VkBufferUsageFlags,
-         BUFFER_USAGE_FLAGS_INDEX >(
-            buffer.get());
+      vkl::internal::GetContextData(
+         buffer.get(),
+         &Context::usage_flags);
 }
 
 VkSharingMode GetSharingMode(
    const BufferHandle & buffer )
 {
    return
-      vkl::internal::GetContextData<
-         VkSharingMode,
-         SHARING_MODE_INDEX >(
-            buffer.get());
+      vkl::internal::GetContextData(
+         buffer.get(),
+         &Context::sharing_mode);
 }
 
 } // namespace vkl

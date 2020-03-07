@@ -15,7 +15,7 @@ BufferHandle CreateBuffer(
    const VkBufferUsageFlags usage,
    const VkSharingMode mode );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const BufferHandle & buffer );
 
 VkPhysicalDevice GetPhysicalDevice(
