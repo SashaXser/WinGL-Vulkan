@@ -3,6 +3,7 @@
 #include "vkl_device.h"
 
 #include <iostream>
+#include <iterator>
 
 namespace vkl
 {
@@ -138,6 +139,18 @@ AllocateCommandBuffers(
             else
             {
                command_buffers.clear();
+
+               const auto remaining =
+                  std::distance< const VkCommandBuffer * >(
+                     &allocated_command_buffer,
+                     allocated_command_buffers.data() +
+                     allocated_command_buffers.size());
+
+               vkFreeCommandBuffers(
+                  *device,
+                  *command_pool,
+                  static_cast< uint32_t >(remaining),
+                  &allocated_command_buffer);
 
                break;
             }
