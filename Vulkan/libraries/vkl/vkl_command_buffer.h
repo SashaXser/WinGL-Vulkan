@@ -31,7 +31,7 @@ bool BeginCommandBuffer(
 bool EndCommandBuffer(
    const CommandBufferHandle & command_buffer );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const CommandBufferHandle & command_buffer );
 
 VkPhysicalDevice GetPhysicalDevice(
