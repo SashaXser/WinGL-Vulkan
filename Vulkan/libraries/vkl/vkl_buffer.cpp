@@ -8,6 +8,9 @@
 namespace vkl
 {
 
+namespace
+{
+
 struct Context final
 {
    VkPhysicalDevice physical_device;
@@ -16,6 +19,8 @@ struct Context final
    VkBufferUsageFlags usage_flags;
    VkSharingMode sharing_mode;
 };
+
+} // namespace
 
 void DestroyBufferHandle(
    const VkBuffer * const buffer )

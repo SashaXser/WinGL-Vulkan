@@ -7,6 +7,9 @@
 namespace vkl
 {
 
+namespace
+{
+
 struct Context
 {
    VkPhysicalDevice physical_device;
@@ -14,6 +17,8 @@ struct Context
    CommandPoolHandle command_pool;
    VkCommandBufferLevel command_buffer_level;
 };
+
+} // namespace
 
 void FreeCommandBuffer(
    const VkCommandBuffer * const command_buffer )

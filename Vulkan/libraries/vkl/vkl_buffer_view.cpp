@@ -8,6 +8,9 @@
 namespace vkl
 {
 
+namespace
+{
+
 struct Context
 {
    VkPhysicalDevice physical_device;
@@ -18,6 +21,8 @@ struct Context
    VkDeviceSize offset;
    VkDeviceSize range;
 };
+
+} // namespace
 
 void DestroyBufferViewHandle(
    const VkBufferView * const buffer_view )
