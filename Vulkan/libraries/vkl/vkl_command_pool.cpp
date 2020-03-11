@@ -3,17 +3,23 @@
 #include "vkl_context_data.h"
 #include "vkl_device.h"
 
-#include <cstddef>
 #include <iostream>
 
 namespace vkl
 {
 
-constexpr size_t DEVICE_INDEX = 1;
-constexpr size_t PHYSICAL_DEVICE_INDEX = 2;
-constexpr size_t COMMAND_POOL_CREATE_FLAGS_INDEX = 3;
-constexpr size_t QUEUE_FAMILY_INDEX_INDEX = 4;
-constexpr size_t CONTEXT_SIZE = 5;
+namespace
+{
+
+struct Context
+{
+   VkPhysicalDevice physical_device;
+   DeviceHandle device;
+   VkCommandPoolCreateFlags create_flags;
+   uint32_t queue_family_index;
+};
+
+} // namespace
 
 void DestroyCommandPoolHandle(
    const VkCommandPool * const command_pool )
@@ -22,58 +28,23 @@ void DestroyCommandPoolHandle(
    {
       if (*command_pool)
       {
-         vkDestroyCommandPool(
-            vkl::internal::GetContextData<
-               VkDevice,
-               DEVICE_INDEX >(
-                  command_pool),
-            *command_pool,
-            DefaultAllocator());
+         const auto device =
+            vkl::internal::GetContextData(
+               command_pool,
+               &Context::device);
+
+         if (device && *device)
+         {
+            vkDestroyCommandPool(
+               *device,
+               *command_pool,
+               DefaultAllocator());
+         }
       }
 
-      vkl::internal::DeallocateContext<
-         CONTEXT_SIZE >(
-            command_pool);
+      vkl::internal::DeallocateContext(
+         command_pool);
    }
-}
-
-CommandPoolHandle SetCommandPoolContext(
-   const vkl::internal::context_ptr_t context,
-   const DeviceHandle & device,
-   const VkCommandPoolCreateFlags create_flags,
-   const uint32_t queue_family_index )
-{
-   vkl::internal::SetContextData<
-      PHYSICAL_DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         GetPhysicalDevice(device));
-
-   vkl::internal::SetContextData<
-      DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         *device);
-
-   vkl::internal::SetContextData<
-      COMMAND_POOL_CREATE_FLAGS_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         create_flags);
-
-   vkl::internal::SetContextData<
-      QUEUE_FAMILY_INDEX_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         queue_family_index);
-
-   return {
-      vkl::internal::GetContextPointer<
-         CONTEXT_SIZE,
-         VkCommandPool >(
-            context),
-      &DestroyCommandPoolHandle
-   };
 }
 
 CommandPoolHandle CreateCommandPool(
@@ -86,19 +57,18 @@ CommandPoolHandle CreateCommandPool(
 
    if (device && *device)
    {
-      const auto context =
+      command_pool.reset(
          vkl::internal::AllocateContext<
-            CONTEXT_SIZE >();
-
-      if (context)
-      {
-         command_pool =
-            SetCommandPoolContext(
-               context,
+            VkCommandPool,
+            Context >(
+               GetPhysicalDevice(device),
                device,
                create_flags,
-               queue_family_index);
+               queue_family_index),
+         &DestroyCommandPoolHandle);
 
+      if (command_pool)
+      {
          const VkCommandPoolCreateInfo info {
             VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
             nullptr,
@@ -148,7 +118,7 @@ bool ResetCommandPool(
       {
          const auto result =
             vkResetCommandPool(
-               device,
+               *device,
                *command_pool,
                reset_flags);
 
@@ -174,24 +144,22 @@ bool ResetCommandPool(
    return reset;
 }
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const CommandPoolHandle & command_pool )
 {
    return
-      vkl::internal::GetContextData<
-         VkDevice,
-         DEVICE_INDEX >(
-            command_pool.get());
+      vkl::internal::GetContextData(
+         command_pool.get(),
+         &Context::device);
 }
 
 VkPhysicalDevice GetPhysicalDevice(
    const CommandPoolHandle & command_pool )
 {
    return
-      vkl::internal::GetContextData<
-         VkPhysicalDevice,
-         PHYSICAL_DEVICE_INDEX >(
-            command_pool.get());
+      vkl::internal::GetContextData(
+         command_pool.get(),
+         &Context::physical_device);
 }
 
 } // namespace vkl

@@ -20,7 +20,7 @@ bool ResetCommandPool(
    const CommandPoolHandle & command_pool,
    const VkCommandPoolResetFlags & reset_flags );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const CommandPoolHandle & command_pool );
 
 VkPhysicalDevice GetPhysicalDevice(
