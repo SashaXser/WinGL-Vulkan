@@ -1,24 +1,45 @@
 #include "vkl_instance.h"
 #include "vkl_allocator.h"
+#include "vkl_context_data.h"
 
 #include <ios>
 #include <iostream>
-#include <new>
+#include <string>
 
 namespace vkl
 {
 
+namespace
+{
+
+struct Context
+{
+   std::string application_name;
+   uint32_t application_version;
+   std::string engine_name;
+   uint32_t engine_version;
+   uint32_t vk_api_version_major;
+   uint32_t vk_api_version_minor;
+   uint32_t vk_api_version_patch;
+};
+
+} // namespace
+
 void DestroyInstanceHandle(
    const VkInstance * const instance )
 {
-   if (instance && *instance)
+   if (instance)
    {
-      vkDestroyInstance(
-         *instance,
-         DefaultAllocator());
-   }
+      if (*instance)
+      {
+         vkDestroyInstance(
+            *instance,
+            DefaultAllocator());
+      }
 
-   delete instance;
+      vkl::internal::DeallocateContext(
+         instance);
+   }
 }
 
 InstanceHandle CreateInstance(
@@ -31,7 +52,16 @@ InstanceHandle CreateInstance(
    const uint32_t vk_api_version_patch )
 {
    InstanceHandle instance {
-      new (std::nothrow) VkInstance { },
+      vkl::internal::AllocateContext<
+         VkInstance,
+         Context >(
+            application_name ? application_name : "",
+            application_version,
+            engine_name ? engine_name : "",
+            engine_version,
+            vk_api_version_major,
+            vk_api_version_minor,
+            vk_api_version_patch),
       &DestroyInstanceHandle };
 
    if (!instance)
