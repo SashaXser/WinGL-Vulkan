@@ -25,7 +25,7 @@ ImageHandle CreateImage(
    const VkSharingMode sharing_mode,
    const VkImageLayout image_layout );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const ImageHandle & image );
 
 VkPhysicalDevice GetPhysicalDevice(
