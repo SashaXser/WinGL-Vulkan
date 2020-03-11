@@ -3,15 +3,27 @@
 #include "vkl_context_data.h"
 #include "vkl_device.h"
 
-#include <cstddef>
 #include <iostream>
 
 namespace vkl
 {
 
-constexpr size_t DEVICE_INDEX = 1;
-constexpr size_t PHYSICAL_DEVICE_INDEX = 2;
-constexpr size_t CONTEXT_SIZE = 3;
+namespace
+{
+
+struct Context
+{
+   VkPhysicalDevice physical_device;
+   DeviceHandle device;
+   ImageHandle image;
+   VkImageViewCreateFlags create_flags;
+   VkImageViewType view_type;
+   VkFormat format;
+   VkComponentMapping component_mapping;
+   VkImageSubresourceRange subresource_range;
+};
+
+} // namespace
 
 void DestroyImageViewHandle(
    const VkImageView * const image_view )
@@ -20,50 +32,23 @@ void DestroyImageViewHandle(
    {
       if (*image_view)
       {
-         vkDestroyImageView(
-            vkl::internal::GetContextData<
-               VkDevice,
-               DEVICE_INDEX >(
-                  image_view),
-            *image_view,
-            DefaultAllocator());
+         const auto device =
+            vkl::internal::GetContextData(
+               image_view,
+               &Context::device);
+
+         if (device && *device)
+         {
+            vkDestroyImageView(
+               *device,
+               *image_view,
+               DefaultAllocator());
+         }
       }
 
-      vkl::internal::DeallocateContext<
-         CONTEXT_SIZE >(
-            image_view);
+      vkl::internal::DeallocateContext(
+         image_view);
    }
-}
-
-ImageViewHandle SetImageViewContext(
-   const vkl::internal::context_ptr_t context,
-   const DeviceHandle & device,
-   const ImageHandle & image,
-   const VkImageViewCreateFlags create_flags,
-   const VkImageViewType view_type,
-   const VkFormat format,
-   const VkComponentMapping & component_mapping,
-   const VkImageSubresourceRange & subresource_range )
-{
-   vkl::internal::SetContextData<
-      PHYSICAL_DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         GetPhysicalDevice(device));
-
-   vkl::internal::SetContextData<
-      DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         *device);
-
-   return {
-      vkl::internal::GetContextPointer<
-         CONTEXT_SIZE,
-         VkImageView >(
-            context),
-      &DestroyImageViewHandle
-   };
 }
 
 ImageViewHandle CreateImageView(
@@ -81,23 +66,22 @@ ImageViewHandle CreateImageView(
    if (device && *device &&
        image && *image)
    {
-      const auto context =
+      image_view.reset(
          vkl::internal::AllocateContext<
-            CONTEXT_SIZE >();
-
-      if (context)
-      {
-         image_view =
-            SetImageViewContext(
-               context,
+            VkImageView,
+            Context >(
+               GetPhysicalDevice(device),
                device,
                image,
                create_flags,
                view_type,
                format,
                component_mapping,
-               subresource_range);
+               subresource_range),
+         &DestroyImageViewHandle);
 
+      if (image_view)
+      {
          const VkImageViewCreateInfo info {
             VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             nullptr,
@@ -138,24 +122,22 @@ ImageViewHandle CreateImageView(
    return image_view;
 }
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const ImageViewHandle & image_view )
 {
    return
-      vkl::internal::GetContextData<
-         VkDevice,
-         DEVICE_INDEX >(
-            image_view.get());
+      vkl::internal::GetContextData(
+         image_view.get(),
+         &Context::device);
 }
 
 VkPhysicalDevice GetPhysicalDevice(
    const ImageViewHandle & image_view )
 {
    return
-      vkl::internal::GetContextData<
-         VkPhysicalDevice,
-         PHYSICAL_DEVICE_INDEX >(
-            image_view.get());
+      vkl::internal::GetContextData(
+         image_view.get(),
+         &Context::physical_device);
 }
 
 } // namespace vkl

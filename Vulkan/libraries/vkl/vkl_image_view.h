@@ -19,7 +19,7 @@ ImageViewHandle CreateImageView(
    const VkComponentMapping & component_mapping,
    const VkImageSubresourceRange & subresource_range );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const ImageViewHandle & image_view );
 
 VkPhysicalDevice GetPhysicalDevice(
