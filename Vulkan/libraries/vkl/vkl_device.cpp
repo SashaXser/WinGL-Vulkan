@@ -2,7 +2,6 @@
 #include "vkl_context_data.h"
 #include "vkl_allocator.h"
 
-#include <cstddef>
 #include <iostream>
 
 #if _DEBUG
@@ -12,8 +11,18 @@
 namespace vkl
 {
 
-constexpr size_t PHYSICAL_DEVICE_INDEX = 1;
-constexpr size_t CONTEXT_SIZE = 2;
+namespace
+{
+
+struct Context
+{
+   VkPhysicalDevice physical_device;
+   VkDeviceQueueCreateFlags create_flags;
+   uint32_t queue_family_index;
+   uint32_t queue_count;
+};
+
+} // namespace
 
 void DestoryDeviceHandle(
    const VkDevice * const device )
@@ -27,32 +36,9 @@ void DestoryDeviceHandle(
             DefaultAllocator());
       }
 
-      vkl::internal::DeallocateContext<
-         CONTEXT_SIZE >(
-            device);
+      vkl::internal::DeallocateContext(
+         device);
    }
-}
-
-DeviceHandle SetDeviceContext(
-   const vkl::internal::context_ptr_t context,
-   const VkPhysicalDevice physical_device,
-   const VkDeviceQueueCreateFlags create_flags,
-   const uint32_t queue_family_index,
-   const uint32_t queue_count )
-{
-   vkl::internal::SetContextData<
-      PHYSICAL_DEVICE_INDEX,
-      CONTEXT_SIZE >(
-         context,
-         physical_device);
-
-   return {
-      vkl::internal::GetContextPointer<
-         CONTEXT_SIZE,
-         VkDevice >(
-            context),
-      &DestoryDeviceHandle
-   };
 }
 
 DeviceHandle CreateDevice(
@@ -151,20 +137,18 @@ DeviceHandle CreateDevice(
       create_info.ppEnabledExtensionNames = nullptr;
       create_info.pEnabledFeatures = &supported_features;
 
-      const auto context =
+      device.reset(
          vkl::internal::AllocateContext<
-            CONTEXT_SIZE >();
-
-      if (context)
-      {
-         device =
-            SetDeviceContext(
-               context,
+            VkDevice,
+            Context >(
                physical_device,
                create_flags,
                queue_family_index,
-               queue_count);
+               queue_count),
+         &DestoryDeviceHandle);
 
+      if (device)
+      {
          const VkResult created =
             vkCreateDevice(
                physical_device,
@@ -201,10 +185,9 @@ VkPhysicalDevice GetPhysicalDevice(
    const DeviceHandle & device )
 {
    return
-      vkl::internal::GetContextData<
-         VkPhysicalDevice,
-         PHYSICAL_DEVICE_INDEX >(
-            device.get());
+      vkl::internal::GetContextData(
+         device.get(),
+         &Context::physical_device);
 }
 
 } // namespace vkl
