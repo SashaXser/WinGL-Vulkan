@@ -16,7 +16,7 @@ DeviceMemoryHandle AllocateDeviceMemory(
    const VkDeviceSize size,
    const uint32_t type_index );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const DeviceMemoryHandle & memory );
 
 VkPhysicalDevice GetPhysicalDevice(
@@ -35,13 +35,13 @@ MappedDeviceMemoryHandle MapDeviceMemory(
    const VkDeviceSize size,
    const VkMemoryMapFlags flags );
 
-VkDevice GetDevice(
+DeviceHandle GetDevice(
    const MappedDeviceMemoryHandle & mapped_memory );
 
 VkPhysicalDevice GetPhysicalDevice(
    const MappedDeviceMemoryHandle & mapped_memory );
 
-VkDeviceMemory GetDeviceMemory(
+DeviceMemoryHandle GetDeviceMemory(
    const MappedDeviceMemoryHandle & mapped_memory );
 
 VkDeviceSize GetOffset(
