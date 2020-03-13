@@ -14,3 +14,6 @@ set_target_properties(
    PROPERTIES
    FOLDER
    "${VULKAN_APPLICATION_IDE_FOLDER}")
+   
+configure_user_file(
+   ${target_name})
