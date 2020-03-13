@@ -202,7 +202,7 @@ int32_t main(
 {
    const auto instance =
       vkl::CreateInstance(
-         "vulkan-queues-and-commands",
+         "vulkan-moving-data",
          1,
          nullptr,
          0,
