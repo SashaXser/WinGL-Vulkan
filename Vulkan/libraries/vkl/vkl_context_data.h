@@ -1,14 +1,13 @@
 #ifndef _VKL_CONTEXT_DATA_H_
 #define _VKL_CONTEXT_DATA_H_
 
-#include <cstddef>
 #include <cstdint>
 #include <new>
 
 namespace vkl::internal
 {
 
-using context_t = uint64_t;
+using context_t = std::uintptr_t;
 using context_ptr_t = context_t *;
 
 template <
