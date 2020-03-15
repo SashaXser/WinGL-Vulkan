@@ -231,7 +231,7 @@ const VkAllocationCallbacks allocator_callbacks_ =
 
 const VkAllocationCallbacks * DefaultAllocator( )
 {
-#ifndef DISABLE_DEFAULT_VULKAN_ALLOCATOR
+#ifndef VKL_DISABLE_DEFAULT_VULKAN_ALLOCATOR
    return &default::allocator_callbacks_;
 #else
    return nullptr;

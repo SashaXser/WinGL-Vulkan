@@ -49,11 +49,11 @@ target_include_directories(
    PUBLIC
    "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-if (DISABLE_DEFAULT_VULKAN_ALLOCATOR)
+if (VKL_DISABLE_DEFAULT_VULKAN_ALLOCATOR)
    target_compile_definitions(
       ${target_name}
       PRIVATE
-      DISABLE_DEFAULT_VULKAN_ALLOCATOR)
+      VKL_DISABLE_DEFAULT_VULKAN_ALLOCATOR)
 endif ( )
 
 set_target_properties(
