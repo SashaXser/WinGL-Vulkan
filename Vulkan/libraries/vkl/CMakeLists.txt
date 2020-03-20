@@ -36,13 +36,25 @@ add_library(
    vkl_memory_fwds.h
    vkl_physical_device.cpp
    vkl_physical_device.h
-   vkl_physical_device_fwds.h)
+   vkl_physical_device_fwds.h
+   vkl_window.cpp
+   vkl_window.h
+   vkl_window_fwds.h
+   vkl_window_input_action.h
+   vkl_window_keyboard_keys.h
+   vkl_window_modifier_keys.h
+   vkl_window_mouse_buttons.h)
 
 find_package(Vulkan REQUIRED)
 target_link_libraries(
    ${target_name}
    PUBLIC
    Vulkan::Vulkan)
+
+target_link_libraries(
+   ${target_name}
+   PRIVATE
+   glfw)
 
 target_include_directories(
    ${target_name}
