@@ -61,6 +61,17 @@ target_include_directories(
    PUBLIC
    "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
+if (WIN32)
+   target_compile_definitions(
+      ${target_name}
+      PUBLIC
+      VK_USE_PLATFORM_WIN32_KHR)
+else ( )
+   message(
+      FATAL_ERROR
+      "Define VK Platform Type!")
+endif ( )
+
 if (VKL_DISABLE_DEFAULT_VULKAN_ALLOCATOR)
    target_compile_definitions(
       ${target_name}
