@@ -25,6 +25,10 @@ GetPhysicalDeviceQueueFamilyProperties(
    const VkQueueFlags required,
    const VkQueueFlags preferred );
 
+bool PhysicalDeviceSupportsPresentation(
+   const VkPhysicalDevice physical_device,
+   const uint32_t queue_family_index );
+
 }  // namespace vkl
 
 #endif // _VKL_PHYSICAL_DEVICE_H_

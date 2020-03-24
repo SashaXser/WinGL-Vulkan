@@ -130,4 +130,26 @@ GetPhysicalDeviceQueueFamilyProperties(
    return queue_family_properties;
 }
 
+bool PhysicalDeviceSupportsPresentation(
+   const VkPhysicalDevice physical_device,
+   const uint32_t queue_family_index )
+{
+   bool supported { false };
+
+   if (physical_device)
+   {
+#if VK_USE_PLATFORM_WIN32_KHR
+      supported =
+         vkGetPhysicalDeviceWin32PresentationSupportKHR(
+            physical_device,
+            queue_family_index) ==
+         VK_TRUE;
+#else
+#error "Define for this platform!"
+#endif
+   }
+
+   return supported;
+}
+
 } // namespace vkl
