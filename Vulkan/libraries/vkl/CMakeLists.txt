@@ -37,6 +37,9 @@ add_library(
    vkl_physical_device.cpp
    vkl_physical_device.h
    vkl_physical_device_fwds.h
+   vkl_surface.cpp
+   vkl_surface.h
+   vkl_surface_fwds.h
    vkl_window.cpp
    vkl_window.h
    vkl_window_fwds.h
