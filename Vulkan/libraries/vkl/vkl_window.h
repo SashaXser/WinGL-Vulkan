@@ -6,6 +6,12 @@
 #include <cstdint>
 #include <initializer_list>
 
+#if _WIN32
+#ifdef CreateWindow
+#undef CreateWindow
+#endif
+#endif
+
 namespace vkl
 {
 

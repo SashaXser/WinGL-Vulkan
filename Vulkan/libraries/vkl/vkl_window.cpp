@@ -2,8 +2,15 @@
 #include "vkl_context_data.h"
 
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 #include <utility>
+
+#if _WIN32
+#ifdef CreateWindow
+#undef CreateWindow
+#endif
+#endif
 
 namespace vkl
 {
@@ -460,5 +467,28 @@ bool SetWindowResizeCallback(
          &glfwSetWindowSizeCallback,
          native_callback);
 }
+
+#if _WIN32
+
+HWND GetWin32HWND(
+   const WindowHandle & window )
+{
+   HWND hwnd { nullptr };
+
+   if (window && *window)
+   {
+      const auto window_imp =
+         reinterpret_cast< GLFWwindow * >(
+            *window);
+
+      hwnd =
+         glfwGetWin32Window(
+            window_imp);
+   }
+
+   return hwnd;
+}
+
+#endif // _WIN32
 
 } // namespace vkl

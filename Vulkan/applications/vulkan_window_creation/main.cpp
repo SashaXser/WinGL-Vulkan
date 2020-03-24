@@ -11,6 +11,20 @@
 #include <string>
 #include <thread>
 
+#if _WIN32
+#include <windows.h>
+
+#ifdef CreateWindow
+#undef CreateWindow
+#endif
+
+namespace vkl
+{
+extern HWND GetWin32HWND(
+   const WindowHandle & );
+}
+#endif
+
 bool escape_pressed_ { false };
 
 const char * DecodeAction(
@@ -253,6 +267,19 @@ int32_t main(
    {
       return -2;
    }
+
+#if _WIN32
+
+   const HWND hwnd =
+      vkl::GetWin32HWND(
+         window_handle);
+
+   std::cout
+      << "Native HWND : 0x"
+      << std::hex << hwnd
+      << std::dec << std::endl;
+
+#endif
 
    vkl::SetWindowUserData(
       window_handle,

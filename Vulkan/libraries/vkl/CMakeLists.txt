@@ -65,7 +65,9 @@ if (WIN32)
    target_compile_definitions(
       ${target_name}
       PUBLIC
-      VK_USE_PLATFORM_WIN32_KHR)
+      VK_USE_PLATFORM_WIN32_KHR
+      PRIVATE
+      GLFW_EXPOSE_NATIVE_WIN32)
 else ( )
    message(
       FATAL_ERROR
