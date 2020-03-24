@@ -92,8 +92,20 @@ InstanceHandle CreateInstance(
       create_info.pApplicationInfo = &application_info;
       create_info.enabledLayerCount = 0;
       create_info.ppEnabledLayerNames = nullptr;
-      create_info.enabledExtensionCount = 0;
-      create_info.ppEnabledExtensionNames = nullptr;
+
+      const char * const extensions[] =
+      {
+         VK_KHR_SURFACE_EXTENSION_NAME,
+#if VK_USE_PLATFORM_WIN32_KHR
+         VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#else
+#error "Define for this platform!"
+#endif
+      };
+
+      create_info.enabledExtensionCount =
+         sizeof(extensions) / sizeof(*extensions);
+      create_info.ppEnabledExtensionNames = extensions;
 
       const VkResult created =
          vkCreateInstance(
