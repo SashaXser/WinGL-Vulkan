@@ -21,13 +21,16 @@ PhysicalDevices GetPhysicalGPUDevices(
 
 PhysicalDeviceQueueFamilyProperties
 GetPhysicalDeviceQueueFamilyProperties(
-   const VkPhysicalDevice physical_device,
+   const PhysicalDeviceHandle physical_device,
    const VkQueueFlags required,
    const VkQueueFlags preferred );
 
 bool PhysicalDeviceSupportsPresentation(
-   const VkPhysicalDevice physical_device,
+   const PhysicalDeviceHandle physical_device,
    const uint32_t queue_family_index );
+
+InstanceHandle GetInstance(
+   const PhysicalDeviceHandle & physical_device );
 
 }  // namespace vkl
 

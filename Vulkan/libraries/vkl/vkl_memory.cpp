@@ -12,9 +12,9 @@ namespace vkl
 namespace device_memory
 {
 
-struct Context
+struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    DeviceHandle device;
    VkDeviceSize size;
    uint32_t type_index;
@@ -117,7 +117,7 @@ DeviceHandle GetDevice(
          &device_memory::Context::device);
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const DeviceMemoryHandle & memory )
 {
    return
@@ -147,9 +147,9 @@ uint32_t GetTypeIndex(
 namespace mapped_device_memory
 {
 
-struct Context
+struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    DeviceHandle device;
    DeviceMemoryHandle device_memory;
    VkDeviceSize offset;
@@ -256,7 +256,7 @@ DeviceHandle GetDevice(
          &mapped_device_memory::Context::device);
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const MappedDeviceMemoryHandle & mapped_memory )
 {
    return

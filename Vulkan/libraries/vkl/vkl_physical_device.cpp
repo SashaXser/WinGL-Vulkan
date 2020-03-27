@@ -1,9 +1,30 @@
 #include "vkl_physical_device.h"
+#include "vkl_context_data.h"
 
 #include <iostream>
 
 namespace vkl
 {
+
+namespace
+{
+
+struct Context final
+{
+   InstanceHandle instance;
+};
+
+} // namespace
+
+void DestoryPhysicalDeviceHandle(
+   const VkPhysicalDevice * const physical_device )
+{
+   if (physical_device)
+   {
+      vkl::internal::DeallocateContext(
+         physical_device);
+   }
+}
 
 PhysicalDevices GetPhysicalDevices(
    const InstanceHandle & instance )
@@ -53,7 +74,23 @@ PhysicalDevices GetPhysicalDevices(
 
          physical_devices.emplace_back(
             properties,
-            device);
+            PhysicalDeviceHandle {
+               vkl::internal::AllocateContext<
+                  VkPhysicalDevice,
+                  Context >(
+                     instance),
+               &DestoryPhysicalDeviceHandle
+            });
+
+         if (!physical_devices.back().second)
+         {
+            physical_devices.pop_back();
+         }
+         else
+         {
+            *physical_devices.back().second =
+               device;
+         }
       }
    }
 
@@ -94,36 +131,39 @@ PhysicalDevices GetPhysicalGPUDevices(
 
 PhysicalDeviceQueueFamilyProperties
 GetPhysicalDeviceQueueFamilyProperties(
-   const VkPhysicalDevice physical_device,
+   const PhysicalDeviceHandle physical_device,
    const VkQueueFlags required,
    const VkQueueFlags preferred )
 {
    PhysicalDeviceQueueFamilyProperties
       queue_family_properties;
 
-   uint32_t queue_count { };
-   vkGetPhysicalDeviceQueueFamilyProperties(
-      physical_device,
-      &queue_count,
-      nullptr);
-
-   std::vector< VkQueueFamilyProperties >
-      properties { queue_count, VkQueueFamilyProperties { } };
-
-   vkGetPhysicalDeviceQueueFamilyProperties(
-      physical_device,
-      &queue_count,
-      properties.data());
-
-   for (const auto & property : properties)
+   if (physical_device && *physical_device)
    {
-      if ((property.queueFlags & preferred) == preferred ||
-          (property.queueFlags & required) == required)
+      uint32_t queue_count { };
+      vkGetPhysicalDeviceQueueFamilyProperties(
+         *physical_device,
+         &queue_count,
+         nullptr);
+
+      std::vector< VkQueueFamilyProperties >
+         properties { queue_count, VkQueueFamilyProperties { } };
+
+      vkGetPhysicalDeviceQueueFamilyProperties(
+         *physical_device,
+         &queue_count,
+         properties.data());
+
+      for (const auto & property : properties)
       {
-         queue_family_properties.emplace_back(
-            static_cast< uint32_t >(
-               &property - properties.data()),
-            property);
+         if ((property.queueFlags & preferred) == preferred ||
+             (property.queueFlags & required) == required)
+         {
+            queue_family_properties.emplace_back(
+               static_cast< uint32_t >(
+                  &property - properties.data()),
+               property);
+         }
       }
    }
 
@@ -131,17 +171,17 @@ GetPhysicalDeviceQueueFamilyProperties(
 }
 
 bool PhysicalDeviceSupportsPresentation(
-   const VkPhysicalDevice physical_device,
+   const PhysicalDeviceHandle physical_device,
    const uint32_t queue_family_index )
 {
    bool supported { false };
 
-   if (physical_device)
+   if (physical_device && *physical_device)
    {
 #if VK_USE_PLATFORM_WIN32_KHR
       supported =
          vkGetPhysicalDeviceWin32PresentationSupportKHR(
-            physical_device,
+            *physical_device,
             queue_family_index) ==
          VK_TRUE;
 #else
@@ -150,6 +190,15 @@ bool PhysicalDeviceSupportsPresentation(
    }
 
    return supported;
+}
+
+InstanceHandle GetInstance(
+   const PhysicalDeviceHandle & physical_device )
+{
+   return
+      vkl::internal::GetContextData(
+         physical_device.get(),
+         &Context::instance);
 }
 
 } // namespace vkl

@@ -3,6 +3,7 @@
 
 #include "vkl_command_pool_fwds.h"
 #include "vkl_device_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -23,7 +24,7 @@ bool ResetCommandPool(
 DeviceHandle GetDevice(
    const CommandPoolHandle & command_pool );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const CommandPoolHandle & command_pool );
 
 } // namespace vkl

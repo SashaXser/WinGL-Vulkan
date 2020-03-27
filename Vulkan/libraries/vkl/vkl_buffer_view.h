@@ -4,6 +4,7 @@
 #include "vkl_buffer_fwds.h"
 #include "vkl_buffer_view_fwds.h"
 #include "vkl_device_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -21,7 +22,7 @@ BufferViewHandle CreateBufferView(
 DeviceHandle GetDevice(
    const BufferViewHandle & buffer_view );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const BufferViewHandle & buffer_view );
 
 } // namespace vkl

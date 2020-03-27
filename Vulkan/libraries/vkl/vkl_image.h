@@ -3,6 +3,7 @@
 
 #include "vkl_device_fwds.h"
 #include "vkl_image_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -28,7 +29,7 @@ ImageHandle CreateImage(
 DeviceHandle GetDevice(
    const ImageHandle & image );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const ImageHandle & image );
 
 } // namespace vkl

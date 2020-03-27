@@ -4,17 +4,21 @@
 #include "vulkan/vulkan.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include <utility>
 
 namespace vkl
 {
 
+using PhysicalDeviceHandle =
+   std::shared_ptr< VkPhysicalDevice >;
+
 using PhysicalDevices =
    std::vector<
       std::pair<
          VkPhysicalDeviceProperties,
-         VkPhysicalDevice > >;
+         PhysicalDeviceHandle > >;
 
 using PhysicalDeviceQueueFamilyProperties =
    std::vector<

@@ -3,6 +3,7 @@
 
 #include "vkl_device_fwds.h"
 #include "vkl_memory_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -19,7 +20,7 @@ DeviceMemoryHandle AllocateDeviceMemory(
 DeviceHandle GetDevice(
    const DeviceMemoryHandle & memory );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const DeviceMemoryHandle & memory );
 
 VkDeviceSize GetSize(
@@ -38,7 +39,7 @@ MappedDeviceMemoryHandle MapDeviceMemory(
 DeviceHandle GetDevice(
    const MappedDeviceMemoryHandle & mapped_memory );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const MappedDeviceMemoryHandle & mapped_memory );
 
 DeviceMemoryHandle GetDeviceMemory(

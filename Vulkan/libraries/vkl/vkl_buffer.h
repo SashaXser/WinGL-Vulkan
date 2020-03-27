@@ -3,6 +3,7 @@
 
 #include "vkl_buffer_fwds.h"
 #include "vkl_device_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -18,7 +19,7 @@ BufferHandle CreateBuffer(
 DeviceHandle GetDevice(
    const BufferHandle & buffer );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const BufferHandle & buffer );
 
 VkDeviceSize GetSize(

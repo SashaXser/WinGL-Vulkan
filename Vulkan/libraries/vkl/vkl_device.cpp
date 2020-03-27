@@ -14,9 +14,9 @@ namespace vkl
 namespace
 {
 
-struct Context
+struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    VkDeviceQueueCreateFlags create_flags;
    uint32_t queue_family_index;
    uint32_t queue_count;
@@ -42,7 +42,7 @@ void DestoryDeviceHandle(
 }
 
 DeviceHandle CreateDevice(
-   const VkPhysicalDevice physical_device,
+   const PhysicalDeviceHandle physical_device,
    const VkDeviceQueueCreateFlags create_flags,
    const uint32_t queue_family_index,
    const uint32_t queue_count )
@@ -51,12 +51,12 @@ DeviceHandle CreateDevice(
       nullptr,
       &DestoryDeviceHandle };
 
-   if (physical_device)
+   if (physical_device && *physical_device)
    {
       VkPhysicalDeviceProperties properties { };
 
       vkGetPhysicalDeviceProperties(
-         physical_device,
+         *physical_device,
          &properties);
 
       std::cout
@@ -109,7 +109,7 @@ DeviceHandle CreateDevice(
       VkPhysicalDeviceFeatures supported_features { };
 
       vkGetPhysicalDeviceFeatures(
-         physical_device,
+         *physical_device,
          &supported_features);
 
       VkDeviceCreateInfo create_info;
@@ -151,7 +151,7 @@ DeviceHandle CreateDevice(
       {
          const VkResult created =
             vkCreateDevice(
-               physical_device,
+               *physical_device,
                &create_info,
                DefaultAllocator(),
                device.get());
@@ -181,7 +181,7 @@ DeviceHandle CreateDevice(
    return device;
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const DeviceHandle & device )
 {
    return

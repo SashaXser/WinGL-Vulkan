@@ -11,9 +11,9 @@ namespace vkl
 namespace
 {
 
-struct Context
+struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    DeviceHandle device;
    ImageHandle image;
    VkImageViewCreateFlags create_flags;
@@ -131,7 +131,7 @@ DeviceHandle GetDevice(
          &Context::device);
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const ImageViewHandle & image_view )
 {
    return

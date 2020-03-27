@@ -11,9 +11,9 @@ namespace vkl
 namespace
 {
 
-struct Context
+struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    DeviceHandle device;
    CommandPoolHandle command_pool;
    VkCommandBufferLevel command_buffer_level;
@@ -227,7 +227,7 @@ DeviceHandle GetDevice(
          &Context::device);
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const CommandBufferHandle & command_buffer )
 {
    return

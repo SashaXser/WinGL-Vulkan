@@ -4,6 +4,7 @@
 #include "vkl_command_buffer_fwds.h"
 #include "vkl_command_pool_fwds.h"
 #include "vkl_device_fwds.h"
+#include "vkl_physical_device_fwds.h"
 
 #include <vulkan/vulkan.h>
 
@@ -34,7 +35,7 @@ bool EndCommandBuffer(
 DeviceHandle GetDevice(
    const CommandBufferHandle & command_buffer );
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const CommandBufferHandle & command_buffer );
 
 } // namespace vkl

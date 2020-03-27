@@ -11,9 +11,9 @@ namespace vkl
 namespace
 {
 
-struct Context
+struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    DeviceHandle device;
    VkCommandPoolCreateFlags create_flags;
    uint32_t queue_family_index;
@@ -153,7 +153,7 @@ DeviceHandle GetDevice(
          &Context::device);
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const CommandPoolHandle & command_pool )
 {
    return

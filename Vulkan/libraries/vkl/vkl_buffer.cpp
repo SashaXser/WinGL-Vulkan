@@ -13,7 +13,7 @@ namespace
 
 struct Context final
 {
-   VkPhysicalDevice physical_device;
+   PhysicalDeviceHandle physical_device;
    DeviceHandle device;
    VkDeviceSize size;
    VkBufferUsageFlags usage_flags;
@@ -124,7 +124,7 @@ DeviceHandle GetDevice(
          &Context::device);
 }
 
-VkPhysicalDevice GetPhysicalDevice(
+PhysicalDeviceHandle GetPhysicalDevice(
    const BufferHandle & buffer )
 {
    return
