@@ -12,6 +12,12 @@ SurfaceHandle CreateSurface(
    const InstanceHandle & instance,
    const WindowHandle & window );
 
+InstanceHandle GetInstance(
+   const SurfaceHandle & surface );
+
+WindowHandle GetWindow(
+   const SurfaceHandle & surface );
+
 } // namespace vkl
 
 #endif // _VKL_SURFACE_H_

@@ -127,4 +127,22 @@ SurfaceHandle CreateSurface(
    return surface;
 }
 
+InstanceHandle GetInstance(
+   const SurfaceHandle & surface )
+{
+   return
+      vkl::internal::GetContextData(
+         surface.get(),
+         &Context::instance);
+}
+
+WindowHandle GetWindow(
+   const SurfaceHandle & surface )
+{
+   return
+      vkl::internal::GetContextData(
+         surface.get(),
+         &Context::window);
+}
+
 } // namespace vkl
