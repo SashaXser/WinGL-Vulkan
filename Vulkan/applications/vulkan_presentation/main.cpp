@@ -85,7 +85,7 @@ int32_t main(
 
    const auto surface =
       vkl::CreateSurface(
-         instance,
+         gpu_physical_device,
          window);
 
    return 0;

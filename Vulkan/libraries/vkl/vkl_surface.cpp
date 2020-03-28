@@ -1,6 +1,7 @@
 #include "vkl_surface.h"
 #include "vkl_allocator.h"
 #include "vkl_context_data.h"
+#include "vkl_physical_device.h"
 
 #if VK_USE_PLATFORM_WIN32_KHR
 #include <windows.h>
@@ -22,6 +23,7 @@ namespace
 struct Context final
 {
    InstanceHandle instance;
+   PhysicalDeviceHandle physical_device;
    WindowHandle window;
 };
 
@@ -55,66 +57,74 @@ void DestroySurface(
 }
 
 SurfaceHandle CreateSurface(
-   const InstanceHandle & instance,
+   const PhysicalDeviceHandle & physical_device,
    const WindowHandle & window )
 {
    SurfaceHandle surface {
       nullptr, &DestroySurface };
 
-   if (instance && window)
+   if (physical_device && *physical_device &&
+       window && *window)
    {
 #if VK_USE_PLATFORM_WIN32_KHR
+      const auto instance =
+         vkl::GetInstance(
+            physical_device);
 
-      surface.reset(
-         vkl::internal::AllocateContext<
-            VkSurfaceKHR,
-            Context >(
-               instance,
-               window),
-         &DestroySurface);
-
-      if (surface)
+      if (instance && *instance)
       {
-         const HWND hwnd =
-            GetWin32HWND(
-               window);
+         surface.reset(
+            vkl::internal::AllocateContext<
+               VkSurfaceKHR,
+               Context >(
+                  instance,
+                  physical_device,
+                  window),
+            &DestroySurface);
 
-         if (!hwnd)
+         if (surface)
          {
-            surface.reset();
-         }
-         else
-         {
-            const VkWin32SurfaceCreateInfoKHR info {
-               VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-               nullptr,
-               0,
-               GetModuleHandle(nullptr),
-               hwnd
-            };
+            const HWND hwnd =
+               GetWin32HWND(
+                  window);
 
-            const auto result =
-               vkCreateWin32SurfaceKHR(
-                  *instance,
-                  &info,
-                  DefaultAllocator(),
-                  surface.get());
-
-            if (result != VK_SUCCESS)
+            if (!hwnd)
             {
-               std::cerr
-                  << "Unable to create surface ("
-                  << result
-                  << ")!"
-                  << std::endl;
-
                surface.reset();
             }
             else
             {
-               std::cout
-                  << "Surface created successfully!"
-                  << std::endl;
+               const VkWin32SurfaceCreateInfoKHR info {
+                  VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+                  nullptr,
+                  0,
+                  GetModuleHandle(nullptr),
+                  hwnd
+               };
+
+               const auto result =
+                  vkCreateWin32SurfaceKHR(
+                     *instance,
+                     &info,
+                     DefaultAllocator(),
+                     surface.get());
+
+               if (result != VK_SUCCESS)
+               {
+                  std::cerr
+                     << "Unable to create surface ("
+                     << result
+                     << ")!"
+                     << std::endl;
+
+                  surface.reset();
+               }
+               else
+               {
+                  std::cout
+                     << "Surface created successfully!"
+                     << std::endl;
+               }
             }
          }
       }
