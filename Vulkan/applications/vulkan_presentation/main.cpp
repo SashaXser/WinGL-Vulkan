@@ -88,5 +88,19 @@ int32_t main(
          gpu_physical_device,
          window);
 
+   if (!surface)
+   {
+      return -7;
+   }
+
+   const auto surface_capabilities =
+      vkl::GetSurfaceCapabilites(
+         surface);
+
+   if (!surface_capabilities)
+   {
+      return -8;
+   }
+
    return 0;
 }

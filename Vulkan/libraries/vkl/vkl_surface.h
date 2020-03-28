@@ -6,6 +6,10 @@
 #include "vkl_surface_fwds.h"
 #include "vkl_window_fwds.h"
 
+#include <vulkan/vulkan.h>
+
+#include <optional>
+
 namespace vkl
 {
 
@@ -16,7 +20,14 @@ SurfaceHandle CreateSurface(
 InstanceHandle GetInstance(
    const SurfaceHandle & surface );
 
+PhysicalDeviceHandle GetPhysicalDevice(
+   const SurfaceHandle & surface );
+
 WindowHandle GetWindow(
+   const SurfaceHandle & surface );
+
+std::optional< VkSurfaceCapabilitiesKHR >
+GetSurfaceCapabilites(
    const SurfaceHandle & surface );
 
 } // namespace vkl

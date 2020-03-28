@@ -146,6 +146,15 @@ InstanceHandle GetInstance(
          &Context::instance);
 }
 
+PhysicalDeviceHandle GetPhysicalDevice(
+   const SurfaceHandle & surface )
+{
+   return
+      vkl::internal::GetContextData(
+         surface.get(),
+         &Context::physical_device);
+}
+
 WindowHandle GetWindow(
    const SurfaceHandle & surface )
 {
@@ -153,6 +162,38 @@ WindowHandle GetWindow(
       vkl::internal::GetContextData(
          surface.get(),
          &Context::window);
+}
+
+std::optional< VkSurfaceCapabilitiesKHR >
+GetSurfaceCapabilites(
+   const SurfaceHandle & surface )
+{
+   std::optional< VkSurfaceCapabilitiesKHR > capabilities;
+
+   if (surface && *surface)
+   {
+      const auto physical_device =
+         GetPhysicalDevice(
+            surface);
+
+      if (physical_device && *physical_device)
+      {
+         VkSurfaceCapabilitiesKHR pdsc { };
+
+         const auto result =
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+               *physical_device,
+               *surface,
+               &pdsc);
+
+         if (result == VK_SUCCESS)
+         {
+            capabilities = pdsc;
+         }
+      }
+   }
+
+   return capabilities;
 }
 
 } // namespace vkl
