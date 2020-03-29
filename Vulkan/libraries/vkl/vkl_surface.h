@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.h>
 
 #include <optional>
+#include <vector>
 
 namespace vkl
 {
@@ -28,6 +29,10 @@ WindowHandle GetWindow(
 
 std::optional< VkSurfaceCapabilitiesKHR >
 GetSurfaceCapabilites(
+   const SurfaceHandle & surface );
+
+std::optional< std::vector< VkSurfaceFormatKHR > >
+GetSurfaceFormats(
    const SurfaceHandle & surface );
 
 } // namespace vkl

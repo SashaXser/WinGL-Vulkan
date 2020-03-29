@@ -196,4 +196,51 @@ GetSurfaceCapabilites(
    return capabilities;
 }
 
+std::optional< std::vector< VkSurfaceFormatKHR > >
+GetSurfaceFormats(
+   const SurfaceHandle & surface )
+{
+   std::optional< std::vector< VkSurfaceFormatKHR > >
+      surface_formats;
+
+   if (surface && *surface)
+   {
+      const auto physical_device =
+         GetPhysicalDevice(
+            surface);
+
+      if (physical_device && *physical_device)
+      {
+         uint32_t surface_format_count { 0 };
+
+         auto result =
+            vkGetPhysicalDeviceSurfaceFormatsKHR(
+               *physical_device,
+               *surface,
+               &surface_format_count,
+               nullptr);
+
+         if (VK_SUCCESS == result)
+         {
+            std::vector< VkSurfaceFormatKHR >
+               formats { surface_format_count };
+
+            result =
+               vkGetPhysicalDeviceSurfaceFormatsKHR(
+                  *physical_device,
+                  *surface,
+                  &surface_format_count,
+                  formats.data());
+
+            if (VK_SUCCESS == result)
+            {
+               surface_formats = formats;
+            }
+         }
+      }
+   }
+
+   return surface_formats;
+}
+
 } // namespace vkl

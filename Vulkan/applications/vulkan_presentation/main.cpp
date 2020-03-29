@@ -102,5 +102,14 @@ int32_t main(
       return -8;
    }
 
+   const auto surface_formats =
+      vkl::GetSurfaceFormats(
+         surface);
+
+   if (!surface_formats)
+   {
+      return -9;
+   }
+
    return 0;
 }
