@@ -133,8 +133,15 @@ DeviceHandle CreateDevice(
       create_info.ppEnabledLayerNames = nullptr;
 #endif // _DEBUG
 
-      create_info.enabledExtensionCount = 0;
-      create_info.ppEnabledExtensionNames = nullptr;
+      const char * const extensions[] =
+      {
+         VK_KHR_SWAPCHAIN_EXTENSION_NAME
+      };
+
+      create_info.enabledExtensionCount =
+         sizeof(extensions) / sizeof(*extensions);
+      create_info.ppEnabledExtensionNames = extensions;
+
       create_info.pEnabledFeatures = &supported_features;
 
       device.reset(
