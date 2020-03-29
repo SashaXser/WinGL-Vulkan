@@ -111,5 +111,14 @@ int32_t main(
       return -9;
    }
 
+   const auto surface_present_modes =
+      vkl::GetSurfacePresentModes(
+         surface);
+
+   if (!surface_present_modes)
+   {
+      return -10;
+   }
+
    return 0;
 }

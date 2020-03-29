@@ -35,6 +35,10 @@ std::optional< std::vector< VkSurfaceFormatKHR > >
 GetSurfaceFormats(
    const SurfaceHandle & surface );
 
+std::optional< std::vector< VkPresentModeKHR > >
+GetSurfacePresentModes(
+   const SurfaceHandle & surface );
+
 } // namespace vkl
 
 #endif // _VKL_SURFACE_H_
