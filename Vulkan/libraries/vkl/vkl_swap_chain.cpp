@@ -55,6 +55,35 @@ void DestroySwapChainHandle(
    }
 }
 
+bool SupportsPresentation(
+   const DeviceHandle & device,
+   const SurfaceHandle & surface )
+{
+   VkBool32 supported { VK_FALSE };
+
+   const auto physical_device =
+      GetPhysicalDevice(device);
+   const auto queue_family =
+      GetQueueFamily(
+         device);
+
+   if (device && *device &&
+       surface && *surface &&
+       physical_device && *physical_device &&
+       queue_family)
+   {
+      const auto result =
+         vkGetPhysicalDeviceSurfaceSupportKHR(
+            *physical_device,
+            queue_family->first,
+            *surface,
+            &supported);
+   }
+
+   return
+      supported == VK_TRUE;
+}
+
 VkPresentModeKHR GetDefaultPresentMode(
    const std::vector< VkPresentModeKHR > & present_modes )
 {
@@ -162,109 +191,112 @@ SwapChainHandle CreateSwapChain(
    if (device && *device &&
        surface && *surface)
    {
-      const auto surface_capabilities =
-         GetSurfaceCapabilites(surface);
-      const auto surface_formats =
-         GetSurfaceFormats(surface);
-      const auto surface_present_modes =
-         GetSurfacePresentModes(surface);
-
-      if (surface_capabilities &&
-          surface_formats &&
-          surface_present_modes)
+      if (SupportsPresentation(device, surface))
       {
-         const uint32_t min_image_count =
-            std::clamp(
-               static_cast< uint32_t >(3),
-               surface_capabilities->minImageCount,
-               surface_capabilities->maxImageCount);
+         const auto surface_capabilities =
+            GetSurfaceCapabilites(surface);
+         const auto surface_formats =
+            GetSurfaceFormats(surface);
+         const auto surface_present_modes =
+            GetSurfacePresentModes(surface);
 
-         // the structure is missing some validity checks
-         // this will need to be addressed at a later time
-         const VkSwapchainCreateInfoKHR info {
-            VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-            nullptr,
-            0,
-            *surface,
-            min_image_count,
-            surface_formats->front().format,
-            surface_formats->front().colorSpace,
-            surface_capabilities->currentExtent,
-            1,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            VK_SHARING_MODE_EXCLUSIVE,
-            0,
-            nullptr,
-            VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-            VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            GetDefaultPresentMode(*surface_present_modes),
-            VK_FALSE,
-            nullptr
-         };
-
-         swap_chain.reset(
-            vkl::internal::AllocateContext<
-               VkSwapchainKHR,
-               Context >(
-                  GetPhysicalDevice(device),
-                  device,
-                  surface,
-                  info),
-            &DestroySwapChainHandle);
-
-         if (swap_chain)
+         if (surface_capabilities &&
+             surface_formats &&
+             surface_present_modes)
          {
-            const auto result =
-               vkCreateSwapchainKHR(
-                  *device,
-                  &info,
-                  DefaultAllocator(),
-                  swap_chain.get());
+            const uint32_t min_image_count =
+               std::clamp(
+                  static_cast< uint32_t >(3),
+                  surface_capabilities->minImageCount,
+                  surface_capabilities->maxImageCount);
 
-            if (result != VK_SUCCESS)
-            {
-               std::cerr
-                  << "Unable to create swap chain ("
-                  << result
-                  << ")!"
-                  << std::endl;
+            // the structure is missing some validity checks
+            // this will need to be addressed at a later time
+            const VkSwapchainCreateInfoKHR info {
+               VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+               nullptr,
+               0,
+               *surface,
+               min_image_count,
+               surface_formats->front().format,
+               surface_formats->front().colorSpace,
+               surface_capabilities->currentExtent,
+               1,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+               VK_SHARING_MODE_EXCLUSIVE,
+               0,
+               nullptr,
+               VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+               VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+               GetDefaultPresentMode(*surface_present_modes),
+               VK_FALSE,
+               nullptr
+            };
 
-               swap_chain.reset();
-            }
-            else
-            {
-               std::cout
-                  << "Swap chain created successfully!"
-                  << std::endl;
-
-               auto swap_chain_images =
-                  GetSwapChainImages(
+            swap_chain.reset(
+               vkl::internal::AllocateContext<
+                  VkSwapchainKHR,
+                  Context >(
+                     GetPhysicalDevice(device),
                      device,
-                     swap_chain);
+                     surface,
+                     info),
+               &DestroySwapChainHandle);
 
-               if (swap_chain_images.empty())
+            if (swap_chain)
+            {
+               const auto result =
+                  vkCreateSwapchainKHR(
+                     *device,
+                     &info,
+                     DefaultAllocator(),
+                     swap_chain.get());
+
+               if (result != VK_SUCCESS)
                {
                   std::cerr
-                     << "Unable to obtain swap chain images!"
+                     << "Unable to create swap chain ("
+                     << result
+                     << ")!"
                      << std::endl;
 
                   swap_chain.reset();
                }
                else
                {
-                  const bool set =
-                     vkl::internal::SetContextData(
-                        swap_chain.get(),
-                        &Context::swap_chain_images,
-                        std::move(swap_chain_images));
+                  std::cout
+                     << "Swap chain created successfully!"
+                     << std::endl;
 
-                  if (!set)
+                  auto swap_chain_images =
+                     GetSwapChainImages(
+                        device,
+                        swap_chain);
+
+                  if (swap_chain_images.empty())
                   {
                      std::cerr
-                        << "Unable to store swap chain images!"
+                        << "Unable to obtain swap chain images!"
                         << std::endl;
 
                      swap_chain.reset();
+                  }
+                  else
+                  {
+                     const bool set =
+                        vkl::internal::SetContextData(
+                           swap_chain.get(),
+                           &Context::swap_chain_images,
+                           std::move(swap_chain_images));
+
+                     if (!set)
+                     {
+                        std::cerr
+                           << "Unable to store swap chain images!"
+                           << std::endl;
+
+                        swap_chain.reset();
+                     }
                   }
                }
             }
