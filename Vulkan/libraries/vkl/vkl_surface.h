@@ -1,6 +1,7 @@
 #ifndef _VKL_SURFACE_H_
 #define _VKL_SURFACE_H_
 
+#include "vkl_device_fwds.h"
 #include "vkl_instance_fwds.h"
 #include "vkl_physical_device_fwds.h"
 #include "vkl_surface_fwds.h"
@@ -15,7 +16,7 @@ namespace vkl
 {
 
 SurfaceHandle CreateSurface(
-   const PhysicalDeviceHandle & physical_device,
+   const DeviceHandle & device,
    const WindowHandle & window );
 
 InstanceHandle GetInstance(

@@ -108,10 +108,9 @@ int32_t main(
       return -8;
    }
 
-   // change this to the device (not physical device)
    const auto surface =
       vkl::CreateSurface(
-         gpu_physical_device,
+         gpu_device,
          window);
 
    if (!surface)

@@ -1,6 +1,7 @@
 #include "vkl_surface.h"
 #include "vkl_allocator.h"
 #include "vkl_context_data.h"
+#include "vkl_device.h"
 #include "vkl_physical_device.h"
 
 #if VK_USE_PLATFORM_WIN32_KHR
@@ -57,11 +58,15 @@ void DestroySurface(
 }
 
 SurfaceHandle CreateSurface(
-   const PhysicalDeviceHandle & physical_device,
+   const DeviceHandle & device,
    const WindowHandle & window )
 {
    SurfaceHandle surface {
       nullptr, &DestroySurface };
+
+   const auto physical_device =
+      GetPhysicalDevice(
+         device);
 
    if (physical_device && *physical_device &&
        window && *window)
