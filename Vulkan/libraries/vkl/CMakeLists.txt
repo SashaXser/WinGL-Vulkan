@@ -40,6 +40,9 @@ add_library(
    vkl_surface.cpp
    vkl_surface.h
    vkl_surface_fwds.h
+   vkl_swap_chain.cpp
+   vkl_swap_chain.h
+   vkl_swap_chain_fwds.h
    vkl_window.cpp
    vkl_window.h
    vkl_window_fwds.h

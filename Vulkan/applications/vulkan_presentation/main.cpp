@@ -1,6 +1,8 @@
+#include "vkl/vkl_device.h"
 #include "vkl/vkl_instance.h"
 #include "vkl/vkl_physical_device.h"
 #include "vkl/vkl_surface.h"
+#include "vkl/vkl_swap_chain.h"
 #include "vkl/vkl_window.h"
 
 #include <vulkan/vulkan.h>
@@ -65,12 +67,35 @@ int32_t main(
       return -4;
    }
 
+   const auto queue_family_properties =
+      vkl::GetPhysicalDeviceQueueFamilyProperties(
+         gpu_physical_devices.front().second,
+         VK_QUEUE_GRAPHICS_BIT,
+         0);
+
+   if (queue_family_properties.empty())
+   {
+      return -5;
+   }
+
+   const auto gpu_device =
+      vkl::CreateDevice(
+         gpu_physical_devices.front().second,
+         0,
+         queue_family_properties.front().first,
+         queue_family_properties.front().second.queueCount);
+
+   if (!gpu_device)
+   {
+      return -6;
+   }
+
    const auto window_init =
       vkl::InitWindowSystem();
 
    if (!window_init)
    {
-      return -5;
+      return -7;
    }
 
    const auto window =
@@ -80,9 +105,10 @@ int32_t main(
 
    if (!window)
    {
-      return -6;
+      return -8;
    }
 
+   // change this to the device (not physical device)
    const auto surface =
       vkl::CreateSurface(
          gpu_physical_device,
@@ -90,7 +116,7 @@ int32_t main(
 
    if (!surface)
    {
-      return -7;
+      return -9;
    }
 
    const auto surface_capabilities =
@@ -99,7 +125,7 @@ int32_t main(
 
    if (!surface_capabilities)
    {
-      return -8;
+      return -10;
    }
 
    const auto surface_formats =
@@ -108,7 +134,7 @@ int32_t main(
 
    if (!surface_formats)
    {
-      return -9;
+      return -11;
    }
 
    const auto surface_present_modes =
@@ -117,7 +143,26 @@ int32_t main(
 
    if (!surface_present_modes)
    {
-      return -10;
+      return -12;
+   }
+
+   const auto swap_chain =
+      vkl::CreateSwapChain(
+         gpu_device,
+         surface);
+
+   if (!swap_chain)
+   {
+      return -13;
+   }
+
+   const auto swap_chain_images =
+      vkl::GetSwapChainImages(
+         swap_chain);
+
+   if (!swap_chain_images)
+   {
+      return -14;
    }
 
    return 0;
