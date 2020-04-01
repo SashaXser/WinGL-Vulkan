@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <new>
+#include <utility>
 
 namespace vkl::internal
 {
@@ -119,6 +120,33 @@ inline MemberVariableT GetContextData(
    }
 
    return data;
+}
+
+template <
+   typename ContextT,
+   typename ContextDataT,
+   typename MemberVariableT >
+inline bool SetContextData(
+   ContextT * const context,
+   MemberVariableT ContextDataT::* const context_data,
+   MemberVariableT && data )
+{
+   bool set { false };
+
+   const auto context_store =
+      GetContextData<
+         ContextDataT >(
+            context);
+
+   if (context_store)
+   {
+      context_store->*context_data =
+         std::move(data);
+
+      set = true;
+   }
+
+   return set;
 }
 
 } // namespace vkl::internal
