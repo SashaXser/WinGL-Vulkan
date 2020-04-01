@@ -3,10 +3,7 @@
 #include "vkl_allocator.h"
 
 #include <iostream>
-
-#if _DEBUG
 #include <vector>
-#endif
 
 namespace vkl
 {
@@ -70,7 +67,11 @@ DeviceHandle CreateDevice(
       queue_create_info.flags = create_flags;
       queue_create_info.queueFamilyIndex = queue_family_index;
       queue_create_info.queueCount = queue_count;
-      queue_create_info.pQueuePriorities = nullptr;
+
+      const std::vector< float > queue_priorities(
+         queue_count, 1.0f);
+      queue_create_info.pQueuePriorities =
+         queue_priorities.data();
 
 #if _DEBUG
       uint32_t ilayer_count { };
@@ -195,6 +196,33 @@ PhysicalDeviceHandle GetPhysicalDevice(
       vkl::internal::GetContextData(
          device.get(),
          &Context::physical_device);
+}
+
+std::optional<
+   std::pair< uint32_t, uint32_t > >
+GetQueueFamily(
+   const DeviceHandle & device )
+{
+   std::optional<
+      std::pair< uint32_t, uint32_t > >
+      queue_family;
+
+   if (device && *device)
+   {
+      const auto context =
+         vkl::internal::GetContextData<
+            Context >(
+               device.get());
+
+      if (context)
+      {
+         queue_family.emplace(
+            context->queue_family_index,
+            context->queue_count);
+      }
+   }
+
+   return queue_family;
 }
 
 } // namespace vkl

@@ -7,6 +7,8 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <optional>
+#include <utility>
 
 namespace vkl
 {
@@ -18,6 +20,11 @@ DeviceHandle CreateDevice(
    const uint32_t queue_count );
 
 PhysicalDeviceHandle GetPhysicalDevice(
+   const DeviceHandle & device );
+
+std::optional<
+   std::pair< uint32_t, uint32_t > >
+GetQueueFamily(
    const DeviceHandle & device );
 
 } // namespace vkl
