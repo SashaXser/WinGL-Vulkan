@@ -175,6 +175,32 @@ std::vector< VkImage > GetSwapChainImages(
       else
       {
          // todo: create by assigning to SwapChainImageHandle
+
+         // https://www.khronos.org/registry/vulkan/specs/1.0-wsi_extensions/html/vkspec.html#_wsi_swapchain
+
+         // While acquired by the application, presentable images can be
+         // used in any way that equivalent non-presentable images can be
+         // used. A presentable image is equivalent to a non-presentable
+         // image created with the following VkImageCreateInfo parameters:
+
+         // VkImageCreateInfo Field    Value
+         // flags                      VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT is set
+         //                            if VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR is set
+         //                            VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR
+         //                            are both set if VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR is set
+         //                            all other bits are unset
+         // imageType                  VK_IMAGE_TYPE_2D 
+         // format                     pCreateInfo->imageFormat
+         // extent                     { pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, 1 }
+         // mipLevels                  1
+         // arrayLayers                pCreateInfo->imageArrayLayers
+         // samples                    VK_SAMPLE_COUNT_1_BIT
+         // tiling                     VK_IMAGE_TILING_OPTIMAL
+         // usage                      pCreateInfo->imageUsage
+         // sharingMode                pCreateInfo->imageSharingMode
+         // queueFamilyIndexCount      pCreateInfo->queueFamilyIndexCount
+         // pQueueFamilyIndices        pCreateInfo->pQueueFamilyIndices
+         // initialLayout              VK_IMAGE_LAYOUT_UNDEFINED
       }
    }
 
