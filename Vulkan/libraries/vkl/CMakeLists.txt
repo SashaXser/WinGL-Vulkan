@@ -22,6 +22,9 @@ add_library(
    vkl_device.cpp
    vkl_device.h
    vkl_device_fwds.h
+   vkl_fence.cpp
+   vkl_fence.h
+   vkl_fence_fwds.h
    vkl_image.cpp
    vkl_image.h
    vkl_image_fwds.h
