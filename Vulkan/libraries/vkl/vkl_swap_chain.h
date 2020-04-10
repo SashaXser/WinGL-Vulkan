@@ -18,6 +18,9 @@ SwapChainHandle CreateSwapChain(
    const DeviceHandle & device,
    const SurfaceHandle & surface );
 
+SwapChainHandle CreateSwapChain(
+   const SwapChainHandle & current_swap_chain );
+
 DeviceHandle GetDevice(
    const SwapChainHandle & swap_chain );
 

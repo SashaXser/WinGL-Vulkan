@@ -334,6 +334,112 @@ SwapChainHandle CreateSwapChain(
    return swap_chain;
 }
 
+SwapChainHandle CreateSwapChain(
+   const SwapChainHandle & current_swap_chain )
+{
+   SwapChainHandle swap_chain {
+      nullptr, &DestroySwapChainHandle };
+
+   const auto device =
+      GetDevice(current_swap_chain);
+   const auto surface =
+      GetSurface(current_swap_chain);
+
+   if (device && *device &&
+       surface && *surface &&
+       current_swap_chain && *current_swap_chain)
+   {
+      const auto surface_capabilities =
+         GetSurfaceCapabilites(surface);
+      const auto current_context =
+         vkl::internal::GetContextData<
+            Context >(
+               current_swap_chain.get());
+
+      if (current_context && surface_capabilities)
+      {
+         auto info =
+            current_context->swap_chain_create_info;
+
+         info.imageExtent =
+            surface_capabilities->currentExtent;
+
+         swap_chain.reset(
+            vkl::internal::AllocateContext<
+               VkSwapchainKHR,
+               Context >(
+                  GetPhysicalDevice(device),
+                  device,
+                  surface,
+                  info),
+            &DestroySwapChainHandle);
+
+         if (swap_chain)
+         {
+            info.oldSwapchain =
+               *current_swap_chain;
+
+            const auto result =
+               vkCreateSwapchainKHR(
+                  *device,
+                  &info,
+                  DefaultAllocator(),
+                  swap_chain.get());
+
+            if (result != VK_SUCCESS)
+            {
+               std::cerr
+                  << "Unable to create swap chain ("
+                  << result
+                  << ")!"
+                  << std::endl;
+
+               swap_chain.reset();
+            }
+            else
+            {
+               std::cout
+                  << "Swap chain created successfully!"
+                  << std::endl;
+
+               auto swap_chain_images =
+                  GetSwapChainImages(
+                     device,
+                     swap_chain);
+
+               if (swap_chain_images.empty())
+               {
+                  std::cerr
+                     << "Unable to obtain swap chain images!"
+                     << std::endl;
+                  
+                  swap_chain.reset();
+               }
+               else
+               {
+                  const bool set =
+                     vkl::internal::SetContextData(
+                        swap_chain.get(),
+                        &Context::swap_chain_images,
+                        std::move(swap_chain_images));
+
+                  if (!set)
+                  {
+                     std::cerr
+                        << "Unable to store swap chain images!"
+                        << std::endl;
+
+                     swap_chain.reset();
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   return swap_chain;
+}
+
 DeviceHandle GetDevice(
    const SwapChainHandle & swap_chain )
 {
