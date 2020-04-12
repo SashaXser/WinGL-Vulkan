@@ -19,6 +19,9 @@ DeviceHandle CreateDevice(
    const uint32_t queue_family_index,
    const uint32_t queue_count );
 
+bool WaitIdle(
+   const DeviceHandle & device );
+
 PhysicalDeviceHandle GetPhysicalDevice(
    const DeviceHandle & device );
 

@@ -377,11 +377,11 @@ int32_t main(
             {
                // need to wait for the gpu to be idle so
                // we can make sure the commands can be reset
-               const auto complete =
-                  vkDeviceWaitIdle(
-                     *gpu_device);
+               const auto idle =
+                  vkl::WaitIdle(
+                     gpu_device);
 
-               if (complete == VK_SUCCESS)
+               if (idle)
                {
                   // recreate the swap chain with the new
                   // dimensions from the resize...
@@ -543,8 +543,8 @@ int32_t main(
 
    // wait for all the commands to have been executed before
    // deallocation of the resources takes place.
-   vkDeviceWaitIdle(
-      *gpu_device);
+   vkl::WaitIdle(
+      gpu_device);
 
    return 0;
 }

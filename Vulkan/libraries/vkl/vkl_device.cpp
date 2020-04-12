@@ -189,6 +189,24 @@ DeviceHandle CreateDevice(
    return device;
 }
 
+bool WaitIdle(
+   const DeviceHandle & device )
+{
+   bool wait_idle { false };
+
+   if (device && *device)
+   {
+      const auto result =
+         vkDeviceWaitIdle(
+            *device);
+
+      wait_idle =
+         result == VK_SUCCESS;
+   }
+
+   return wait_idle;
+}
+
 PhysicalDeviceHandle GetPhysicalDevice(
    const DeviceHandle & device )
 {
