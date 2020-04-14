@@ -142,6 +142,54 @@ ImageHandle CreateImage(
    return image;
 }
 
+ImageHandle CreateImage(
+   const VkImage vk_image,
+   const DeviceHandle & device,
+   const VkImageCreateFlags create_flags,
+   const VkImageType image_type,
+   const VkFormat image_format,
+   const VkExtent3D image_extents,
+   const uint32_t mip_levels,
+   const uint32_t array_layers,
+   const VkSampleCountFlagBits sample_count,
+   const VkImageTiling image_tiling,
+   const VkImageUsageFlags image_usage,
+   const VkSharingMode sharing_mode,
+   const VkImageLayout image_layout )
+{
+   ImageHandle image { nullptr };
+
+   if (vk_image &&
+       device && *device)
+   {
+      image.reset(
+         vkl::internal::AllocateContext<
+            VkImage,
+            Context >(
+               GetPhysicalDevice(device),
+               device,
+               create_flags,
+               image_type,
+               image_format,
+               image_extents,
+               mip_levels,
+               array_layers,
+               sample_count,
+               image_tiling,
+               image_usage,
+               sharing_mode,
+               image_layout),
+         &vkl::internal::DeallocateContext);
+
+      if (image)
+      {
+         *image = vk_image;
+      }
+   }
+
+   return image;
+}
+
 DeviceHandle GetDevice(
    const ImageHandle & image )
 {
