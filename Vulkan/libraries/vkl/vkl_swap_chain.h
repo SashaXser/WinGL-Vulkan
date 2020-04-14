@@ -2,6 +2,7 @@
 #define _VKL_SWAP_CHAIN_H_
 
 #include "vkl_device_fwds.h"
+#include "vkl_image_fwds.h"
 #include "vkl_physical_device_fwds.h"
 #include "vkl_surface_fwds.h"
 #include "vkl_swap_chain_fwds.h"
@@ -38,8 +39,7 @@ std::optional< VkExtent2D >
 GetExtent(
    const SwapChainHandle & swap_chain );
 
-// todo, need to change to be handles
-std::optional< std::vector< VkImage > >
+std::optional< std::vector< ImageHandle > >
 GetSwapChainImages(
    const SwapChainHandle & swap_chain );
 

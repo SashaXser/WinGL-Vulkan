@@ -2,6 +2,7 @@
 #include "vkl_allocator.h"
 #include "vkl_context_data.h"
 #include "vkl_device.h"
+#include "vkl_image.h"
 #include "vkl_surface.h"
 
 #include <algorithm>
@@ -21,10 +22,7 @@ struct Context
    DeviceHandle device;
    SurfaceHandle surface;
    VkSwapchainCreateInfoKHR swap_chain_create_info;
-
-   // todo, this vector needs to change to use a
-   // SwapChainImageHandle type instead of vkimage
-   std::vector< VkImage > swap_chain_images;
+   std::vector< ImageHandle > swap_chain_images;
 };
 
 } // namespace
@@ -139,11 +137,12 @@ VkPresentModeKHR GetDefaultPresentMode(
    return present_mode;
 }
 
-std::vector< VkImage > GetSwapChainImages(
+std::vector< ImageHandle >
+GetSwapChainImages(
    const DeviceHandle & device,
    const SwapChainHandle & swap_chain )
 {
-   std::vector< VkImage > swap_chain_images;
+   std::vector< ImageHandle > swap_chain_images;
 
    uint32_t swap_chain_image_count { };
 
@@ -157,50 +156,96 @@ std::vector< VkImage > GetSwapChainImages(
    if (VK_SUCCESS == result &&
        swap_chain_image_count)
    {
-      swap_chain_images.resize(
+      std::vector< VkImage > vk_swap_chain_images;
+
+      vk_swap_chain_images.resize(
          swap_chain_image_count,
          { });
 
-      auto result =
+      const auto result =
          vkGetSwapchainImagesKHR(
             *device,
             *swap_chain,
             &swap_chain_image_count,
-            swap_chain_images.data());
+            vk_swap_chain_images.data());
 
-      if (VK_SUCCESS != result)
+      if (result == VK_SUCCESS)
       {
-         swap_chain_images.clear();
-      }
-      else
-      {
-         // todo: create by assigning to SwapChainImageHandle
+         const auto * const context =
+            vkl::internal::GetContextData< Context >(
+               swap_chain.get());
 
-         // https://www.khronos.org/registry/vulkan/specs/1.0-wsi_extensions/html/vkspec.html#_wsi_swapchain
+         if (context)
+         {
+            const auto & info =
+               context->swap_chain_create_info;
 
-         // While acquired by the application, presentable images can be
-         // used in any way that equivalent non-presentable images can be
-         // used. A presentable image is equivalent to a non-presentable
-         // image created with the following VkImageCreateInfo parameters:
+            const VkImageCreateFlags create_flags =
+               (info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR ?
+                  VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR :
+                  0) |
+               (info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR ?
+                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT |
+                  VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR :
+                  0);
 
-         // VkImageCreateInfo Field    Value
-         // flags                      VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT is set
-         //                            if VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR is set
-         //                            VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR
-         //                            are both set if VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR is set
-         //                            all other bits are unset
-         // imageType                  VK_IMAGE_TYPE_2D 
-         // format                     pCreateInfo->imageFormat
-         // extent                     { pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, 1 }
-         // mipLevels                  1
-         // arrayLayers                pCreateInfo->imageArrayLayers
-         // samples                    VK_SAMPLE_COUNT_1_BIT
-         // tiling                     VK_IMAGE_TILING_OPTIMAL
-         // usage                      pCreateInfo->imageUsage
-         // sharingMode                pCreateInfo->imageSharingMode
-         // queueFamilyIndexCount      pCreateInfo->queueFamilyIndexCount
-         // pQueueFamilyIndices        pCreateInfo->pQueueFamilyIndices
-         // initialLayout              VK_IMAGE_LAYOUT_UNDEFINED
+            for (const auto & vk_image : vk_swap_chain_images)
+            {  
+               // https://www.khronos.org/registry/vulkan/specs/1.0-wsi_extensions/html/vkspec.html#_wsi_swapchain
+
+               // While acquired by the application, presentable images can be
+               // used in any way that equivalent non-presentable images can be
+               // used. A presentable image is equivalent to a non-presentable
+               // image created with the following VkImageCreateInfo parameters:
+
+               // VkImageCreateInfo Field    Value
+               // flags                      VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT is set
+               //                            if VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR is set
+               //                            VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR
+               //                            are both set if VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR is set
+               //                            all other bits are unset
+               // imageType                  VK_IMAGE_TYPE_2D 
+               // format                     pCreateInfo->imageFormat
+               // extent                     { pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, 1 }
+               // mipLevels                  1
+               // arrayLayers                pCreateInfo->imageArrayLayers
+               // samples                    VK_SAMPLE_COUNT_1_BIT
+               // tiling                     VK_IMAGE_TILING_OPTIMAL
+               // usage                      pCreateInfo->imageUsage
+               // sharingMode                pCreateInfo->imageSharingMode
+               // queueFamilyIndexCount      pCreateInfo->queueFamilyIndexCount
+               // pQueueFamilyIndices        pCreateInfo->pQueueFamilyIndices
+               // initialLayout              VK_IMAGE_LAYOUT_UNDEFINED
+
+               auto image =
+                  CreateImage(
+                     vk_image,
+                     device,
+                     create_flags,
+                     VK_IMAGE_TYPE_2D,
+                     info.imageFormat,
+                     { info.imageExtent.width, info.imageExtent.height, 1 },
+                     1,
+                     info.imageArrayLayers,
+                     VK_SAMPLE_COUNT_1_BIT,
+                     VK_IMAGE_TILING_OPTIMAL,
+                     info.imageUsage,
+                     info.imageSharingMode,
+                     VK_IMAGE_LAYOUT_UNDEFINED);
+
+               if (!image)
+               {
+                  swap_chain_images.clear();
+
+                  break;
+               }
+               else
+               {
+                  swap_chain_images.push_back(
+                     std::move(image));
+               }
+            }
+         }
       }
    }
 
@@ -507,11 +552,11 @@ GetExtent(
    return extent;
 }
 
-std::optional< std::vector< VkImage > >
+std::optional< std::vector< ImageHandle > >
 GetSwapChainImages(
    const SwapChainHandle & swap_chain )
 {
-   std::optional< std::vector< VkImage > >
+   std::optional< std::vector< ImageHandle > >
       swap_chain_images;
 
    const auto * context =

@@ -178,7 +178,7 @@ int32_t main(
       [ ] (
          const vkl::CommandPoolHandle & command_pool,
          const vkl::DeviceHandle & gpu_device,
-         const std::vector< VkImage > & swap_chain_images,
+         const std::vector< vkl::ImageHandle > & swap_chain_images,
          std::vector< vkl::CommandBufferHandle > & framebuffer_command_buffers )
    {
       // resets the command pool and all of the buffers
@@ -238,7 +238,7 @@ int32_t main(
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         VK_QUEUE_FAMILY_IGNORED,
                         VK_QUEUE_FAMILY_IGNORED,
-                        swap_chain_image,
+                        *swap_chain_image,
                         {
                            VK_IMAGE_ASPECT_COLOR_BIT,
                            0,
@@ -281,7 +281,7 @@ int32_t main(
                      // will be in the correct layout already.
                      vkCmdClearColorImage(
                         *command_buffer,
-                        swap_chain_image,
+                        *swap_chain_image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         &clear_color,
                         1, &image_subres_range);
@@ -298,7 +298,7 @@ int32_t main(
                         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                         VK_QUEUE_FAMILY_IGNORED,
                         VK_QUEUE_FAMILY_IGNORED,
-                        swap_chain_image,
+                        *swap_chain_image,
                         {
                            VK_IMAGE_ASPECT_COLOR_BIT,
                            0,
