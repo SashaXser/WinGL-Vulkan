@@ -69,3 +69,9 @@ else (PROJECTS_USE_GLEW_STATIC)
 endif (PROJECTS_USE_GLEW_STATIC)
 
 target_link_libraries(WinGL PUBLIC resil)
+
+set_target_properties(
+   WinGL
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")

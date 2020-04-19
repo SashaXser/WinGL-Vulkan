@@ -29,4 +29,10 @@ add_executable(CubeMap WIN32 ${CUBEMAP_SRC} ${SHADER_SRC})
 
 target_link_libraries(CubeMap WinGL)
 
+set_target_properties(
+   CubeMap
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(./Images)

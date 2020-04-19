@@ -18,4 +18,10 @@ add_executable(SmokeParticleSystem WIN32 ${SMOKE_PART_SYS_SRC})
 
 target_link_libraries(SmokeParticleSystem WinGL)
 
+set_target_properties(
+   SmokeParticleSystem
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(Smoke.rgb)

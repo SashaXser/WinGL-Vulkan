@@ -17,6 +17,12 @@ add_executable(TessellationTriangle WIN32 ${TESS_TRI_SRC} ${SHADER_SRC})
 
 target_link_libraries(TessellationTriangle WinGL)
 
+set_target_properties(
+   TessellationTriangle
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(triangle.frag)
 copy_to_bin(triangle.tctrl)
 copy_to_bin(triangle.teval)

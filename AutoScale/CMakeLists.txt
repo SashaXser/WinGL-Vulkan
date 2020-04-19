@@ -9,3 +9,9 @@ AutoScaleWindow.h
 add_executable(AutoScale WIN32 ${AUTO_SCALE_SRC})
 
 target_link_libraries(AutoScale WinGL)
+
+set_target_properties(
+   AutoScale
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")

@@ -9,3 +9,9 @@ RenderTargetWindow.h
 add_executable(RenderTarget WIN32 ${RENDER_TGT_SRC})
 
 target_link_libraries(RenderTarget WinGL)
+
+set_target_properties(
+   RenderTarget
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")

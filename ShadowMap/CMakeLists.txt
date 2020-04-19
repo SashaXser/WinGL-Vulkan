@@ -19,6 +19,12 @@ add_executable(ShadowMap WIN32 ${SHADOW_MAP_SRC})
 target_link_libraries(ShadowMap WinGL)
 target_link_libraries(ShadowMap assimp)
 
+set_target_properties(
+   ShadowMap
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(enterprise)
 copy_to_bin(DEFIANT)
 copy_to_bin(enterprise.frag)

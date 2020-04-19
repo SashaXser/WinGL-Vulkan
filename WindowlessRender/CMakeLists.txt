@@ -9,3 +9,9 @@ WindowlessRenderWindow.h
 add_executable(WindowlessRender WIN32 ${WINDOWLESS_RENDER_SRC})
 
 target_link_libraries(WindowlessRender WinGL)
+
+set_target_properties(
+   WindowlessRender
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")

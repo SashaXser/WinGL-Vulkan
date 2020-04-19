@@ -23,4 +23,10 @@ add_executable(NormalMapping WIN32 ${NORMAL_MAPPING_SRC})
 
 target_link_libraries(NormalMapping WinGL)
 
+set_target_properties(
+   NormalMapping
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(normal_mapping)

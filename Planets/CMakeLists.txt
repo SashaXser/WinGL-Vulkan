@@ -23,6 +23,12 @@ add_executable(Planets WIN32 ${PLANETS_SRC} ${SHADER_SRC})
 
 target_link_libraries(Planets WinGL)
 
+set_target_properties(
+   Planets
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(./Textures)
 
 foreach(file IN LISTS SHADER_SRC)

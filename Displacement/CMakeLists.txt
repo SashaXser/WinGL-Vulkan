@@ -18,4 +18,10 @@ add_executable(Displacement WIN32 ${displacement_src} ${shader_src})
 
 target_link_libraries(Displacement WinGL)
 
+set_target_properties(
+   Displacement
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(displacement)

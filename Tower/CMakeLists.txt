@@ -18,6 +18,12 @@ add_executable(Tower WIN32 ${TOWER_SRC} ${CUBEMAP_SRC} ${SHADER_SRC})
 
 target_link_libraries(Tower WinGL)
 
+set_target_properties(
+   Tower
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 include_directories(./../CubeMap)
 
 copy_to_bin(./Tower)

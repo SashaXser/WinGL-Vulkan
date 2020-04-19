@@ -48,6 +48,8 @@ set(PROJECTS_USE_GLEW_STATIC NO)
 # just in case an install happens, just install locally...
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install")
 
+set(OPENGL_IDE_FOLDER opengl)
+
 add_subdirectory(./ext-src)
 add_subdirectory(./WinGL)
 add_subdirectory(./ProjectiveTexturing)

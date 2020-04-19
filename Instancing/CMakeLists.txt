@@ -18,6 +18,12 @@ add_executable(Instancing WIN32 ${INSTANCING_SRC} ${SHADER_SRC})
 
 target_link_libraries(Instancing WinGL)
 
+set_target_properties(
+   Instancing
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(buildings.rgb)
 copy_to_bin(buildings.frag)
 copy_to_bin(buildings.vert)

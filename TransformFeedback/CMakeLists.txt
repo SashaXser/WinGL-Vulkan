@@ -14,6 +14,12 @@ add_executable(TransformFeedback WIN32 ${TRANSFORM_FEEDBACK_SRC})
 
 target_link_libraries(TransformFeedback WinGL)
 
+set_target_properties(
+   TransformFeedback
+   PROPERTIES
+   FOLDER
+   "${OPENGL_IDE_FOLDER}")
+
 copy_to_bin(transform_feedback_gen.geom)
 copy_to_bin(transform_feedback_gen.vert)
 copy_to_bin(transform_feedback_vis.frag)
