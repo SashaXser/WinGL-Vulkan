@@ -6,24 +6,120 @@
 
 // gl includes
 
+// platform includes
+#include <windows.h>
+
 // std incluces
 #include <chrono>
+#include <functional>
 #include <iterator>
-#include <thread>
+#include <utility>
 
-#define ENABLE_MULTISAMPLE_FRAMEBUFFER 1
+#define ENABLE_MULTISAMPLE_FRAMEBUFFER 0
 
 constexpr GLsizei NUM_SAMPLES { 16 };
+
+static std::pair< HWND, HGLRC > hidden_gl_window { };
+
+std::pair< HWND, HGLRC > CreateHiddenWindow( )
+{
+   std::pair< HWND, HGLRC >
+      hidden_gl_window { };
+
+   const WNDCLASSEX window_class {
+      sizeof(window_class),
+      CS_OWNDC,
+      &DefWindowProc,
+      0, 0,
+      GetModuleHandle(nullptr),
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      "hidden_gl_window",
+      nullptr
+   };
+
+   RegisterClassEx(
+      &window_class);
+
+   hidden_gl_window.first =
+      CreateWindowEx(
+         WS_EX_NOACTIVATE,
+         window_class.lpszClassName,
+         "hidden gl window",
+         0,
+         0, 0, 16, 16,
+         nullptr,
+         nullptr,
+         window_class.hInstance,
+         nullptr);
+
+   if (hidden_gl_window.first)
+   {
+      const PIXELFORMATDESCRIPTOR pfd {
+         sizeof(pfd),
+         1,
+         PFD_SUPPORT_OPENGL | PFD_DEPTH_DONTCARE |
+         PFD_DOUBLEBUFFER_DONTCARE | PFD_STEREO_DONTCARE,
+         PFD_TYPE_RGBA,
+         32,
+         8, 16,
+         8, 8,
+         8, 0,
+         8, 24,
+         0, 0, 0, 0, 0,
+         0, 0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+      };
+
+      const int32_t pixel_format =
+         ChoosePixelFormat(
+            GetDC(hidden_gl_window.first),
+            &pfd);
+
+      SetPixelFormat(
+         GetDC(hidden_gl_window.first),
+         pixel_format,
+         &pfd);
+      
+      hidden_gl_window.second =
+         wglCreateContext(
+            GetDC(hidden_gl_window.first));
+   }
+
+   return hidden_gl_window;
+}
 
 MultisampleFramebufferWindow::MultisampleFramebufferWindow( ) :
 frame_buffer { 0 },
 color_buffer { 0 },
-depth_buffer { 0 }
+depth_buffer { 0 },
+quit_render_thread { false },
+frame_mode { FrameMode::RENDER }
 {
+   hidden_gl_window =
+      CreateHiddenWindow();
 }
 
 MultisampleFramebufferWindow::~MultisampleFramebufferWindow( )
-{  
+{
+   auto deleted =
+      wglDeleteContext(
+         hidden_gl_window.second);
+
+   deleted =
+      DeleteDC(
+         GetDC(hidden_gl_window.first));
+
+   deleted =
+      DestroyWindow(
+         hidden_gl_window.first);
 }
 
 bool MultisampleFramebufferWindow::Create(
@@ -45,11 +141,21 @@ bool MultisampleFramebufferWindow::Create(
    if (OpenGLWindow::Create(
        nWidth, nHeight, pWndTitle, glInit))
    {
+      std::mutex init_complete_mutex;
+      std::condition_variable init_complete;
+
+      render_thread =
+         std::thread(
+            &MultisampleFramebufferWindow::RenderThread,
+            this,
+            std::ref(init_complete));
+
+      init_complete.wait(
+         std::unique_lock(
+            init_complete_mutex));
+
       // make the context current
       MakeCurrent();
-
-      // init all things gl
-      InitGLData();
 
       return true;
    }
@@ -59,6 +165,13 @@ bool MultisampleFramebufferWindow::Create(
 
 void MultisampleFramebufferWindow::OnDestroy( )
 {
+   quit_render_thread.store(
+      true);
+
+   frame.notify_all();
+
+   render_thread.join();
+
    WGL_ASSERT(
       wglGetCurrentContext());
 
@@ -86,31 +199,30 @@ int MultisampleFramebufferWindow::Run( )
    // basic message pump and render frame
    while (!bQuit)
    {
+      frame.wait(
+         std::unique_lock(
+            frame_mutex),
+         [ this ]
+         {
+            return frame_mode == FrameMode::PRESENT;
+         });
+
       // process all the messages
       if (!(bQuit = PeekAppMessages(appQuitVal)))
       {
-         const auto time_begin =
-            std::chrono::high_resolution_clock::now();
-
-         RenderScene();
-
          RenderColorBuffer();
 
          // swap the front and back buffers
          SwapBuffers(GetHDC());
+      }
 
-         const auto time_end =
-            std::chrono::high_resolution_clock::now();
-         
-         const auto time_remaining =
-            std::chrono::duration_cast<
-               std::chrono::milliseconds >(
-                  std::chrono::milliseconds(33) -
-                  (time_end - time_begin));
+      // do not call member variables after class is released
+      if (!bQuit)
+      {
+         frame_mode =
+            FrameMode::RENDER;
 
-         if (time_remaining.count() > 0)
-            std::this_thread::sleep_for(
-               time_remaining);
+         frame.notify_all();
       }
    }
 
@@ -520,4 +632,81 @@ void MultisampleFramebufferWindow::RenderColorBuffer( )
       0);
 
 #endif // ENABLE_MULTISAMPLE_FRAMEBUFFER
+}
+
+void MultisampleFramebufferWindow::RenderThread(
+   std::condition_variable & init_complete )
+{
+   auto shared =
+      wglShareLists(
+         hidden_gl_window.second,
+         GetGLContext());
+
+   const auto local_hidden_window =
+      CreateHiddenWindow();
+
+   shared =
+      wglShareLists(
+         hidden_gl_window.second,
+         local_hidden_window.second);
+
+   wglMakeCurrent(
+      GetDC(local_hidden_window.first),
+      local_hidden_window.second);
+
+   InitGLData();
+
+   init_complete.notify_all();
+
+   while (!quit_render_thread)
+   {
+      frame.wait(
+         std::unique_lock(
+            frame_mutex),
+         [ this ]
+         {
+            return
+               frame_mode == FrameMode::RENDER ||
+               quit_render_thread;
+         });
+
+      const auto time_begin =
+         std::chrono::high_resolution_clock::now();
+
+      RenderScene();
+
+      glFinish();
+
+      const auto time_end =
+         std::chrono::high_resolution_clock::now();
+      
+      const auto time_remaining =
+         std::chrono::milliseconds(33) -
+         (time_end - time_begin);
+
+      if (time_remaining.count() > 0)
+         std::this_thread::sleep_for(
+            time_remaining);
+
+      frame_mode =
+         FrameMode::PRESENT;
+
+      frame.notify_all();
+   }
+
+   wglMakeCurrent(
+      nullptr,
+      nullptr);
+
+   auto deleted =
+      wglDeleteContext(
+         local_hidden_window.second);
+
+   deleted =
+      DeleteDC(
+         GetDC(local_hidden_window.first));
+
+   deleted =
+      DestroyWindow(
+         local_hidden_window.first);
 }

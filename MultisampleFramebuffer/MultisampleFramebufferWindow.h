@@ -10,6 +10,13 @@
 #include <gl/glew.h>
 #include <gl/GL.h>
 
+// std includes
+#include <atomic>
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
+#include <thread>
+
 class MultisampleFramebufferWindow :
    public OpenGLWindow
 {
@@ -52,9 +59,24 @@ private:
    void RenderScene( );
    void RenderColorBuffer( );
 
+   void RenderThread(
+      std::condition_variable & init_complete );
+
    GLuint frame_buffer;
    GLuint color_buffer;
    GLuint depth_buffer;
+
+   std::thread render_thread;
+   std::atomic_bool quit_render_thread;
+
+   enum class FrameMode : uint32_t
+   {
+      RENDER, PRESENT
+   };
+
+   FrameMode frame_mode;
+   std::mutex frame_mutex;
+   std::condition_variable frame;
 
 };
 
