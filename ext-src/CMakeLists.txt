@@ -21,3 +21,5 @@ set_target_properties(zlibstatic PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/zlib")
 # move assimp and dependencies into ext-src folder
 set_target_properties(assimp PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
 set_target_properties(uninstall PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
+set_target_properties(IrrXML PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
+set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "${EXT_SRC_IDE_FOLDER}/assimp")
