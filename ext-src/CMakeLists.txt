@@ -12,7 +12,7 @@ set(ASSIMP_ENABLE_BOOST_WORKAROUND ON CACHE BOOL "ext-src forced override for as
 find_package(ZLIB REQUIRED)
 
 add_subdirectory(./glew-2.1.0)
-add_subdirectory(./assimp-3.1.1)
+add_subdirectory(./assimp-5.0.1)
 add_subdirectory(./resil-1.8.2)
 
 # move the zlib project into the ext-src folder
