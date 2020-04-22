@@ -25,6 +25,7 @@
 
 // std includes
 #include <map>
+#include <cassert>
 #include <cmath>
 #include <memory>
 #include <string>
