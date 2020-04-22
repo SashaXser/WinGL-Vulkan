@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.15.2)
 
 # use cxx17 as the standard for all projects
 set(

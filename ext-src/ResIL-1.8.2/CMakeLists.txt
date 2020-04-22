@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.15.2)
 
 if (NOT TARGET ${PROJECT_NAME_ZLIB})
    add_subdirectory("./input libs/zlib-1.2.8")
