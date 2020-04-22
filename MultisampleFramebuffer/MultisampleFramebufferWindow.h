@@ -17,6 +17,8 @@
 #include <mutex>
 #include <thread>
 
+#define ENABLE_MULTISAMPLE_FRAMEBUFFER 1
+
 class MultisampleFramebufferWindow :
    public OpenGLWindow
 {
@@ -65,6 +67,11 @@ private:
    GLuint frame_buffer;
    GLuint color_buffer;
    GLuint depth_buffer;
+
+#if ENABLE_MULTISAMPLE_FRAMEBUFFER
+   GLuint frame_buffer_resolve;
+   GLuint color_buffer_resolve;
+#endif
 
    std::thread render_thread;
    std::atomic_bool quit_render_thread;
