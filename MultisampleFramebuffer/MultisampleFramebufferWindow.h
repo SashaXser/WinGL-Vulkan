@@ -64,8 +64,9 @@ private:
    void RenderThread(
       std::condition_variable & init_complete );
 
-   GLuint frame_buffer;
-   GLuint color_buffer;
+   size_t current_frame;
+   GLuint frame_buffer[2];
+   GLuint color_buffer[2];
    GLuint depth_buffer;
 
 #if ENABLE_MULTISAMPLE_FRAMEBUFFER

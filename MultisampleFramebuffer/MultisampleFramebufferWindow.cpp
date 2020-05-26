@@ -95,6 +95,7 @@ std::pair< HWND, HGLRC > CreateHiddenWindow( )
 }
 
 MultisampleFramebufferWindow::MultisampleFramebufferWindow( ) :
+current_frame { 0 },
 frame_buffer { 0 },
 color_buffer { 0 },
 depth_buffer { 0 },
@@ -105,8 +106,12 @@ color_buffer_resolve { 0 },
 quit_render_thread { false },
 frame_mode { FrameMode::RENDER }
 {
-   hidden_gl_window =
-      CreateHiddenWindow();
+   if (!hidden_gl_window.first ||
+       !hidden_gl_window.second)
+   {
+      hidden_gl_window =
+         CreateHiddenWindow();
+   }
 }
 
 MultisampleFramebufferWindow::~MultisampleFramebufferWindow( )
@@ -266,9 +271,13 @@ void MultisampleFramebufferWindow::InitGLData( )
 #endif // ENABLE_MULTISAMPLE_FRAMEBUFFER
    };
 
-   glGenTextures(
-      1,
-      &color_buffer);
+   for (auto & cb : color_buffer)
+   {
+      glGenTextures(
+         1,
+         &cb);
+   }
+
    glGenTextures(
       1,
       &depth_buffer);
@@ -281,31 +290,34 @@ void MultisampleFramebufferWindow::InitGLData( )
 
    InitTextures();
 
-   glGenFramebuffers(
-      1,
-      &frame_buffer);
-   glBindFramebuffer(
-      GL_FRAMEBUFFER,
-      frame_buffer);
-   glFramebufferTexture2D(
-      GL_FRAMEBUFFER,
-      GL_COLOR_ATTACHMENT0,
-      texture_target,
-      color_buffer,
-      0);
-   glFramebufferTexture2D(
-      GL_FRAMEBUFFER,
-      GL_DEPTH_ATTACHMENT,
-      texture_target,
-      depth_buffer,
-      0);
+   for (auto & fb : frame_buffer)
+   {
+      glGenFramebuffers(
+         1,
+         &fb);
+      glBindFramebuffer(
+         GL_FRAMEBUFFER,
+         fb);
+      glFramebufferTexture2D(
+         GL_FRAMEBUFFER,
+         GL_COLOR_ATTACHMENT0,
+         texture_target,
+         color_buffer[&fb - frame_buffer],
+         0);
+      glFramebufferTexture2D(
+         GL_FRAMEBUFFER,
+         GL_DEPTH_ATTACHMENT,
+         texture_target,
+         depth_buffer,
+         0);
 
-   const auto status =
-      glCheckFramebufferStatus(
-         GL_FRAMEBUFFER);
+      const auto status =
+         glCheckFramebufferStatus(
+            GL_FRAMEBUFFER);
 
-   WGL_ASSERT(
-      status == GL_FRAMEBUFFER_COMPLETE);
+      WGL_ASSERT(
+         status == GL_FRAMEBUFFER_COMPLETE);
+   }
 
 #if ENABLE_MULTISAMPLE_FRAMEBUFFER
 
@@ -346,37 +358,40 @@ void MultisampleFramebufferWindow::InitTextures( )
 #endif // ENABLE_MULTISAMPLE_FRAMEBUFFER
    };
 
-   glBindTexture(
-      texture_target,
-      color_buffer);
+   for (const auto cb : color_buffer)
+   {
+      glBindTexture(
+         texture_target,
+         cb);
 #if ENABLE_MULTISAMPLE_FRAMEBUFFER
-   glTexImage2DMultisample(
-      GL_TEXTURE_2D_MULTISAMPLE,
-      NUM_SAMPLES,
-      GL_RGBA8,
-      GetSize().width,
-      GetSize().height,
-      GL_FALSE);
+      glTexImage2DMultisample(
+         GL_TEXTURE_2D_MULTISAMPLE,
+         NUM_SAMPLES,
+         GL_RGBA8,
+         GetSize().width,
+         GetSize().height,
+         GL_FALSE);
 #else // ENABLE_MULTISAMPLE_FRAMEBUFFER
-   glTexImage2D(
-      GL_TEXTURE_2D,
-      0,
-      GL_RGBA8,
-      GetSize().width,
-      GetSize().height,
-      0,
-      GL_BGRA,
-      GL_UNSIGNED_BYTE,
-      nullptr);
-   glTexParameteri(
-      GL_TEXTURE_2D,
-      GL_TEXTURE_MIN_FILTER,
-      GL_NEAREST);
-   glTexParameteri(
-      GL_TEXTURE_2D,
-      GL_TEXTURE_MAG_FILTER,
-      GL_NEAREST);
+      glTexImage2D(
+         GL_TEXTURE_2D,
+         0,
+         GL_RGBA8,
+         GetSize().width,
+         GetSize().height,
+         0,
+         GL_BGRA,
+         GL_UNSIGNED_BYTE,
+         nullptr);
+      glTexParameteri(
+         GL_TEXTURE_2D,
+         GL_TEXTURE_MIN_FILTER,
+         GL_NEAREST);
+      glTexParameteri(
+         GL_TEXTURE_2D,
+         GL_TEXTURE_MAG_FILTER,
+         GL_NEAREST);
 #endif // ENABLE_MULTISAMPLE_FRAMEBUFFER
+   }
 
    glBindTexture(
       texture_target,
@@ -448,7 +463,7 @@ void MultisampleFramebufferWindow::RenderScene( )
 {
    glBindFramebuffer(
       GL_FRAMEBUFFER,
-      frame_buffer);
+      frame_buffer[current_frame]);
 
    glDrawBuffer(
       GL_COLOR_ATTACHMENT0);
@@ -516,7 +531,7 @@ void MultisampleFramebufferWindow::RenderScene( )
       { 0.0f, 1.0f, 1.0f, 1.0f, 0.4f,  0.9f }
    };
 
-   static float degrees_rates[][2] {
+   static thread_local float degrees_rates[][2] {
       { 0.0f, 0.8f },
       { 0.0f, 0.7f },
       { 0.0f, 0.6f },
@@ -573,7 +588,7 @@ void MultisampleFramebufferWindow::RenderScene( )
 
    glBindFramebuffer(
       GL_READ_FRAMEBUFFER,
-      frame_buffer);
+      frame_buffer[current_frame]);
    glBindFramebuffer(
       GL_DRAW_FRAMEBUFFER,
       frame_buffer_resolve);
@@ -631,7 +646,7 @@ void MultisampleFramebufferWindow::RenderColorBuffer( )
 #if ENABLE_MULTISAMPLE_FRAMEBUFFER
       color_buffer_resolve);
 #else
-      color_buffer);
+      color_buffer[current_frame]);
 #endif
 
    GLint cur_tex_env_mode { };
@@ -715,12 +730,24 @@ void MultisampleFramebufferWindow::RenderThread(
                quit_render_thread;
          });
 
+      current_frame =
+         current_frame++ %
+         std::size(frame_buffer);
+
+      wglMakeCurrent(
+         GetDC(local_hidden_window.first),
+         local_hidden_window.second);
+
       const auto time_begin =
          std::chrono::high_resolution_clock::now();
 
       RenderScene();
 
       glFinish();
+
+      wglMakeCurrent(
+         nullptr,
+         nullptr);
 
       const auto time_end =
          std::chrono::high_resolution_clock::now();
@@ -739,18 +766,25 @@ void MultisampleFramebufferWindow::RenderThread(
       frame.notify_all();
    }
 
-   glDeleteTextures(
-      1,
-      &color_buffer);
+   for (const auto cb : color_buffer)
+   {
+      glDeleteTextures(
+         1,
+         &cb);
+   }
+   
    glDeleteTextures(
       1,
       &depth_buffer);
 
-   // need to delete the frame buffer here...
-   // frame buffers cannot be shared between contexts...
-   glDeleteFramebuffers(
-      1,
-      &frame_buffer);
+   for (const auto fb : color_buffer)
+   {
+      // need to delete the frame buffer here...
+      // frame buffers cannot be shared between contexts...
+      glDeleteFramebuffers(
+         1,
+         &fb);
+   }
 
 #if ENABLE_MULTISAMPLE_FRAMEBUFFER
    glDeleteTextures(
