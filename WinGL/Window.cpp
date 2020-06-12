@@ -11,6 +11,13 @@
 // library includes
 #pragma comment( lib, "Winmm.lib" )
 
+namespace init
+{
+const auto dpi_awareness_set =
+   SetProcessDpiAwarenessContext(
+      DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2); 
+}
+
 Window::Window( ) :
 mHDC           ( NULL ),
 mHWND          ( NULL ),
