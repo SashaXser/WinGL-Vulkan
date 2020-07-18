@@ -306,7 +306,7 @@ void MultisampleFramebufferWindow::InitGLData( )
          0);
       glFramebufferTexture2D(
          GL_FRAMEBUFFER,
-         GL_DEPTH_ATTACHMENT,
+         GL_DEPTH_STENCIL_ATTACHMENT,
          texture_target,
          depth_buffer,
          0);
