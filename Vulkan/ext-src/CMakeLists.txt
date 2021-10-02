@@ -5,8 +5,9 @@ set(VULKAN_EXT_SRC_IDE_FOLDER
 
 set(GLM_TEST_ENABLE off)
 set(BUILD_SHARED_LIBS off)
+set(BUILD_STATIC_LIBS on)
 
-add_subdirectory(glm-0.9.9.6)
+add_subdirectory(glm-0.9.9.8)
 
 set_target_properties(
    glm_static

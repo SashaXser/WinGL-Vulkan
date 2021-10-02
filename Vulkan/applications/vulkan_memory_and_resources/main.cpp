@@ -368,7 +368,7 @@ InstanceHandle CreateInstance( )
    application_info.applicationVersion = 1;
    application_info.pEngineName = nullptr;
    application_info.engineVersion = 0;
-   application_info.apiVersion = VK_MAKE_VERSION(1, 1, 121);
+   application_info.apiVersion = VK_MAKE_VERSION(1, 2, 182);
 
    VkInstanceCreateInfo create_info;
    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -773,16 +773,20 @@ BufferHandle CreateBuffer(
 
 std::vector< VkFormat > GetVkFormats( )
 {
-   std::vector< VkFormat > formats {
-      static_cast< size_t >(VK_FORMAT_RANGE_SIZE) };
-
-   for (size_t i = 0; i < VK_FORMAT_RANGE_SIZE; ++i)
-   {
-      formats[i] =
-         static_cast< VkFormat >(i);
-   }
+   std::vector< VkFormat > formats;
 
    size_t ext_range_size =
+      VK_FORMAT_ASTC_12x12_SRGB_BLOCK -
+      VK_FORMAT_R4G4_UNORM_PACK8 + 1;
+
+   for (size_t i = 0; i < ext_range_size; ++i)
+   {
+      formats.emplace_back(
+         static_cast< VkFormat >(
+            static_cast< size_t >(VK_FORMAT_R4G4_UNORM_PACK8) + i));
+   }
+
+   ext_range_size =
       VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM -
       VK_FORMAT_G8B8G8R8_422_UNORM + 1;
 
@@ -813,6 +817,28 @@ std::vector< VkFormat > GetVkFormats( )
       formats.emplace_back(
          static_cast< VkFormat >(
             static_cast< size_t >(VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK_EXT) + i));
+   }
+
+   ext_range_size =
+      VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT -
+      VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT + 1;
+
+   for (size_t i = 0; i < ext_range_size; ++i)
+   {
+      formats.emplace_back(
+         static_cast< VkFormat >(
+            static_cast< size_t >(VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT) + i));
+   }
+
+   ext_range_size =
+      VK_FORMAT_A4B4G4R4_UNORM_PACK16_EXT -
+      VK_FORMAT_A4R4G4B4_UNORM_PACK16_EXT + 1;
+
+   for (size_t i = 0; i < ext_range_size; ++i)
+   {
+      formats.emplace_back(
+         static_cast< VkFormat >(
+            static_cast< size_t >(VK_FORMAT_A4R4G4B4_UNORM_PACK16_EXT) + i));
    }
 
    return formats;

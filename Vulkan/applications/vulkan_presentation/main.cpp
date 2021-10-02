@@ -25,7 +25,7 @@ int32_t main(
       vkl::CreateInstance(
          "vulkan-presentation", 1,
          "", 1,
-         1, 1, 121);
+         1, 2, 182);
 
    if (!instance)
    {

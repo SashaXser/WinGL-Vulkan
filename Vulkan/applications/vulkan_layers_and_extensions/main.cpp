@@ -53,7 +53,7 @@ InstanceHandle CreateInstance( )
    application_info.applicationVersion = 1;
    application_info.pEngineName = nullptr;
    application_info.engineVersion = 0;
-   application_info.apiVersion = VK_MAKE_VERSION(1, 1, 121);
+   application_info.apiVersion = VK_MAKE_VERSION(1, 2, 182);
 
    VkInstanceCreateInfo create_info;
    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

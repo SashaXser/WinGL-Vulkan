@@ -17,7 +17,7 @@ function(
       
    find_path(
       validation_layer_path
-      VkLayer_core_validation.json
+      VkLayer_khronos_validation.json
       PATH_SUFFIXES ${path_suffix})
 
    set(
