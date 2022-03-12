@@ -106,10 +106,6 @@ add_compile_definitions(
    HAVE_CONFIG_H
    _CRT_NONSTDC_NO_WARNINGS)
 
-add_compile_options(
-   /W3
-   /permissive)
-
 add_library(resil STATIC ${RES_IL_SRC_COMPLETE})
 
 target_compile_definitions(resil PUBLIC _RESIL_IS_UNICODE)

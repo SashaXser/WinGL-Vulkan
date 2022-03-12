@@ -8,6 +8,8 @@ set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "ext-src forced override for assimp
 set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "ext-src forced override for assimp")
 set(ASSIMP_ENABLE_BOOST_WORKAROUND ON CACHE BOOL "ext-src forced override for assimp")
 
+add_compile_options(/W1 /permissive)
+
 # do a lookup of zlib first, so other cmake module paths are not overwritten...
 find_package(ZLIB REQUIRED)
 

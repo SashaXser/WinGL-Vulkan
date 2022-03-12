@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.15.0)
 
+add_compile_options(/W1 /permissive)
+
 set(VULKAN_EXT_SRC_IDE_FOLDER
    "${VULKAN_IDE_FOLDER}/ext-src")
 
