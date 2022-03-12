@@ -30,7 +30,7 @@ DisplacementWindow::~DisplacementWindow( )
 bool DisplacementWindow::Create( unsigned int nWidth,
                                  unsigned int nHeight,
                                  const char * pWndTitle,
-                                 const void * pInitParams )
+                                 const void * /*pInitParams*/ )
 {
    bool created = false;
 
@@ -79,7 +79,9 @@ int DisplacementWindow::Run( )
    while (!bQuit)
    {
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // clear the back buffer and the depth buffer
          //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

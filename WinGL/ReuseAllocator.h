@@ -76,7 +76,7 @@ _front   ( 0 )
 
 template < typename T >
 template < typename O >
-ReuseAllocator< T >::ReuseAllocator( const ReuseAllocator< O > & allocator ) :
+ReuseAllocator< T >::ReuseAllocator( const ReuseAllocator< O > & /*allocator*/ ) :
 _front   ( 0 )
 {
 }
@@ -105,7 +105,7 @@ ReuseAllocator< T >::operator = ( const ReuseAllocator< O > & other )
 
 template < typename T >
 typename ReuseAllocator< T >::pointer
-ReuseAllocator< T >::allocate( size_type count, const void * hint )
+ReuseAllocator< T >::allocate( size_type count, const void * /*hint*/ )
 {
    // make sure that the count is equal to one.
    // if this crashes, basically this means that
@@ -146,7 +146,7 @@ void ReuseAllocator< T >::destroy( pointer ptr )
 }
 
 template < typename T >
-void ReuseAllocator< T >::deallocate( pointer ptr, size_type count )
+void ReuseAllocator< T >::deallocate( pointer ptr, size_type /*count*/ )
 {
    if (!_front)
    {

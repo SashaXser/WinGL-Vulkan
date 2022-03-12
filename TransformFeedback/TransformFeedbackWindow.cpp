@@ -43,7 +43,7 @@ void TransformFeedbackWindow::OnDestroy( )
 bool TransformFeedbackWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
                                       const char * pWndTitle,
-                                      const void * pInitParams )
+                                      const void * /*pInitParams*/ )
 {
    // major, minor, compatible, debug, forward compatible
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -133,7 +133,7 @@ bool TransformFeedbackWindow::Create( unsigned int nWidth,
       mGenCurveShader.Enable();
       mGenCurveShader.SetUniformValue< 4 >("control_points",
                                            static_cast< const float * >(mControlPoints.front()),
-                                           mControlPoints.size());
+                                           static_cast< GLsizei >(mControlPoints.size()));
       mGenCurveShader.SetUniformValue("number_of_control_points", uint32_t(3));
       mGenCurveShader.Disable();
 
@@ -190,7 +190,9 @@ int TransformFeedbackWindow::Run( )
    while (!bQuit)
    {
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // clear the main color buffer...
          const GLfloat BLACK[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -307,8 +309,8 @@ LRESULT TransformFeedbackWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARA
    case WM_SIZE:
    {
       // obtain the width and height
-      const uint32_t width = lParam & 0xFFFF;
-      const uint32_t height = lParam >> 16;
+      const uint32_t width = static_cast< uint32_t >(lParam & 0xFFFF);
+      const uint32_t height = static_cast< uint32_t >(lParam >> 16);
 
       // update the viewport
       glViewport(0, 0,
@@ -358,7 +360,10 @@ LRESULT TransformFeedbackWindow::MessageHandler( UINT uMsg, WPARAM wParam, LPARA
 
          // update the shader's view of the control points
          mGenCurveShader.Enable();
-         mGenCurveShader.SetUniformValue< 4 >("control_points", static_cast< const float * >(mControlPoints.front()), mControlPoints.size());
+         mGenCurveShader.SetUniformValue< 4 >(
+            "control_points",
+            static_cast< const float * >(mControlPoints.front()),
+            static_cast< GLsizei >(mControlPoints.size()));
          mGenCurveShader.Disable();
 
          // update the buffer for the visual shader

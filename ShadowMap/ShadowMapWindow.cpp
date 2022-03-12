@@ -100,7 +100,7 @@ void ShadowMapWindow::OnDestroy( )
 bool ShadowMapWindow::Create( unsigned int nWidth,
                               unsigned int nHeight,
                               const char * pWndTitle,
-                              const void * pInitParams )
+                              const void * /*pInitParams*/ )
 {
    // initialize 40 first, then 32 second, else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -212,7 +212,9 @@ int ShadowMapWindow::Run( )
    while (!bQuit)
    {
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // render the scene
          RenderScene();
@@ -513,9 +515,6 @@ void ShadowMapWindow::RenderScene( )
 
       while (mpEnterpriseE->mRenderBuckets.cend() != rbucketEnd)
       {
-         // activate the texture
-         Texture * diffuse_tex = mpEnterpriseE->mDiffuse[rbucketBeg->first].get();
-
          for (; rbucketBeg != rbucketEnd; ++rbucketBeg)
          {
             glDrawElements(GL_TRIANGLES,
@@ -570,7 +569,7 @@ void ShadowMapWindow::GenerateSceneData( )
    mpEnterpriseE->mVAO.DeleteArray();
    mpEnterpriseE->mIdxBuf.DeleteBuffer();
 
-   mpEnterpriseE->mRenderBuckets.empty();
+   mpEnterpriseE->mRenderBuckets.clear();
 
    // generate the data based on the active model data
    GenerateEnterpriseE();
@@ -764,8 +763,8 @@ void ShadowMapWindow::GenerateEnterpriseE( )
             const aiMesh * const pCurMesh = pScene->mMeshes[cur_mesh];
             const aiVector3D * const pVertices = pCurMesh->mVertices;
             const aiVector3D * const pNormals = pCurMesh->mNormals;
-            const aiVector3D * const pTangents = pCurMesh->mTangents;
-            const aiVector3D * const pBitangents = pCurMesh->mBitangents;
+            //const aiVector3D * const pTangents = pCurMesh->mTangents;
+            //const aiVector3D * const pBitangents = pCurMesh->mBitangents;
             const aiVector3D * const pTexCoords = pCurMesh->mTextureCoords[0];
             const size_t num_verts = pCurMesh->mNumVertices;
 
@@ -878,13 +877,13 @@ void ShadowMapWindow::GenerateEnterpriseE( )
                [ & ] ( ) -> std::vector< GLuint >
                {
                   // need to transform the indices to use base 0
-                  std::vector< GLuint > indices(indices.cbegin() + base_index, indices.cend());
-                  for (auto & index : indices)
+                  std::vector< GLuint > temp_indices(indices.cbegin() + base_index, indices.cend());
+                  for (auto & index : temp_indices)
                   { 
                      index = index - base_index;
                   }
 
-                  return indices;
+                  return temp_indices;
                }();
 
                // calculate all the vector information
@@ -911,7 +910,7 @@ void ShadowMapWindow::GenerateEnterpriseE( )
       else
       {
          PostDebugMessage(GL_DEBUG_TYPE_ERROR, 3, GL_DEBUG_SEVERITY_HIGH,
-                          static_cast< std::stringstream & >(std::stringstream() << "Unable to read " << pFilename).str().c_str());
+                          (std::stringstream() << "Unable to read " << pFilename).str().c_str());
       }
    };
 

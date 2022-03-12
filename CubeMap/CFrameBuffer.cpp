@@ -175,7 +175,7 @@ unsigned int  CFrameBuffer::glCheckFramebufferStatusEXT( unsigned int nTarget )
 
 unsigned char CFrameBuffer::glIsRenderbufferEXT( unsigned int nRenderBuffer )
 {
-   unsigned int nResult = 0;
+   GLboolean nResult = 0;
 
    if (m_bInitialized) nResult = glIsRenderBufferExt(nRenderBuffer);
 
@@ -184,7 +184,7 @@ unsigned char CFrameBuffer::glIsRenderbufferEXT( unsigned int nRenderBuffer )
 
 unsigned char CFrameBuffer::glIsFramebufferEXT( unsigned int nFrameBuffer )
 {
-   unsigned int nResult = 0;
+   GLboolean nResult = 0;
 
    if (m_bInitialized) nResult = glIsFrameBufferExt(nFrameBuffer);
 

@@ -28,7 +28,7 @@ TessellationTriangleWindow::~TessellationTriangleWindow( )
 bool TessellationTriangleWindow::Create( unsigned int nWidth,
                                          unsigned int nHeight,
                                          const char * pWndTitle,
-                                         const void * pInitParams )
+                                         const void * /*pInitParams*/ )
 {
    // indicate the contexts to initialize with
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -83,7 +83,9 @@ int TessellationTriangleWindow::Run( )
    while (!bQuit)
    {
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // clear the back buffer
          glClear(GL_COLOR_BUFFER_BIT);

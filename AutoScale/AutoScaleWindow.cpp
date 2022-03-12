@@ -27,7 +27,7 @@ AutoScaleWindow::~AutoScaleWindow( )
 bool AutoScaleWindow::Create( unsigned int nWidth,
                               unsigned int nHeight,
                               const char * pWndTitle,
-                              const void * pInitParams )
+                              const void * /*pInitParams*/ )
 {
    // initialize with a context else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -86,8 +86,10 @@ int AutoScaleWindow::Run( )
    // basic message pump and render frame
    while (!bQuit)
    {
+      bQuit = PeekAppMessages(appQuitVal);
+
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      if (!bQuit)
       {
          // clear the back buffer and the depth buffer
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

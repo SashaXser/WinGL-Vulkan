@@ -328,9 +328,12 @@ void DestroyInstanceHandle(
 {
    if (instance && *instance)
    {
+      const auto allocator =
+         CreateAllocator();
+
       vkDestroyInstance(
          *instance,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete instance;
@@ -346,9 +349,12 @@ void DestroyLogicalDeviceHandle(
 {
    if (device && *device)
    {
+      const auto allocator =
+         CreateAllocator();
+
       vkDestroyDevice(
          *device,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete device;
@@ -384,10 +390,13 @@ InstanceHandle CreateInstance( )
       new VkInstance { nullptr },
       &DestroyInstanceHandle };
 
+   const auto allocator =
+      CreateAllocator();
+
    const VkResult created =
       vkCreateInstance(
          &create_info,
-         &CreateAllocator(),
+         &allocator,
          instance.get());
 
    if (created != VK_SUCCESS)
@@ -607,11 +616,14 @@ LogicalDeviceHandle CreateLogicalDevice(
       new VkDevice { nullptr },
       &DestroyLogicalDeviceHandle };
 
+   const auto allocator =
+      CreateAllocator();
+
    const VkResult created =
       vkCreateDevice(
          physical_device,
          &create_info,
-         &CreateAllocator(),
+         &allocator,
          logical_device.get());
 
    if (created != VK_SUCCESS)
@@ -641,10 +653,13 @@ void DestroyBufferHandle(
          reinterpret_cast< VkDevice * >(
             context);
 
+      const auto allocator =
+         CreateAllocator();
+
       vkDestroyBuffer(
          *device,
          *buffer,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete [] context;
@@ -746,11 +761,14 @@ BufferHandle CreateBuffer(
             << DecodeSharingMode(mode)
             << std::endl;
 
+         const auto allocator =
+            CreateAllocator();
+
          const auto result =
             vkCreateBuffer(
                *device,
                &info,
-               &CreateAllocator(),
+               &allocator,
                buffer.get());
 
          if (result == VK_SUCCESS)
@@ -1186,11 +1204,11 @@ void DisplayPhysicalDeviceImageFormatProperties(
                << std::endl
                << "Sample Counts       : ";
 
-            for (size_t i = 1;
-                 i <= VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
-                 i <<= 1)
+            for (size_t j = 1;
+                 j <= VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
+                 j <<= 1)
             {
-               switch (properties.sampleCounts & i)
+               switch (properties.sampleCounts & j)
                {
                case VK_SAMPLE_COUNT_1_BIT:
                   std::cout << "1, "; break;
@@ -1210,7 +1228,7 @@ void DisplayPhysicalDeviceImageFormatProperties(
                default:
                   std::cout
                      << "Unknown Sample "
-                     << std::hex << "0x" << i << std::dec
+                     << std::hex << "0x" << j << std::dec
                      << ", ";
                   break;
                }
@@ -1242,10 +1260,13 @@ void DestroyImageHandle(
          reinterpret_cast< VkDevice * >(
             context);
 
+      const auto allocator =
+         CreateAllocator();
+
       vkDestroyImage(
          *device,
          *image,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete [] context;
@@ -1312,11 +1333,14 @@ ImageHandle CreateImage(
             image_layout
          };
 
+         const auto allocator =
+            CreateAllocator();
+
          const auto result =
             vkCreateImage(
                *device,
                &info,
-               &CreateAllocator(),
+               &allocator,
                image.get());
 
          if (result == VK_SUCCESS)
@@ -1350,10 +1374,13 @@ void DestroyDeviceMemory(
          reinterpret_cast< VkDevice * >(
             context);
 
+      const auto allocator =
+         CreateAllocator();
+
       vkFreeMemory(
          *device,
          *memory,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete [] context;
@@ -1394,11 +1421,14 @@ DeviceMemoryHandle AllocateMemory(
             type_index
          };
 
+         const auto allocator =
+            CreateAllocator();
+
          const auto result =
             vkAllocateMemory(
                *device,
                &info,
-               &CreateAllocator(),
+               &allocator,
                memory.get());
 
          if (result == VK_SUCCESS)
@@ -1518,11 +1548,13 @@ void DestroyBufferViewHandle(
       VkDevice * const device =
          reinterpret_cast< VkDevice * >(
             context);
+      const auto allocator =
+         CreateAllocator();
 
       vkDestroyBufferView(
          *device,
          *view,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete [] context;
@@ -1570,11 +1602,14 @@ BufferViewHandle CreateBufferView(
             range
          };
 
+         const auto allocator =
+            CreateAllocator();
+
          const auto result =
             vkCreateBufferView(
                *device,
                &info,
-               &CreateAllocator(),
+               &allocator,
                view.get());
 
          if (result == VK_SUCCESS)
@@ -1608,10 +1643,13 @@ void DestroyImageViewHandle(
          reinterpret_cast< VkDevice * >(
             context);
 
+      const auto allocator =
+         CreateAllocator();
+
       vkDestroyImageView(
          *device,
          *view,
-         &CreateAllocator());
+         &allocator);
    }
 
    delete [] context;
@@ -1661,11 +1699,14 @@ ImageViewHandle CreateImageView(
             subresource_range
          };
 
+         const auto allocator =
+            CreateAllocator();
+
          const auto result =
             vkCreateImageView(
                *device,
                &info,
-               &CreateAllocator(),
+               &allocator,
                view.get());
 
          if (result == VK_SUCCESS)
@@ -1687,8 +1728,8 @@ ImageViewHandle CreateImageView(
 }
 
 int32_t main(
-   const int32_t argc,
-   const char* const argv[] )
+   const int32_t /*argc*/,
+   const char* const /*argv*/[] )
 {
    const auto instance =
       CreateInstance();

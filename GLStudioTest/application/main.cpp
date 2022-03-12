@@ -73,7 +73,7 @@ _fbo( nullptr )
 bool GLStudioWindow::Create( unsigned int nWidth,
                              unsigned int nHeight,
                              const char * pWndTitle,
-                             const void * pInitParams )
+                             const void * /*pInitParams*/ )
 {
    // initialize with a context else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -110,8 +110,10 @@ int GLStudioWindow::Run( )
    {
       double start_frame_ms = Timer().GetCurrentTimeMS();
 
+      bQuit = PeekAppMessages(appQuitVal);
+
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      if (!bQuit)
       {
          double current_time_ms = Timer().GetCurrentTimeMS();
          double delta_time_ms = current_time_ms - start_frame_ms;
@@ -330,10 +332,10 @@ LRESULT GLStudioWindow::MessageHandler( UINT uMsg,
    return result;
 }
 
-int WINAPI WinMain( HINSTANCE hInstance,
-                    HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine,
-                    int nShowCmd )
+int WINAPI WinMain( HINSTANCE /*hInstance*/,
+                    HINSTANCE /*hPrevInstance*/,
+                    LPSTR /*lpCmdLine*/,
+                    int /*nShowCmd*/ )
 {
    // indicates success or failure
    int error = -1;

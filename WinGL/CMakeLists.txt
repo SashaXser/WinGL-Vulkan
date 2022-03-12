@@ -58,6 +58,8 @@ source_group("Camera Policies" FILES ${WIN_GL_CAMERA_POLICIES_SRC})
 
 target_compile_definitions(WinGL PUBLIC _USE_MATH_DEFINES)
 
+target_compile_options(WinGL PRIVATE /wd4706)
+
 target_include_directories(WinGL INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(WinGL PUBLIC opengl32.lib)

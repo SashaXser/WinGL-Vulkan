@@ -116,7 +116,7 @@ CModel3DS::~CModel3DS( )
    }
 }
 
-void CModel3DS::Update( const double & rElapsedTime )
+void CModel3DS::Update( const double & /*rElapsedTime*/ )
 {
 }
 
@@ -377,7 +377,7 @@ void CModel3DS::ProcessMaterialBlock( std::istream & iStream, unsigned int nChun
             float *        pRatio = 0;
             unsigned short nRatio = 0;
             unsigned short nID = 0;
-            unsigned long  nChunkLength = 0;
+            unsigned long  nMatLength = 0;
 
             // setup the ratio pointer
             switch (nChunkID)
@@ -388,7 +388,7 @@ void CModel3DS::ProcessMaterialBlock( std::istream & iStream, unsigned int nChun
 
             // read the chunk id and length
             iStream.read((char *)&nID, sizeof(nID));
-            iStream.read((char *)&nChunkLength, sizeof(nChunkLength));
+            iStream.read((char *)&nMatLength, sizeof(nMatLength));
             // read the ratio
             iStream.read((char *)&nRatio, sizeof(nRatio));
             // set the ratio
@@ -566,7 +566,7 @@ void CModel3DS::ProcessTriangularFaceList( std::istream & iStream,
 
 void CModel3DS::ProcessSmoothingGrpList( std::istream & iStream,
                                          unsigned int nChunkLength,
-                                         ObjectBlock * pObjBlk )
+                                         ObjectBlock * /*pObjBlk*/ )
 {
    // local(s)
    unsigned short nChunkID = 0;

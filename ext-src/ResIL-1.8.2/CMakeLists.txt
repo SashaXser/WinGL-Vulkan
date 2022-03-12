@@ -93,17 +93,26 @@ set(RES_IL_SRC_COMPLETE
     ${RES_IL_EXT_LIBS_LCMS2}
     ${RES_IL_EXT_LIBS_TIFF})
 
-add_library(resil STATIC ${RES_IL_SRC_COMPLETE})
-
 add_definitions(/D JAS_WIN_MSVC_BUILD)
 add_definitions(/wd4101 /wd4244 /wd4700 /wd4267 /wd4013 /wd4715 /wd4716 /wd4018 /wd4005)
 
-target_compile_definitions(resil PUBLIC _RESIL_IS_UNICODE)
+get_directory_property(dir_comp_defs COMPILE_DEFINITIONS)
+list(REMOVE_ITEM dir_comp_defs NOMINMAX WIN32_LEAN_AND_MEAN)
+set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "${dir_comp_defs}")
 
-string(REPLACE "/D NOMINMAX" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-string(REPLACE "/D WIN32_LEAN_AND_MEAN" "/D _UNICODE /D UNICODE /D HAVE_CONFIG_H /D _CRT_NONSTDC_NO_WARNINGS" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-string(REPLACE "/D NOMINMAX" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-string(REPLACE "/D WIN32_LEAN_AND_MEAN" "/D _UNICODE /D UNICODE /D HAVE_CONFIG_H /D _CRT_NONSTDC_NO_WARNINGS" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+add_compile_definitions(
+   _UNICODE
+   UNICODE
+   HAVE_CONFIG_H
+   _CRT_NONSTDC_NO_WARNINGS)
+
+add_compile_options(
+   /W3
+   /permissive)
+
+add_library(resil STATIC ${RES_IL_SRC_COMPLETE})
+
+target_compile_definitions(resil PUBLIC _RESIL_IS_UNICODE)
 
 set(INPUT_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/include/il/config.h")
 set(OUTPUT_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/internal/config.h")

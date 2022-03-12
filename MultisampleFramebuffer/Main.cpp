@@ -9,10 +9,10 @@
 #include <mutex>
 #include <thread>
 
-int WINAPI WinMain( HINSTANCE hInstance,
-                    HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine,
-                    int nShowCmd )
+int WINAPI WinMain( HINSTANCE /*hInstance*/,
+                    HINSTANCE /*hPrevInstance*/,
+                    LPSTR /*lpCmdLine*/,
+                    int /*nShowCmd*/ )
 {
    // indicates success or failure
    int error = -1;
@@ -31,14 +31,14 @@ int WINAPI WinMain( HINSTANCE hInstance,
       std::thread thread {
          [ & ] ( )
          {
-            init_complete_cv.wait(
-               std::unique_lock { init_complete_mutex },
-               [ & ] ( ) { return !init_complete; });
-
             auto * const pMFW = new MultisampleFramebufferWindow();
             if (pMFW->Create(640, 480, "MFW"))
             {
-               init_complete = true;
+               {
+                  std::unique_lock lock { init_complete_mutex };
+
+                  init_complete = true;
+               }
 
                init_complete_cv.notify_all();
 
@@ -47,9 +47,13 @@ int WINAPI WinMain( HINSTANCE hInstance,
          }
       };
 
-      init_complete_cv.wait(
-         std::unique_lock { init_complete_mutex },
-         [ & ] ( ) { return init_complete; });
+      {
+         std::unique_lock lock { init_complete_mutex };
+
+         init_complete_cv.wait(
+            lock,
+            [ & ] ( ) { return init_complete; });
+      }
 
       // run the program
       error = pMFW->Run();

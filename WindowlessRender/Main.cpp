@@ -5,8 +5,8 @@
 #include "AllocConsole.h"
 #include "WindowlessRenderWindow.h"
 
-int __stdcall WinMain( HINSTANCE instance, HINSTANCE pinstance,
-                       LPSTR pCmdline, int show )
+int __stdcall WinMain( HINSTANCE /*instance*/, HINSTANCE /*pinstance*/,
+                       LPSTR /*pCmdline*/, int /*show*/ )
 {
    // allocate a console for the application
    AllocateDebugConsole();

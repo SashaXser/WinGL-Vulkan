@@ -58,7 +58,7 @@ NormalMappingWindow::~NormalMappingWindow( )
 bool NormalMappingWindow::Create( unsigned int nWidth,
                                   unsigned int nHeight,
                                   const char * pWndTitle,
-                                  const void * pInitParams )
+                                  const void * /*pInitParams*/ )
 {
    // initialize with a context else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -176,7 +176,9 @@ int NormalMappingWindow::Run( )
    while (!bQuit)
    {
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // clear the back buffer and the depth buffer
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

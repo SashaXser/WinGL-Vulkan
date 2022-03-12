@@ -58,7 +58,7 @@ void CubeMapWindow::OnDestroy( )
 bool CubeMapWindow::Create( unsigned int nWidth,
                             unsigned int nHeight,
                             const char * pWndTitle,
-                            const void * pInitParams )
+                            const void * /*pInitParams*/ )
 {
    // initialize the opengl context
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -217,7 +217,9 @@ int CubeMapWindow::Run( )
       const double current_time_sec = Timer().GetCurrentTimeSec();
 
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // clear the frame and depth buffers
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

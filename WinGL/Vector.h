@@ -409,7 +409,8 @@ namespace details
 template < typename T, typename U >
 inline Vector< T, 2 > vector_cross( const Vector< T, 2 > & lhs, const Vector< U, 2 > & rhs )
 {
-   static_assert(false, "cross product not supported for 2D vectors")
+   // there is no implementation for this...
+   // cross product for 2D vectors not supported...
 }
 
 template < typename T, typename U >
@@ -434,6 +435,8 @@ template < typename T, uint32_t SIZE >
 template < typename U >
 inline Vector< T, SIZE > & Vector< T, SIZE >::operator ^= ( const Vector< U, SIZE > & vec )
 {
+   static_assert(SIZE != 2, "cross product not supported for 2D vectors");
+
    *this = details::vector_cross(*this, vec);
 
    return *this;
@@ -442,6 +445,8 @@ inline Vector< T, SIZE > & Vector< T, SIZE >::operator ^= ( const Vector< U, SIZ
 template < typename T, uint32_t SIZE >
 inline Vector< T, SIZE > & Vector< T, SIZE >::operator ^= ( const Vector< T, SIZE > & vec )
 {
+   static_assert(SIZE != 2, "cross product not supported for 2D vectors");
+
    *this = details::vector_cross(*this, vec);
 
    return *this;
@@ -857,6 +862,13 @@ typedef Vector< float, 3 >  Vec3f;
 typedef Vector< double, 3 > Vec3d;
 typedef Vector< float, 4 >  Vec4f;
 typedef Vector< double, 4 > Vec4d;
+
+template < typename T >
+using Vector2 = Vector< T, 2 >;
+template < typename T >
+using Vector3 = Vector< T, 3 >;
+template < typename T >
+using Vector4 = Vector< T, 4 >;
 
 // even with the use of the enable_if_t, the compiler
 // includes all the declarations of the class interface,

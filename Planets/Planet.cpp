@@ -158,7 +158,7 @@ void Planet::Render( )
    glPopMatrix();
 }
 
-void Planet::Update( const double & true_elapsed_time_secs,
+void Planet::Update( const double & /*true_elapsed_time_secs*/,
                      const double & sim_elapsed_time_secs )
 {
    // update the time position

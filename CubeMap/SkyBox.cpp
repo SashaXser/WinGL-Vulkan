@@ -49,7 +49,7 @@ void SkyBox::InitImages( const char * pTop,
    }
 }
 
-void SkyBox::Render( const double & rElapsedTime )
+void SkyBox::Render( const double & /*rElapsedTime*/ )
 {
    // create a vertex field
    // a LHS is assumed for the skybox
@@ -115,7 +115,7 @@ void SkyBox::Render( const double & rElapsedTime )
    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
-void SkyBox::Update( const double & rElapsedTime )
+void SkyBox::Update( const double & /*rElapsedTime*/ )
 {
    /* Do Nothing */
 }

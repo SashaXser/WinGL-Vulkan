@@ -61,7 +61,7 @@ public:
    // type cast operator to get a matrix
    operator Matrix< T > ( ) const
    {
-      return Matrix();
+      return Matrix< T > { };
    }
 
    // returns a matrix representation of the quat
@@ -739,7 +739,7 @@ Quaternion< T > Quaternion< T >::Rotation( const Vector< T, 4 > & origin, const 
    WGL_ASSERT(1 - std::numeric_limits< T >::epsilon() <= destination.Length() &&
               destination.Length() <= 1 + std::numeric_limits< T >::epsilon());
 
-   return Quaternion< T >::Rotation(Vector3(origin), Vector3(destination));
+   return Quaternion< T >::Rotation(Vector3< T >(origin), Vector3< T >(destination));
 }
 
 typedef Quaternion< float >  Quatf;

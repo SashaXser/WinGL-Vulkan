@@ -5,10 +5,10 @@
 #include "AllocConsole.h"
 #include "ProjectiveTextureWindow.h"
 
-int WINAPI WinMain( HINSTANCE hInstance,
-                    HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine,
-                    int nShowCmd )
+int WINAPI WinMain( HINSTANCE /*hInstance*/,
+                    HINSTANCE /*hPrevInstance*/,
+                    LPSTR /*lpCmdLine*/,
+                    int /*nShowCmd*/ )
 {
    // allocate a console for the application
    AllocateDebugConsole();

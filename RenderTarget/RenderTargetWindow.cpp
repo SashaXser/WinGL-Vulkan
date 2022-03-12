@@ -19,7 +19,7 @@ RenderTargetWindow::~RenderTargetWindow( )
 bool RenderTargetWindow::Create( unsigned int nWidth,
                                  unsigned int nHeight,
                                  const char * pWndTitle,
-                                 const void * pInitParams )
+                                 const void * /*pInitParams*/ )
 {
    // initialize 40 first, then 32 second, else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -62,7 +62,9 @@ int RenderTargetWindow::Run( )
    while (!bQuit)
    {
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          RenderScene();
       }

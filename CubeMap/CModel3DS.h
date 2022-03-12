@@ -78,7 +78,7 @@ inline CModel3DS::CModel3DS( )
 {
 }
 
-inline bool CModel3DS::Write( const char * pFile )
+inline bool CModel3DS::Write( const char * /*pFile*/ )
 {
    return false;
 }

@@ -14,9 +14,9 @@
 #include <algorithm>
 
 // defines an invalid texture type
-const GLenum INVALID_TEXTURE_TARGET = -1;
-const GLenum INVALID_INTERNAL_TEXTURE_FORMAT = -1;
-const GLenum INVALID_TEXTURE_UNIT = -1;
+const GLenum INVALID_TEXTURE_TARGET = ~0ul;
+const GLenum INVALID_INTERNAL_TEXTURE_FORMAT = ~0ul;
+const GLenum INVALID_TEXTURE_UNIT = ~0ul;
 
 GLenum GetTextureTarget( const GLuint id )
 {

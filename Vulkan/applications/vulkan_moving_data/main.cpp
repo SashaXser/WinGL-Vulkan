@@ -113,9 +113,6 @@ CreateImage(
          sharing_mode,
          image_layout);
 
-   vkl::DeviceMemoryHandle image_memory {
-      nullptr };
-
    if (image)
    {
       // need to do more to get the correct type index
@@ -173,9 +170,6 @@ CreateCommandBuffer(
          command_pool_create_flags,
          queue_family_index);
 
-   vkl::CommandBufferHandle command_buffer {
-      nullptr };
-
    if (command_pool)
    {
       auto command_buffer =
@@ -197,8 +191,8 @@ CreateCommandBuffer(
 }
 
 int32_t main(
-   const int32_t argc,
-   const char * const argv[] )
+   const int32_t /*argc*/,
+   const char * const /*argv*/[] )
 {
    const auto instance =
       vkl::CreateInstance(

@@ -178,7 +178,7 @@ void PlanetsWindow::OnDestroy( )
 bool PlanetsWindow::Create( unsigned int nWidth,
                             unsigned int nHeight,
                             const char * pWndTitle,
-                            const void * pInitParams )
+                            const void * /*pInitParams*/ )
 {
    // initialize the opengl context
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -246,7 +246,9 @@ int PlanetsWindow::Run( )
       const double current_time_sec = Timer().GetCurrentTimeSec();
 
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // render the scene
          RenderScene(current_time_sec - previous_time_sec);
@@ -417,7 +419,7 @@ void PlanetsWindow::UpdateScene( const double elapsed_time_sec )
    }
 }
 
-void PlanetsWindow::DrawScene( const double elapsed_time_sec )
+void PlanetsWindow::DrawScene( const double /*elapsed_time_sec*/ )
 {
    // must update to be more modern...  do that later...
 

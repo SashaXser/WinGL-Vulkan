@@ -32,7 +32,7 @@ SliderControlWindow::~SliderControlWindow( )
 bool SliderControlWindow::Create( unsigned int nWidth,
                                   unsigned int nHeight,
                                   const char * pWndTitle,
-                                  const void * pInitParams )
+                                  const void * /*pInitParams*/ )
 {
    // initialize with a context else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -83,7 +83,9 @@ int SliderControlWindow::Run( )
    while (!bQuit)
    {
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // clear the back buffer and the depth buffer
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -121,8 +123,8 @@ int SliderControlWindow::Run( )
 
          // how much time has passed since the last call
          const double time_slice_sec = Timer().DeltaSec(mCurrentTimeTick);
-         mHandlePos += math::pi< float >() * time_slice_sec / 2.85f;
-         mHandleRot += math::pi< float >() * time_slice_sec;
+         mHandlePos += static_cast< float >(math::pi< double >() * time_slice_sec / 2.85);
+         mHandleRot += static_cast< float >(math::pi< double >() * time_slice_sec);
 
          // setup the model view projection matrix
          mHandleShader.SetUniformMatrix< 1, 4, 4 >("mvp",

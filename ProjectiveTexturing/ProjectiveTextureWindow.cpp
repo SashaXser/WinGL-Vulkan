@@ -54,7 +54,7 @@ ProjectiveTextureWindow::~ProjectiveTextureWindow( )
 bool ProjectiveTextureWindow::Create( unsigned int nWidth,
                                       unsigned int nHeight,
                                       const char * pWndTitle,
-                                      const void * pInitParams )
+                                      const void * /*pInitParams*/ )
 {
    // initialize 40 first, then 32 second, else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -186,7 +186,9 @@ int ProjectiveTextureWindow::Run( )
       const long long begTick = localTimer.GetCurrentTick();
 
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          RenderScene();
 

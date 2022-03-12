@@ -47,7 +47,7 @@ TowerWindow::~TowerWindow( )
 bool TowerWindow::Create( unsigned int nWidth,
                           unsigned int nHeight,
                           const char * pWndTitle,
-                          const void * pInitParams )
+                          const void * /*pInitParams*/ )
 {
    // width and height are hard coded at the moment
    nWidth = 479;
@@ -196,7 +196,9 @@ int TowerWindow::Run( )
       glClear(GL_COLOR_BUFFER_BIT);
 
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // determine the amount of elapsed time
          const std::chrono::duration< double, std::milli > duration_update_freq(update_freq_in_ms);
@@ -256,7 +258,7 @@ LRESULT TowerWindow::MessageHandler( UINT uMsg,
    return result;
 }
 
-void TowerWindow::KeyboardCB( void * pVoid, unsigned int virtual_key, const double & rElapsedTime )
+void TowerWindow::KeyboardCB( void * pVoid, unsigned int virtual_key, const double & /*rElapsedTime*/ )
 {
    switch (virtual_key)
    {
@@ -437,7 +439,7 @@ void TowerWindow::KeyboardCB( void * pVoid, unsigned int virtual_key, const doub
    }
 }
 
-void TowerWindow::EnterInitialsKeyboardCB( void * pVoid, unsigned int virtual_key, const double & rElapsedTime )
+void TowerWindow::EnterInitialsKeyboardCB( void * pVoid, unsigned int virtual_key, const double & /*rElapsedTime*/ )
 {
 #define ADD_CHAR( c ) case #@c: if (pChar) { *pChar = #@c; pData->bUpdateText = true; } break;
 
@@ -830,7 +832,7 @@ void TowerWindow::LoadWinnersBuffer( ShowWinnersUpdateDrawData & oData )
    oData.dUpdateTime = 0.05;
 }
 
-void TowerWindow::DrawPressSpaceCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::DrawPressSpaceCB( void * /*pWnd*/, void * pData, const double & /*rElapsedTime*/ )
 {
    unsigned int * pScanLine = static_cast< PressSpaceUpdateDrawData * >(pData)->pCurrentRow;
 
@@ -845,7 +847,7 @@ void TowerWindow::DrawPressSpaceCB( void * pWnd, void * pData, const double & rE
    }
 }
 
-void TowerWindow::DrawPlayingGameCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::DrawPlayingGameCB( void * /*pWnd*/, void * pData, const double & /*rElapsedTime*/ )
 {
    PlayGameUpdateDrawData * pDrawData = static_cast< PlayGameUpdateDrawData * >(pData);
 
@@ -858,7 +860,7 @@ void TowerWindow::DrawPlayingGameCB( void * pWnd, void * pData, const double & r
    }
 }
 
-void TowerWindow::DrawFlashRemovedSquaresCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::DrawFlashRemovedSquaresCB( void * /*pWnd*/, void * pData, const double & /*rElapsedTime*/ )
 {
    FlashRemovedSquaresUpdateDrawData * pDrawData =
       static_cast< FlashRemovedSquaresUpdateDrawData * >(pData);
@@ -872,7 +874,7 @@ void TowerWindow::DrawFlashRemovedSquaresCB( void * pWnd, void * pData, const do
    }
 }
 
-void TowerWindow::DrawGameOverCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::DrawGameOverCB( void * /*pWnd*/, void * pData, const double & /*rElapsedTime*/ )
 {
    GameOverUpdateDrawData * pDrawData =
       static_cast< GameOverUpdateDrawData * >(pData);
@@ -886,7 +888,7 @@ void TowerWindow::DrawGameOverCB( void * pWnd, void * pData, const double & rEla
    }
 }
 
-void TowerWindow::DrawEnterNameCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::DrawEnterNameCB( void * /*pWnd*/, void * pData, const double & rElapsedTime )
 {
    GameOverWinnerDrawUpdateData * pDrawData =
       static_cast< GameOverWinnerDrawUpdateData * >(pData);
@@ -923,7 +925,7 @@ void TowerWindow::DrawShowWinnersCB( void * pWnd, void * pData, const double & r
    }
 }
 
-void TowerWindow::DrawTitleScreenCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::DrawTitleScreenCB( void * /*pWnd*/, void * /*pData*/, const double & /*rElapsedTime*/ )
 {
    for (unsigned int row = 0; row < BOARD_DIM_ROWS; row++)
    {
@@ -936,7 +938,7 @@ void TowerWindow::DrawTitleScreenCB( void * pWnd, void * pData, const double & r
    }
 }
 
-void TowerWindow::UpdatePressSpaceCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::UpdatePressSpaceCB( void * /*pWnd*/, void * pData, const double & rElapsedTime )
 {
    PressSpaceUpdateDrawData * pUpdateData = static_cast< PressSpaceUpdateDrawData * >(pData);
 
@@ -971,7 +973,7 @@ void TowerWindow::UpdatePressSpaceCB( void * pWnd, void * pData, const double & 
    }
 }
 
-void TowerWindow::UpdatePlayingGameCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::UpdatePlayingGameCB( void * /*pWnd*/, void * pData, const double & rElapsedTime )
 {
    PlayGameUpdateDrawData * pUpdateData = static_cast< PlayGameUpdateDrawData * >(pData);
 
@@ -1044,7 +1046,7 @@ void TowerWindow::UpdatePlayingGameCB( void * pWnd, void * pData, const double &
    }
 }
 
-void TowerWindow::UpdateFlashRemovedSquaresCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::UpdateFlashRemovedSquaresCB( void * /*pWnd*/, void * pData, const double & rElapsedTime )
 {
    FlashRemovedSquaresUpdateDrawData * pUpdateData =
       static_cast< FlashRemovedSquaresUpdateDrawData * >(pData);
@@ -1161,7 +1163,7 @@ void TowerWindow::UpdateFlashRemovedSquaresCB( void * pWnd, void * pData, const 
    }
 }
 
-void TowerWindow::UpdateGameOverCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::UpdateGameOverCB( void * /*pWnd*/, void * pData, const double & rElapsedTime )
 {
    GameOverUpdateDrawData * pUpdateData =
       static_cast< GameOverUpdateDrawData * >(pData);
@@ -1224,7 +1226,7 @@ void TowerWindow::UpdateGameOverCB( void * pWnd, void * pData, const double & rE
    }
 }
 
-void TowerWindow::UpdateEnterNameCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::UpdateEnterNameCB( void * /*pWnd*/, void * pData, const double & /*rElapsedTime*/ )
 {
    GameOverWinnerDrawUpdateData * pUpdateData =
       static_cast< GameOverWinnerDrawUpdateData * >(pData);
@@ -1256,7 +1258,7 @@ void TowerWindow::UpdateShowWinnersCB( void * pWnd, void * pData, const double &
    }
 }
 
-void TowerWindow::UpdateTitleScreenCB( void * pWnd, void * pData, const double & rElapsedTime )
+void TowerWindow::UpdateTitleScreenCB( void * /*pWnd*/, void * /*pData*/, const double & /*rElapsedTime*/ )
 {
    mGameStatesCurrent = GAME_STATES_PRESS_SPACE;
 }

@@ -18,8 +18,8 @@
 #include <thread>
 
 int32_t main(
-   const int32_t argc,
-   const char * const argv[] )
+   const int32_t /*argc*/,
+   const char * const /*argv*/[] )
 {
    const auto instance =
       vkl::CreateInstance(
@@ -368,8 +368,8 @@ int32_t main(
       vkl::SetWindowResizeCallback(
          window,
          [ & ] (
-            void * const user_data,
-            const vkl::WindowHandle & window,
+            void * const /*user_data*/,
+            const vkl::WindowHandle & /*window*/,
             const uint32_t width,
             const uint32_t height )
          {
@@ -525,13 +525,12 @@ int32_t main(
                               &result
                            };
 
-                           const auto present_result =
-                              vkQueuePresentKHR(
-                                 queue,
-                                 &present_info);
+                           vkQueuePresentKHR(
+                              queue,
+                              &present_info);
 
                            std::this_thread::sleep_for(
-                                 std::chrono::milliseconds(500));
+                              std::chrono::milliseconds(500));
                         }
                      }
                   }

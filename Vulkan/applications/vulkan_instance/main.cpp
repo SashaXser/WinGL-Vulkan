@@ -4,8 +4,8 @@
 #include <iostream>
 
 int32_t main(
-   const int32_t argc,
-   const char* const argv[] )
+   const int32_t /*argc*/,
+   const char* const /*argv*/[] )
 {
    VkApplicationInfo application_info;
    application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;

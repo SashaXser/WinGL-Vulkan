@@ -220,6 +220,9 @@ void VertexBufferObject::VertexAttribPointer( const GLuint index,
 {
    WGL_ASSERT(mBound && VertexBufferObject::GetCurrentVBO(mType) == mVBO);
 
+#pragma warning ( push )
+#pragma warning ( disable : 4312 )
    glVertexAttribPointer(index, size, type, normalized, stride, reinterpret_cast< GLvoid * >(offset));
+#pragma warning ( pop )
 }
 

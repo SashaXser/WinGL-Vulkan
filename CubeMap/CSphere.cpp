@@ -174,7 +174,7 @@ void CSphere::ConstructSphere( float fRadius,
    ConstructSphere();
 }
 
-void CSphere::DrawSphere( const double & rElapsedTime ) const
+void CSphere::DrawSphere( const double & /*rElapsedTime*/ ) const
 {
    // set the material properties
    if (m_oMaterial.nFlags & MF_AMBIENT)   glMaterialfv(m_oMaterial.nFace, GL_AMBIENT,    m_oMaterial.fAmbient);
@@ -253,7 +253,7 @@ void CSphere::DrawSphere( const double & rElapsedTime ) const
    }
 }
 
-void CSphere::DrawQuads( const double & rElapsedTime ) const
+void CSphere::DrawQuads( const double & /*rElapsedTime*/ ) const
 {
    // vertex pointer
    float fVertPtr[] = { -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f, -0.5f, 0.5f, 0.0f };
@@ -332,7 +332,7 @@ void CSphere::DrawQuads( const double & rElapsedTime ) const
    }
 }
 
-void CSphere::Update( const double & rElapsedTime,
+void CSphere::Update( const double & /*rElapsedTime*/,
                       const Vec3f & rEyePosition )
 {
    // are hand generated normals set
@@ -362,7 +362,7 @@ void CSphere::Update( const double & rElapsedTime,
          // determine the incident vector
          vIncident = vVert - rEyePosition;
          // determine the reflection
-         Vec3f vReflect = vIncident - vNorm * (2 * (vNorm * vIncident));
+         vReflect = vIncident - vNorm * (2 * (vNorm * vIncident));
 
          // set the texture coordinates
          pVertex->fS = vReflect.X();

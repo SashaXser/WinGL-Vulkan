@@ -133,8 +133,8 @@ bool OpenGLWindow::CreateOpenGLContext( const OpenGLInit * pInitParams )
 
             // store a 2.1 value and the requested
             // context in two byte of data
-            const short CONTEXT_TWO_DOT_ONE = 2 << 8 | 1;
-            const short REQUESTED_CONTEXT = attribList[1] << 8 | attribList[2];
+            const int CONTEXT_TWO_DOT_ONE = 2 << 8 | 1;
+            const int REQUESTED_CONTEXT = attribList[1] << 8 | attribList[2];
 
             // if the requested context is a 2.1 or lower,
             // remove the profile mask and the context flags
@@ -414,9 +414,9 @@ void OpenGLWindow::PostDebugMessage( const uint32_t type,
 void __stdcall OpenGLWindow::DebugContextCallbackAMD( unsigned int id,
                                                       unsigned int category,
                                                       unsigned int severity,
-                                                      int length,
+                                                      int /*length*/,
                                                       const char * message,
-                                                      void * userParams )
+                                                      void * /*userParams*/ )
 {
    // message string to output
    std::stringstream ssMsg;
@@ -468,9 +468,9 @@ void __stdcall OpenGLWindow::DebugContextCallbackARB( unsigned int source,
                                                       unsigned int type,
                                                       unsigned int id,
                                                       unsigned int severity,
-                                                      int length,
+                                                      int /*length*/,
                                                       const char * message,
-                                                      const void * userParams )
+                                                      const void * /*userParams*/ )
 {
    // message string to output
    std::stringstream ssMsg;

@@ -37,7 +37,7 @@ SmokeParticleSystemWindow::~SmokeParticleSystemWindow( )
 bool SmokeParticleSystemWindow::Create( unsigned int nWidth,
                                         unsigned int nHeight,
                                         const char * pWndTitle,
-                                        const void * pInitParams )
+                                        const void * /*pInitParams*/ )
 {
    // initialize 32 else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -88,7 +88,9 @@ int SmokeParticleSystemWindow::Run( )
    while (!bQuit)
    {
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // update the scene
          UpdateScene(simFrame);
@@ -278,7 +280,7 @@ void SmokeParticleSystemWindow::RenderScene( const SimFrame & rSimFrame )
    SwapBuffers(GetHDC());
 }
 
-void SmokeParticleSystemWindow::RenderFloor( const SimFrame & simFrame, 
+void SmokeParticleSystemWindow::RenderFloor( const SimFrame & /*simFrame*/, 
                                              const bool shutdown )
 {
    // defines the buffer objects

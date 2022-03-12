@@ -10,22 +10,22 @@ namespace glsc
 
 void ComponentImpl::Draw( )
 {
-   float viewport[4];
-   glGetFloatv(GL_VIEWPORT, viewport);
+   GLint viewport[4];
+   glGetIntegerv(GL_VIEWPORT, viewport);
 
-   const float vp_width = viewport[2];
-   const float vp_height = viewport[3];
+   const GLint vp_width = viewport[2];
+   const GLint vp_height = viewport[3];
 
    if (vp_width >= vp_height)
    {
-      float middle_x = vp_width / 2.0f;
-      float start_x = middle_x - vp_height / 2.0f;
+      GLint middle_x = vp_width >> 1;
+      GLint start_x = middle_x - (vp_height >> 1);
       glViewport(start_x, 0, vp_height, vp_height);
    }
    else
    {
-      float middle_y = vp_height / 2.0f;
-      float start_y = middle_y - vp_width / 2.0f;
+      GLint middle_y = vp_height >> 1;
+      GLint start_y = middle_y - (vp_width >> 1);
       glViewport(0, start_y, vp_width, vp_width);
    }
 

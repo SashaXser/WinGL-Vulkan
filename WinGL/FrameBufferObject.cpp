@@ -22,7 +22,9 @@ GLuint FrameBufferObject::GetCurrentFrameBuffer( const GLenum binding )
       // get the draw buffer binding here...
       glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &frame_buffer);
       // the read buffer binding should be the same as teh draw buffer binding...
-      WGL_ASSERT(FrameBufferObject::GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER) == frame_buffer);
+      WGL_ASSERT(
+         FrameBufferObject::GetCurrentFrameBuffer(GL_READ_FRAMEBUFFER) ==
+         static_cast< GLuint >(frame_buffer));
       
       break;
    default: WGL_ASSERT(false); break;
@@ -42,7 +44,7 @@ GLuint FrameBufferObject::GetCurrentRenderBuffer( )
 
 GLuint FrameBufferObject::GetMaxNumberOfColorAttachments( )
 {
-   static GLuint maximum =
+   static GLuint maximum_color_attachments =
    [ ] ( ) -> GLuint
    {
       GLint maximum = 0;
@@ -51,7 +53,7 @@ GLuint FrameBufferObject::GetMaxNumberOfColorAttachments( )
       return static_cast< GLuint >(maximum);
    }();
 
-   return maximum;
+   return maximum_color_attachments;
 }
 
 FrameBufferObject::FrameBufferObject( ) :
@@ -243,7 +245,16 @@ void FrameBufferObject::Blit( const size_t sx0, const size_t sy0, const size_t s
 
    // perform the blit
    glReadBuffer(buffer);
-   glBlitFramebuffer(sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1, mask, filter);
+   glBlitFramebuffer(
+      static_cast< GLint >(sx0),
+      static_cast< GLint >(sy0),
+      static_cast< GLint >(sx1),
+      static_cast< GLint >(sy1),
+      static_cast< GLint >(dx0),
+      static_cast< GLint >(dy0),
+      static_cast< GLint >(dx1),
+      static_cast< GLint >(dy1),
+      mask, filter);
 }
 
 void FrameBufferObject::Read( const size_t x, const size_t y,
@@ -258,7 +269,12 @@ void FrameBufferObject::Read( const size_t x, const size_t y,
 
    // perform the read
    glReadBuffer(buffer);
-   glReadPixels(x, y, width, height, format, type, pData);
+   glReadPixels(
+      static_cast< GLint >(x),
+      static_cast< GLint >(y),
+      static_cast< GLsizei >(width),
+      static_cast< GLsizei >(height),
+      format, type, pData);
 }
 
 bool FrameBufferObject::IsComplete( ) const

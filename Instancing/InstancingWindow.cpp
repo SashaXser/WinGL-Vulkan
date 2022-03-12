@@ -48,7 +48,7 @@ InstancingWindow::~InstancingWindow( )
 }
 
 bool InstancingWindow::Create( unsigned int nWidth, unsigned int nHeight,
-                               const char * pWndTitle, const void ** pInitParams )
+                               const char * pWndTitle, const void ** /*pInitParams*/ )
 {
    // initialize the camera and perspective
    mCamera.MakeLookAt(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f);
@@ -108,7 +108,9 @@ int InstancingWindow::Run( )
       const long long begTick = localTimer.GetCurrentTick();
 
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // render the scene
          RenderScene();

@@ -22,7 +22,7 @@ static std::pair< HWND, HGLRC > hidden_gl_window { };
 std::pair< HWND, HGLRC > CreateHiddenWindow( )
 {
    std::pair< HWND, HGLRC >
-      hidden_gl_window { };
+      window { };
 
    const WNDCLASSEX window_class {
       sizeof(window_class),
@@ -41,7 +41,7 @@ std::pair< HWND, HGLRC > CreateHiddenWindow( )
    RegisterClassEx(
       &window_class);
 
-   hidden_gl_window.first =
+   window.first =
       CreateWindowEx(
          WS_EX_NOACTIVATE,
          window_class.lpszClassName,
@@ -53,7 +53,7 @@ std::pair< HWND, HGLRC > CreateHiddenWindow( )
          window_class.hInstance,
          nullptr);
 
-   if (hidden_gl_window.first)
+   if (window.first)
    {
       const PIXELFORMATDESCRIPTOR pfd {
          sizeof(pfd),
@@ -78,20 +78,20 @@ std::pair< HWND, HGLRC > CreateHiddenWindow( )
 
       const int32_t pixel_format =
          ChoosePixelFormat(
-            GetDC(hidden_gl_window.first),
+            GetDC(window.first),
             &pfd);
 
       SetPixelFormat(
-         GetDC(hidden_gl_window.first),
+         GetDC(window.first),
          pixel_format,
          &pfd);
       
-      hidden_gl_window.second =
+      window.second =
          wglCreateContext(
-            GetDC(hidden_gl_window.first));
+            GetDC(window.first));
    }
 
-   return hidden_gl_window;
+   return window;
 }
 
 MultisampleFramebufferWindow::MultisampleFramebufferWindow( ) :
@@ -133,7 +133,7 @@ bool MultisampleFramebufferWindow::Create(
    unsigned int nWidth,
    unsigned int nHeight,
    const char * pWndTitle,
-   const void * pInitParams )
+   const void * /*pInitParams*/ )
 {
    // initialize with a context else nothing
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -157,9 +157,11 @@ bool MultisampleFramebufferWindow::Create(
             this,
             std::ref(init_complete));
 
-      init_complete.wait(
-         std::unique_lock(
-            init_complete_mutex));
+      std::unique_lock lock {
+         init_complete_mutex
+      };
+
+      init_complete.wait(lock);
 
       // make the context current
       MakeCurrent();
@@ -192,16 +194,23 @@ int MultisampleFramebufferWindow::Run( )
    // basic message pump and render frame
    while (!bQuit)
    {
-      frame.wait(
-         std::unique_lock(
-            frame_mutex),
-         [ this ]
-         {
-            return frame_mode == FrameMode::PRESENT;
-         });
+      {
+         std::unique_lock lock {
+            frame_mutex
+         };
+
+         frame.wait(
+            lock,
+            [ this ]
+            {
+               return frame_mode == FrameMode::PRESENT;
+            });
+      }
 
       // process all the messages
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          RenderColorBuffer();
 
@@ -720,15 +729,20 @@ void MultisampleFramebufferWindow::RenderThread(
 
    while (!quit_render_thread)
    {
-      frame.wait(
-         std::unique_lock(
-            frame_mutex),
-         [ this ]
-         {
-            return
-               frame_mode == FrameMode::RENDER ||
-               quit_render_thread;
-         });
+      {
+         std::unique_lock lock {
+            frame_mutex
+         };
+
+         frame.wait(
+            lock,
+            [ this ]
+            {
+               return
+                  frame_mode == FrameMode::RENDER ||
+                  quit_render_thread;
+            });
+      }
 
       current_frame =
          current_frame++ %

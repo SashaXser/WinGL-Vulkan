@@ -64,7 +64,7 @@ void RoamNoRollRestrictPitch< T, MIN_PITCH_RATIO, MAX_PITCH_RATIO, UP_VECTOR >::
    mViewMatrix.MakeInverse();
 
    // calculate the new translation
-   const vec_type translation_vec = axis_vector * amount;
+   const vec_type translation_vec = direction * amount;
 
    // update the matrix
    const mat_type translation_mat(Vector4< T >(1, 0, 0, 0),

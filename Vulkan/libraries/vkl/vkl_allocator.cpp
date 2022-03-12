@@ -50,7 +50,7 @@ uint64_t allocated_size_ { };
 std::mutex allocator_lock_ { };
 
 void VKAPI_CALL Free(
-   void * const user_data,
+   void * const /*user_data*/,
    void * const original_data )
 {
    if (original_data)
@@ -85,7 +85,7 @@ void VKAPI_CALL Free(
 }
 
 void * VKAPI_CALL Allocate(
-   void * const user_data,
+   void * const /*user_data*/,
    const size_t size,
    const size_t alignment,
    const VkSystemAllocationScope scope )
@@ -169,7 +169,7 @@ void * VKAPI_CALL Reallocate(
 }
 
 void VKAPI_CALL InternalAllocate(
-   void * const user_data,
+   void * const /*user_data*/,
    const size_t size,
    const VkInternalAllocationType type,
    const VkSystemAllocationScope scope )
@@ -191,7 +191,7 @@ void VKAPI_CALL InternalAllocate(
 }
 
 void VKAPI_CALL InternalFree(
-   void * const user_data,
+   void * const /*user_data*/,
    const size_t size,
    const VkInternalAllocationType type,
    const VkSystemAllocationScope scope )

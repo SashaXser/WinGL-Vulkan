@@ -63,7 +63,7 @@ WindowlessRenderWindow::~WindowlessRenderWindow( )
 }
 
 bool WindowlessRenderWindow::Create( unsigned int nWidth, unsigned int nHeight,
-                                     const char * pWndTitle, const void ** pInitParams )
+                                     const char * pWndTitle, const void ** /*pInitParams*/ )
 {
    // initialize gl context params
    const OpenGLWindow::OpenGLInit glInit[] =
@@ -140,7 +140,9 @@ int WindowlessRenderWindow::Run( )
       const long long begTick = localTimer.GetCurrentTick();
 
       // process all the app messages and then render the scene
-      if (!(bQuit = PeekAppMessages(appQuitVal)))
+      bQuit = PeekAppMessages(appQuitVal);
+
+      if (!bQuit)
       {
          // render the scene
          RenderScene();
@@ -151,9 +153,6 @@ int WindowlessRenderWindow::Run( )
             // wait for the remainder of the time
             localTimer.Wait(static_cast< unsigned long >(MS_PER_FRAME - deltaMS));
          }
-
-         // determine the framrate of the application
-         const double frame_rate = 1.0 / localTimer.DeltaSec(begTick);
       }
    }
 
@@ -282,12 +281,12 @@ void WindowlessRenderWindow::RenderScene( )
    if (pImgDataToRender)
    {
       // create a texture if one is not there...
-      uint32_t & tex_id = mTextures[(mCurBuffers + 1) % 2];
+      uint32_t & tex = mTextures[(mCurBuffers + 1) % 2];
 
-      if (!tex_id)
+      if (!tex)
       {
-         glGenTextures(1, &tex_id);
-         glBindTexture(GL_TEXTURE_2D, tex_id);
+         glGenTextures(1, &tex);
+         glBindTexture(GL_TEXTURE_2D, tex);
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, pImgDataToRender->width, pImgDataToRender->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -297,7 +296,7 @@ void WindowlessRenderWindow::RenderScene( )
       }
 
       // obtain out pixel unpack buffer
-      const uint32_t pbo_id = [ this, pImgDataToRender ] ( ) -> uint32_t
+      const uint32_t pbo = [ this, pImgDataToRender ] ( ) -> uint32_t
       {
          uint32_t & pbo_id = mPixelUnpackBuffers[(mCurBuffers + 1) % 2];
 
@@ -310,7 +309,7 @@ void WindowlessRenderWindow::RenderScene( )
       }();
 
       // bind buffer and setup the buffer size...
-      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id);
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
       glBufferData(GL_PIXEL_UNPACK_BUFFER, pImgDataToRender->size, nullptr, GL_STREAM_DRAW);
 
       // copy the data to the buffer
@@ -494,7 +493,7 @@ uint32_t WindowlessRenderWindow::RunServerThread( )
       wnd_class_ex.lpszClassName = "gl server window";
       wnd_class_ex.hIconSm = nullptr;
 
-      const ATOM atom = RegisterClassEx(&wnd_class_ex);
+      RegisterClassEx(&wnd_class_ex);
 
       return CreateWindowEx(0,
                             wnd_class_ex.lpszClassName,

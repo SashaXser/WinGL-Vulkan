@@ -2,7 +2,7 @@
 #include "CFont.h"
 #include "Matrix.h"
 
-CFont::CFont( unsigned int unLayer,
+CFont::CFont( unsigned int /*unLayer*/,
               const Vec3f &rPos,
               const std::string &rFile,
               unsigned int unCharWidth,
@@ -84,7 +84,7 @@ CFont::~CFont( )
    glDeleteTextures(1, &m_oImage);
 }
 
-void CFont::Draw( const double &rElapsedTime )
+void CFont::Draw( const double &/*rElapsedTime*/ )
 {
    if (m_vText.size())
    {
@@ -133,7 +133,7 @@ void CFont::Draw( const double &rElapsedTime )
    }
 }
 
-void CFont::Update( const double &rElapsedTime )
+void CFont::Update( const double &/*rElapsedTime*/ )
 {
 }
 

@@ -182,7 +182,7 @@ void MouseScrollCallback(
 
 void WindowCloseCallback(
    void * const user_data,
-   const vkl::WindowHandle & window )
+   const vkl::WindowHandle & /*window*/ )
 {
    std::cout
       << "Window Close Callback" << "\n"
@@ -193,7 +193,7 @@ void WindowCloseCallback(
 
 void WindowResizeCallback(
    void * const user_data,
-   const vkl::WindowHandle & window,
+   const vkl::WindowHandle & /*window*/,
    const uint32_t width,
    const uint32_t height )
 {
@@ -247,8 +247,8 @@ void SetupCallbacks(
 }
 
 int32_t main(
-   const int32_t argc,
-   const char * const argv[] )
+   const int32_t /*argc*/,
+   const char * const /*argv*/[] )
 {
    const auto init_win_sys_handle =
       vkl::InitWindowSystem();

@@ -4,10 +4,10 @@
 // local includes
 #include "CubeMapWindow.h"
 
-int WINAPI WinMain( HINSTANCE hInstance,
-                    HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine,
-                    int nShowCmd )
+int WINAPI WinMain( HINSTANCE /*hInstance*/,
+                    HINSTANCE /*hPrevInstance*/,
+                    LPSTR /*lpCmdLine*/,
+                    int /*nShowCmd*/ )
 {
    // indicates success or failure
    int error = -1;

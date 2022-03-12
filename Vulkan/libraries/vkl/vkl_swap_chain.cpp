@@ -70,12 +70,11 @@ bool SupportsPresentation(
        physical_device && *physical_device &&
        queue_family)
    {
-      const auto result =
-         vkGetPhysicalDeviceSurfaceSupportKHR(
-            *physical_device,
-            queue_family->first,
-            *surface,
-            &supported);
+      vkGetPhysicalDeviceSurfaceSupportKHR(
+         *physical_device,
+         queue_family->first,
+         *surface,
+         &supported);
    }
 
    return
@@ -162,14 +161,14 @@ GetSwapChainImages(
          swap_chain_image_count,
          { });
 
-      const auto result =
+      result =
          vkGetSwapchainImagesKHR(
             *device,
             *swap_chain,
             &swap_chain_image_count,
             vk_swap_chain_images.data());
 
-      if (result == VK_SUCCESS)
+      if (VK_SUCCESS == result)
       {
          const auto * const context =
             vkl::internal::GetContextData< Context >(

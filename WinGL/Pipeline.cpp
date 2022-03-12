@@ -94,7 +94,7 @@ void Pipeline::SetPolygonMode( const GLenum mode )
 
 void Pipeline::DrawBuffers( const std::vector< GLenum > & buffers )
 {
-   glDrawBuffers(buffers.size(), &buffers.front());
+   glDrawBuffers(static_cast< GLsizei >(buffers.size()), &buffers.front());
 
    mEnabledDrawBuffers = buffers;
 }
@@ -156,7 +156,7 @@ void Pipeline::EnableVertexAttribArray( const bool enable, const size_t attribut
 {
    if (enable)
    {
-      glEnableVertexAttribArray(attribute);
+      glEnableVertexAttribArray(static_cast< GLuint >(attribute));
       
       mEnabledVertAttribArray.resize(std::max(mEnabledVertAttribArray.size(), attribute + 1));
 
@@ -164,7 +164,9 @@ void Pipeline::EnableVertexAttribArray( const bool enable, const size_t attribut
    }
    else
    {
-      glDisableVertexAttribArray(attribute); mEnabledVertAttribArray[attribute] = false;
+      glDisableVertexAttribArray(static_cast< GLuint >(attribute));
+
+      mEnabledVertAttribArray[attribute] = false;
    }
 }
 
@@ -175,12 +177,12 @@ bool Pipeline::IsVertexAttribArrayEnabled( const size_t attribute )
 
 void Pipeline::DrawArrays( const GLenum mode, const size_t first, const size_t count ) const
 {
-   glDrawArrays(mode, first, count);
+   glDrawArrays(mode, static_cast< GLint >(first), static_cast< GLsizei >(count));
 }
 
 void Pipeline::DrawElements( const GLenum mode, const size_t count, const GLenum type, const void * const pIndices ) const
 {
-   glDrawElements(mode, count, type, pIndices);
+   glDrawElements(mode, static_cast< GLsizei >(count), type, pIndices);
 }
 
 void Pipeline::DrawTransformFeedback( const GLenum mode, const TransformFeedbackObject & tfo ) const

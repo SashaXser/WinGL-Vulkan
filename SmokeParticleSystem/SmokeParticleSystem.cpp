@@ -57,7 +57,7 @@ SmokeParticleSystem::~SmokeParticleSystem( )
 {
 }
 
-void SmokeParticleSystem::Update( const SimFrame & simFrame )
+void SmokeParticleSystem::Update( const SimFrame & /*simFrame*/ )
 {
    // update the position of the system...
    // this will be controlled by the shape it is

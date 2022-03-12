@@ -36,9 +36,8 @@ Window::~Window( )
 bool Window::Create( unsigned int nWidth,
                      unsigned int nHeight,
                      const char * pWndTitle,
-                     const void * pInitParams )
+                     const void * /*pInitParams*/ )
 {
-   
    // register the class window
    WNDCLASSEX wndClassEx =
    {
@@ -69,7 +68,7 @@ bool Window::Create( unsigned int nWidth,
       const DWORD nStylesEx = WS_EX_OVERLAPPEDWINDOW;
 
       // adjust the window to account for the borders...
-      RECT clientRect = { 0, 0, nWidth, nHeight };
+      RECT clientRect { 0, 0, static_cast< LONG >(nWidth), static_cast< LONG >(nHeight) };
       AdjustWindowRectEx(&clientRect, nStyles, FALSE, nStylesEx);
 
       // create the window
@@ -113,8 +112,8 @@ Size Window::GetSize( )
 
    Size clientSize =
    {
-      clientRect.right - clientRect.left,
-      clientRect.bottom - clientRect.top
+      static_cast< unsigned long >(clientRect.right - clientRect.left),
+      static_cast< unsigned long >(clientRect.bottom - clientRect.top)
    };
 
    return clientSize;

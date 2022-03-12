@@ -59,7 +59,7 @@ ShaderProgram & ShaderProgram::operator = ( ShaderProgram && program )
    return *this;
 }
 
-bool ShaderProgram::Attach( const GLenum shader, const GLuint shader_obj )
+bool ShaderProgram::Attach( const GLenum /*shader*/, const GLuint shader_obj )
 {
    bool attached = false;
 
@@ -189,7 +189,7 @@ std::vector< GLuint > ShaderProgram::GetAttachedShaders( const GLenum shader ) c
             GLint shader_type = 0;
             glGetShaderiv(shader_obj, GL_SHADER_TYPE, &shader_type);
             
-            return shader != shader_type;
+            return shader != static_cast< GLenum >(shader_type);
          });
 
          // resize to only include those types that match shader
